@@ -1,0 +1,14 @@
+.Rproj.user
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+.RProfile
+.Renviron
+.DS_Store
+_targets/
+*/in/*
+*/out/*
+!*/in/.empty
+!*/out/.empty
+!*/src/*
