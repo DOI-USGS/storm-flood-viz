@@ -1,0 +1,15 @@
+name: hurricane-precip
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python
+  - xarray
+  - fsspec
+  - pandas
+  - numpy
+  - scipy
+  - gdal
+  - s3fs
+  - zarr<3.0
+  - dask
