@@ -1,5 +1,6 @@
 source("1_fetch/src/storm_shape_functions.R")
 source("1_fetch/src/clip_flood_stage_gages.R")
+source("1_fetch/src/chunk_up_sites.R")
 
 pcodes <- c("00060", "00065")
 storm_name <- 'Helene'
@@ -62,7 +63,10 @@ p1_targets <- list(
     )
   ),
   tar_target(
-    uv_data_df,
-    
+    site_chunk_lists,
+    {
+      chunk_up_sites(site_ids = unique(usgs_flood_stage_gages$site_no),
+                     n_sites_per_list = 500)
+    }
   )
 )
