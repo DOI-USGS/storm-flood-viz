@@ -9,10 +9,13 @@ p1_targets <- list(
   tar_target(p1_precip_start,
              "2024-10-07T10"),
   tar_target(p1_precip_end,
-             "2024-10-07T10"),
+             "2024-10-07T15"),
+  tar_target(summed,
+             TRUE),
   tar_target(p1_precip_tif, 
              download_precip(bBox=p1_precip_bbox,
                              start_time_str=p1_precip_start,
-                             end_time_str=p1_precip_end),
+                             end_time_str=p1_precip_end,
+                             summed=summed),
              format = 'file')
 )
