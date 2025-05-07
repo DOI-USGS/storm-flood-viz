@@ -76,16 +76,17 @@ def numpy_array_to_raster(
 def download_precip(
     bBox=[-82.0, 28.0, -79.0, 30.0],
     start_time_str="2024-10-07T10",
-    end_time_str="2024-10-07T10",
-    file_path_base="1_fetch/out/",
+    end_time_str="2024-10-07T12",
+    output_path="1_fetch/out/",
+    summed=False,
     cells_x=500,
     zarr_url="s3://mdmf/gdp/stageiv_combined.zarr/",
     GEOTIFF_DRIVER_NAME=r"GTiff",
     NO_DATA=-9999.0,
     SPATIAL_REFERENCE_SYSTEM_WKID=4269,
 ):
-    if os.path.exists(file_path_base) == False:
-        os.makedirs(file_path_base)
+    if os.path.exists(output_path) == False:
+        os.makedirs(output_path)
 
     # time in Coordinated Universal Time (UTC) (I believe)
     start_time = pd.to_datetime(start_time_str)
@@ -127,10 +128,9 @@ def download_precip(
         (precip.longitude.values.flatten(), precip.latitude.values.flatten())
     )
 
+    file_paths = []
     # save array from each time
     for i in range(0, precip.shape[0]):
-        # specify file path
-        output_path = file_path_base + str(precip.time.values[i])[:-16] + ".tif"
 
         # interpolate - needs to be nearest, griddata crashes with reticulate and targets for some reason 5/2/25. It's all good with reticulate or python by itself.
         interp_precip = griddata(
@@ -140,11 +140,43 @@ def download_precip(
             method="nearest",
         )
 
+        if summed == False:
+            # specify file path
+            file_path = output_path + str(precip.time.values[i])[:-16] + ".tif"
+            # convert to gdal tiff
+            print("saving tif: " + file_path)
+            numpy_array_to_raster(
+                file_path,
+                np.flipud(interp_precip),
+                (bBox[0] - dx * 0.5, bBox[3] + dx * 0.5),
+                dx,
+                nband=1,
+                no_data=NO_DATA,
+                gdal_data_type=gdal.GDT_Float32,
+                spatial_reference_system_wkid=SPATIAL_REFERENCE_SYSTEM_WKID,
+                driver=GEOTIFF_DRIVER_NAME,
+            )
+            # make a list of output paths
+            file_paths += [file_path]
+        else:
+            if i == 0:
+                interp_precip_sum = interp_precip
+            else:
+                interp_precip_sum += interp_precip
+
+    if summed == True:
+        file_path = (
+            output_path
+            + str(precip.time.values[0])[:-16]
+            + "_to_"
+            + str(precip.time.values[-1])[:-16]
+            + ".tif"
+        )
         # convert to gdal tiff
-        print("saving tif: " + output_path)
+        print("saving summed tif: " + file_path)
         numpy_array_to_raster(
-            output_path,
-            np.flipud(interp_precip),
+            file_path,
+            np.flipud(interp_precip_sum),
             (bBox[0] - dx * 0.5, bBox[3] + dx * 0.5),
             dx,
             nband=1,
@@ -153,4 +185,6 @@ def download_precip(
             spatial_reference_system_wkid=SPATIAL_REFERENCE_SYSTEM_WKID,
             driver=GEOTIFF_DRIVER_NAME,
         )
-    return output_path
+        return file_path
+    else:
+        return file_paths
