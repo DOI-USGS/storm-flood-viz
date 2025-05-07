@@ -128,7 +128,7 @@ def download_precip(
         (precip.longitude.values.flatten(), precip.latitude.values.flatten())
     )
 
-    output_paths = []
+    file_paths = []
     # save array from each time
     for i in range(0, precip.shape[0]):
 
@@ -142,11 +142,11 @@ def download_precip(
 
         if summed == False:
             # specify file path
-            output_path = output_path + str(precip.time.values[i])[:-16] + ".tif"
+            file_path = output_path + str(precip.time.values[i])[:-16] + ".tif"
             # convert to gdal tiff
-            print("saving tif: " + output_path)
+            print("saving tif: " + file_path)
             numpy_array_to_raster(
-                output_path,
+                file_path,
                 np.flipud(interp_precip),
                 (bBox[0] - dx * 0.5, bBox[3] + dx * 0.5),
                 dx,
@@ -157,7 +157,7 @@ def download_precip(
                 driver=GEOTIFF_DRIVER_NAME,
             )
             # make a list of output paths
-            output_paths += [output_path]
+            file_paths += [file_path]
         else:
             if i == 0:
                 interp_precip_sum = interp_precip
@@ -165,7 +165,7 @@ def download_precip(
                 interp_precip_sum += interp_precip
 
     if summed == True:
-        output_path = (
+        file_path = (
             output_path
             + str(precip.time.values[0])[:-16]
             + "_to_"
@@ -173,16 +173,9 @@ def download_precip(
             + ".tif"
         )
         # convert to gdal tiff
-        print(
-            "saving summer tif: "
-            + output_path
-            + str(precip.time.values[0])[:-16]
-            + "_to_"
-            + str(precip.time.values[-1])[:-16]
-            + ".tif"
-        )
+        print("saving summed tif: " + file_path)
         numpy_array_to_raster(
-            output_path,
+            file_path,
             np.flipud(interp_precip_sum),
             (bBox[0] - dx * 0.5, bBox[3] + dx * 0.5),
             dx,
@@ -192,6 +185,6 @@ def download_precip(
             spatial_reference_system_wkid=SPATIAL_REFERENCE_SYSTEM_WKID,
             driver=GEOTIFF_DRIVER_NAME,
         )
-        return output_path
+        return file_path
     else:
-        return output_paths
+        return file_paths
