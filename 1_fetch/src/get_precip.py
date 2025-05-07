@@ -77,7 +77,7 @@ def download_precip(
     bBox=[-82.0, 28.0, -79.0, 30.0],
     start_time_str="2024-10-07T10",
     end_time_str="2024-10-07T12",
-    file_path_base="1_fetch/out/",
+    output_path="1_fetch/out/",
     summed=False,
     cells_x=500,
     zarr_url="s3://mdmf/gdp/stageiv_combined.zarr/",
@@ -85,8 +85,8 @@ def download_precip(
     NO_DATA=-9999.0,
     SPATIAL_REFERENCE_SYSTEM_WKID=4269,
 ):
-    if os.path.exists(file_path_base) == False:
-        os.makedirs(file_path_base)
+    if os.path.exists(output_path) == False:
+        os.makedirs(output_path)
 
     # time in Coordinated Universal Time (UTC) (I believe)
     start_time = pd.to_datetime(start_time_str)
@@ -142,7 +142,7 @@ def download_precip(
 
         if summed == False:
             # specify file path
-            output_path = file_path_base + str(precip.time.values[i])[:-16] + ".tif"
+            output_path = output_path + str(precip.time.values[i])[:-16] + ".tif"
             # convert to gdal tiff
             print("saving tif: " + output_path)
             numpy_array_to_raster(
@@ -166,7 +166,7 @@ def download_precip(
 
     if summed == True:
         output_path = (
-            file_path_base
+            output_path
             + str(precip.time.values[0])[:-16]
             + "_to_"
             + str(precip.time.values[-1])[:-16]
@@ -175,7 +175,7 @@ def download_precip(
         # convert to gdal tiff
         print(
             "saving summer tif: "
-            + file_path_base
+            + output_path
             + str(precip.time.values[0])[:-16]
             + "_to_"
             + str(precip.time.values[-1])[:-16]
