@@ -2,6 +2,7 @@ source("1_fetch/src/storm_shape_functions.R")
 source("1_fetch/src/clip_flood_stage_gages.R")
 source("1_fetch/src/chunk_up_sites.R")
 
+# Input parameters (place in config file?)
 pcodes <- c("00060", "00065")
 storm_name <- 'Helene'
 shape_type <- "buffer_track"
@@ -15,6 +16,8 @@ bbox <- sf::st_bbox(c(xmin = -92, xmax = -80, ymin = 23, ymax = 45))
 flood_stage_url <-"https://water.noaa.gov/resources/downloads/reports/nwps_all_gauges_report.csv"
 
 p1_targets <- list(
+  
+  # Convert projection if needed (from KVL's rmd)
   tar_target(
     bbox_proj,
     {
@@ -28,6 +31,7 @@ p1_targets <- list(
       }
     }
   ),
+  # Get storm shape file from NOAA, storm track or cone of uncertainty
   tar_target(
     storm_shape_file,
     get_storm_shape(
@@ -37,6 +41,7 @@ p1_targets <- list(
     )
     
   ),
+  # Read in storm shape to R and add a buffer if needed; clip to bbox
   tar_target(
     storm_shape,
     read_in_shapefile(
@@ -46,6 +51,7 @@ p1_targets <- list(
       bbox = bbox_proj
     )
   ),
+  # Download flood stage csv from NOAA
   tar_target(
     flood_stage_file,
     {
@@ -55,6 +61,7 @@ p1_targets <- list(
       
     }
   ),
+  # Read in flood stage df and perform some tidying
   tar_target(
     usgs_flood_stage_gages,
     clip_flood_stage_gages(
@@ -62,6 +69,7 @@ p1_targets <- list(
       storm_shape = storm_shape
     )
   ),
+  # Get sites chunked up for uv data download
   tar_target(
     site_chunk_lists,
     {
