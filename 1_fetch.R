@@ -1,6 +1,10 @@
+reticulate::use_condaenv("hurricane-precip", required = TRUE)
+reticulate::source_python("1_fetch/src/generate_hyswap_percentiles.py")
+
+
 source("1_fetch/src/storm_shape_functions.R")
 source("1_fetch/src/clip_flood_stage_gages.R")
-source("1_fetch/src/chunk_up_sites.R")
+source("1_fetch/src/fetch_uv_peaks_data.R")
 
 # Input parameters (place in config file?)
 pcodes <- c("00060", "00065")
@@ -38,8 +42,8 @@ p1_targets <- list(
       storm_code = storm_code,
       shape_type = shape_type,
       out_folder = "1_fetch/out"
-    )
-    
+    ),
+    format = "file"
   ),
   # Read in storm shape to R and add a buffer if needed; clip to bbox
   tar_target(
@@ -59,7 +63,8 @@ p1_targets <- list(
       download.file(flood_stage_url, out_path)
       return(out_path)
       
-    }
+    },
+    format = "file"
   ),
   # Read in flood stage df and perform some tidying
   tar_target(
@@ -71,10 +76,43 @@ p1_targets <- list(
   ),
   # Get sites chunked up for uv data download
   tar_target(
-    site_chunk_lists,
-    {
-      chunk_up_sites(site_ids = unique(usgs_flood_stage_gages$site_no),
-                     n_sites_per_list = 500)
-    }
+    site_id_chunks,
+    chunk_up_sites(unique(usgs_flood_stage_gages$site_no), n_sites_per_list = 200)
+  ),
+  # Download uv data to parquet
+  tar_target(
+    uv_data_pqt,
+    fetch_uv_data(
+      outfile_path = "1_fetch/out/gage_uv_data.parquet",
+      sites_list = site_id_chunks,
+      pcodes = c("00060", "00065"),
+      startDate = "2024-09-24",
+      endDate = "2024-10-01"
+    ),
+    format = "file"
+  ),
+  # Download peaks data to parquet
+  tar_target(
+    peak_data_pqt,
+    fetch_peak_data(
+      outfile_path = "1_fetch/out/gage_peak_data.parquet",
+      sites_list = site_id_chunks
+    ),
+    format = "file"
+  ),
+  # Load in uv data df
+  tar_target(
+    uv_data_df,
+    arrow::read_parquet(uv_data_pqt)
+  ),
+  tar_target(
+    uv_sites,
+    unique(uv_data_df$site_no)[1:5]
+  ),
+  tar_target(
+    uv_data_percentiles_df,
+    calculate_uv_percentiles_from_dv(uv_sites, uv_data_df, pcode = "00060"),
+    pattern = map(uv_sites)
   )
+  
 )

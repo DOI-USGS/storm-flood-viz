@@ -4,6 +4,7 @@ library(tarchetypes)
 options(tidyverse.quiet = TRUE, timeout = 800)
 tar_option_set(packages = c('tidyverse',
                             'sf',
+                            'reticulate',
                             'janitor',
                             'sbtools',
                             'tigris',
