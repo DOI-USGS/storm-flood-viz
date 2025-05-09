@@ -105,14 +105,35 @@ p1_targets <- list(
     uv_data_df,
     arrow::read_parquet(uv_data_pqt)
   ),
+  # Make list of sites to run through the percentiles calculations
   tar_target(
     uv_sites,
-    unique(uv_data_df$site_no)[1:5]
+    unique(uv_data_df$site_no)
   ),
+  # Branch over site ids to generate percentiles and place in single df
+  # of uv data
   tar_target(
     uv_data_percentiles_df,
     calculate_uv_percentiles_from_dv(uv_sites, uv_data_df, pcode = "00060"),
     pattern = map(uv_sites)
+  ),
+  # Read in peak data and grab max peak value per site, with ties
+  # broken using the latest date in the dataset - makes more sense to compare
+  # to the most recent peak than an earlier peak that was tied more recently.
+  tar_target(
+    peak_data_max_df,
+    arrow::read_parquet(peak_data_pqt) |>
+      group_by(site_no) |>
+      slice_max(peak_va) |>
+      filter(peak_dt == max(peak_dt)) |>
+      ungroup()
+  ),
+  tar_target(
+    flow_height_complete_df,
+    {
+      out <- uv_data_percentiles_df |>
+        left_join(usgs_flood_stage_gages, by = "site_no") |>
+        left_join(peak_data_max_df, by = "site_no")
+    }
   )
-  
 )
