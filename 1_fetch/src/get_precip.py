@@ -163,6 +163,24 @@ def download_precip(
                 interp_precip_sum = interp_precip
             else:
                 interp_precip_sum += interp_precip
+            
+            # specify file path
+            file_path = output_path + str(precip.time.values[i])[:-16] + "_cum.tif"
+            # convert to gdal tiff
+            print("saving tif: " + file_path)
+            numpy_array_to_raster(
+                file_path,
+                np.flipud(interp_precip_sum),
+                (bBox[0] - dx * 0.5, bBox[3] + dx * 0.5),
+                dx,
+                nband=1,
+                no_data=NO_DATA,
+                gdal_data_type=gdal.GDT_Float32,
+                spatial_reference_system_wkid=SPATIAL_REFERENCE_SYSTEM_WKID,
+                driver=GEOTIFF_DRIVER_NAME,
+            )
+            # make a list of output paths
+            file_paths += [file_path]
 
     if summed == True:
         file_path = (

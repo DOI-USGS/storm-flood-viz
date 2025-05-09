@@ -10,7 +10,7 @@ p1_targets <- list(
              "2024-09-26T00"),
   tar_target(p1_precip_end,
              "2024-09-26T23"),
-  tar_target(p1_precip_tif, 
+  tar_target(p1_precip_tifs, 
              download_precip(bBox = p1_precip_bbox,
                              start_time_str = p1_precip_start,
                              end_time_str = p1_precip_end,
