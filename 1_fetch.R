@@ -14,7 +14,7 @@ p1_targets <- list(
              download_precip(bBox = p1_precip_bbox,
                              start_time_str = p1_precip_start,
                              end_time_str = p1_precip_end,
-                             summed = TRUE,
+                             summed = "cumulative",
                              output_path = "1_fetch/out/"),
              format = 'file')
 )
