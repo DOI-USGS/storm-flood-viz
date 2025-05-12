@@ -55,12 +55,3 @@ def calculate_uv_percentiles_from_dv(site_id, sites_uv_df, pcode):
     
     return site_uv_df
 
-# if __name__ == "__main__":
-#     in_data_file = "1_fetch/out/gage_uv_data.parquet"
-#     sites_uv_df = pd.read_parquet(in_data_file, engine="pyarrow")
-#     site_id = sites_uv_df['site_no'].to_list()[5]
-# 
-#     out = calculate_uv_percentiles_from_dv(site_id=site_id, sites_uv_df=sites_uv_df, pcode='00060')
-
-
-

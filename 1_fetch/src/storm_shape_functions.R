@@ -1,6 +1,17 @@
+#' Get storm shape from NOAA's website
+#'
+#' @param storm_code An alphanumeric code from NOAA's website used to identify
+#' particular storms.
+#' @param shape_type Must be either "cone_of_uncertainty" or "buffer_track".
+#' @param out_folder Folder to output shape folder containing shape files.
+#'
+#' @return Returns the file path of the shape file.
 
-
-get_storm_shape <- function(storm_code, shape_type = c("cone_of_uncertainty", "buffer_track"), out_folder){
+get_storm_shape <- function(
+    storm_code,
+    shape_type = c("cone_of_uncertainty", "buffer_track"),
+    out_folder
+    ){
   
   unzip_dir <- sprintf("%s/storm_shape_%s", out_folder, storm_code)
   file_name <- paste0(unzip_dir, ".zip")
@@ -35,10 +46,13 @@ get_storm_shape <- function(storm_code, shape_type = c("cone_of_uncertainty", "b
 
 }
 
+# Read in the shape file, and if it's a "buffer_track", apply a buffer to the
+# storm track.
 read_in_shapefile <- function(
     shape_name,
     shape_type = c("cone_of_uncertainty", "buffer_track"),
     buffer = 250000,
+    proj,
     bbox
     ){
   

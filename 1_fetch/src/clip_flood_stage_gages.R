@@ -1,3 +1,5 @@
+# Takes the entire file with all flood stage gages and filters to gages
+# contained within the storm shape file.
 clip_flood_stage_gages <- function(flood_stage_file, storm_shape){
   
   # read in the file
@@ -26,5 +28,4 @@ clip_flood_stage_gages <- function(flood_stage_file, storm_shape){
     dplyr::distinct()
   
   return(target_gages)
-  
 }

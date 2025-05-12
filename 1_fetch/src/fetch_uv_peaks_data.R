@@ -31,6 +31,8 @@ fetch_uv_data <- function(outfile_path, sites_list, pcodes, startDate, endDate){
 
 }
 
+# Batch pull NWIS peaks data for a selected sites list and save the peaks
+# data to a file.
 fetch_peak_data <- function(outfile_path, sites_list, startDate = "1900-01-01"){
   
   out <- sites_list |>
