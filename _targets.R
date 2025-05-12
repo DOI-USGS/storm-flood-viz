@@ -1,5 +1,6 @@
 library(targets)
 library(tarchetypes)
+library(reticulate)
 
 options(tidyverse.quiet = TRUE, timeout = 800)
 tar_option_set(packages = c('tidyverse',
@@ -14,8 +15,8 @@ tar_option_set(packages = c('tidyverse',
                             'cowplot',
                             'rmapshaper',
                             'terra',
-                            'tidyterra',
-                            'raster'))
+                            'raster',
+                            'tidyterra'))
 
 # Phase target makefiles
 # source("0_config.R")
