@@ -72,7 +72,8 @@ p1_targets <- list(
   tar_target(
     p1_storm_track_pts,
     sf::read_sf(str_subset(p1_storm_track,
-               "AL092024_pts\\.shp$")) |> 
+        str_c(toupper(p0_storm_info$storm_code),
+              "_pts\\.shp$"))) |> 
       sf::st_transform(crs = p0_proj) |> 
       filter(STORMNAME %in% pull(p0_storm_info, storm_name))
     ),
