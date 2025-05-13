@@ -2,14 +2,14 @@
 #'
 #' @param storm_code An alphanumeric code from NOAA's website used to identify
 #' particular storms.
-#' @param shape_type Must be either "cone_of_uncertainty" or "buffer_track".
+#' @param shape_type Must be either "cone_of_uncertainty" or "buffered_storm_track".
 #' @param out_folder Folder to output shape folder containing shape files.
 #'
 #' @return Returns the file path of the downloaded shape file.
 
 get_storm_shape <- function(
     storm_code,
-    shape_type = c("cone_of_uncertainty", "buffer_track"),
+    shape_type = c("cone_of_uncertainty", "buffered_storm_track"),
     out_folder
     ){
   
@@ -46,11 +46,11 @@ get_storm_shape <- function(
 
 }
 
-#' Read in the shape file, and if it's a "buffer_track", apply a buffer to the
+#' Read in the shape file, and if it's a "buffered_storm_track", apply a buffer to the
 #' storm track.
 #'
 #' @param shape_name String representing file path to storm .shp file.
-#' @param shape_type Must be either "cone_of_uncertainty" or "buffer_track".
+#' @param shape_type Must be either "cone_of_uncertainty" or "buffered_storm_track".
 #' @param buffer Numeric. The buffer around the storm track to be applied, in
 #' meters. The buffer previously applied was 250,000 m (250 km). Note that this
 #' value is not used with "cone_of_uncertainty" shapes.
@@ -63,7 +63,7 @@ get_storm_shape <- function(
 
 read_in_shapefile <- function(
     shape_name,
-    shape_type = c("cone_of_uncertainty", "buffer_track"),
+    shape_type = c("cone_of_uncertainty", "buffered_storm_track"),
     buffer = 250000,
     proj,
     bbox
@@ -75,7 +75,7 @@ read_in_shapefile <- function(
     sf::st_crop(bbox)
   
   # Apply buffer around storm track
-  if(shape_type == "buffer_track"){
+  if(shape_type == "buffered_storm_track"){
     shape_proj_sf <- sf::st_buffer(shape_proj_sf, dist = buffer)
   }
   

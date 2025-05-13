@@ -10,7 +10,7 @@ source("1_fetch/src/fetch_uv_peaks_data.R")
 # Input parameters (place in config file?)
 pcodes <- c("00060", "00065")
 storm_name <- 'Helene' # not currently used
-shape_type <- "buffer_track"
+shape_type <- "buffered_storm_track"
 buffer <- 250000
 storm_code <- 'al092024'
 date_start <- '2024-09-24'
@@ -95,7 +95,7 @@ p1_targets <- list(
   # Get sites chunked up for uv data download
   tar_target(
     p1_site_id_chunks,
-    chunk_up_sites(unique(p1_usgs_flood_stage_gages$site_no), n_sites_per_list = 200)
+    chunk_up_sites(unique(p1_usgs_flood_stage_gages$site_no), n_sites_per_vector = 200)
   ),
   # Download uv data to parquet
   tar_target(
@@ -132,7 +132,13 @@ p1_targets <- list(
   # of uv data
   tar_target(
     p1_uv_data_percentiles_df,
-    calculate_uv_percentiles_from_dv(p1_uv_sites, p1_uv_data_df, pcode = "00060"),
+    {
+      if(p1_uv_sites == unique(p1_uv_data_df$site_no)[1]){
+        print("This branching step may take a while (~30 minutes)")
+      }
+      
+      calculate_uv_percentiles_from_dv(p1_uv_sites, p1_uv_data_df, pcode = "00060")
+    },
     pattern = map(p1_uv_sites)
   ),
   # Read in peak data and grab max peak value per site, with ties
