@@ -1,5 +1,15 @@
 # Takes the entire file with all flood stage gages and filters to gages
 # contained within the storm shape file.
+#'
+#' @param flood_stage_file A file path to a csv file containing flood stage
+#' information for all USGS stream gages. Must have the following columns:
+#' "latitude", "longitude", "usgs id", "action stage", "flood stage",
+#' and "moderate flood stage", "major flood stage".
+#' @param storm_shape An sf object over which to intersect the latitude and
+#' longitude from the stream gages with flood stage information.
+#'
+#' @return An sf dataframe with all flood stage gages within the shape.
+
 clip_flood_stage_gages <- function(flood_stage_file, storm_shape){
   
   # read in the file

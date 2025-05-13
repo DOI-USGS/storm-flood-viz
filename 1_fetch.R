@@ -9,7 +9,7 @@ source("1_fetch/src/fetch_uv_peaks_data.R")
 
 # Input parameters (place in config file?)
 pcodes <- c("00060", "00065")
-storm_name <- 'Helene'
+storm_name <- 'Helene' # not currently used
 shape_type <- "buffer_track"
 buffer <- 250000
 storm_code <- 'al092024'
@@ -66,10 +66,11 @@ p1_targets <- list(
   tar_target(
     p1_storm_shape,
     read_in_shapefile(
-      shape_name = storm_shape_file,
+      shape_name = p1_storm_shape_file,
       shape_type = shape_type,
       buffer = buffer,
-      bbox = bbox_proj
+      proj = proj, 
+      bbox = p1_bbox_proj
     )
   ),
   # Download flood stage csv from NOAA
@@ -87,21 +88,21 @@ p1_targets <- list(
   tar_target(
     p1_usgs_flood_stage_gages,
     clip_flood_stage_gages(
-      flood_stage_file = flood_stage_file,
-      storm_shape = storm_shape
+      flood_stage_file = p1_flood_stage_file,
+      storm_shape = p1_storm_shape
     )
   ),
   # Get sites chunked up for uv data download
   tar_target(
     p1_site_id_chunks,
-    chunk_up_sites(unique(usgs_flood_stage_gages$site_no), n_sites_per_list = 200)
+    chunk_up_sites(unique(p1_usgs_flood_stage_gages$site_no), n_sites_per_list = 200)
   ),
   # Download uv data to parquet
   tar_target(
     p1_uv_data_pqt,
     fetch_uv_data(
       outfile_path = "1_fetch/out/gage_uv_data.parquet",
-      sites_list = site_id_chunks,
+      sites_list = p1_site_id_chunks,
       pcodes = c("00060", "00065"),
       startDate = "2024-09-24",
       endDate = "2024-10-01"
@@ -113,44 +114,45 @@ p1_targets <- list(
     p1_peak_data_pqt,
     fetch_peak_data(
       outfile_path = "1_fetch/out/gage_peak_data.parquet",
-      sites_list = site_id_chunks
+      sites_list = p1_site_id_chunks
     ),
     format = "file"
   ),
   # Load in uv data df
   tar_target(
     p1_uv_data_df,
-    arrow::read_parquet(uv_data_pqt)
+    arrow::read_parquet(p1_uv_data_pqt)
   ),
   # Make list of sites to run through the percentiles calculations
   tar_target(
     p1_uv_sites,
-    unique(uv_data_df$site_no)
+    unique(p1_uv_data_df$site_no)
   ),
   # Branch over site ids to generate percentiles and place in single df
   # of uv data
   tar_target(
     p1_uv_data_percentiles_df,
-    calculate_uv_percentiles_from_dv(uv_sites, uv_data_df, pcode = "00060"),
-    pattern = map(uv_sites)
+    calculate_uv_percentiles_from_dv(p1_uv_sites, p1_uv_data_df, pcode = "00060"),
+    pattern = map(p1_uv_sites)
   ),
   # Read in peak data and grab max peak value per site, with ties
   # broken using the latest date in the dataset - makes more sense to compare
   # to the most recent peak than an earlier peak that was tied more recently.
   tar_target(
     p1_peak_data_max_df,
-    arrow::read_parquet(peak_data_pqt) |>
+    arrow::read_parquet(p1_peak_data_pqt) |>
       group_by(site_no) |>
       slice_max(peak_va) |>
       filter(peak_dt == max(peak_dt)) |>
       ungroup()
   ),
+  # Merge together uv percentiles with flood stages and peak data
   tar_target(
     p1_flow_height_complete_df,
     {
-      out <- uv_data_percentiles_df |>
-        left_join(usgs_flood_stage_gages, by = "site_no") |>
-        left_join(peak_data_max_df, by = "site_no")
+      out <- p1_uv_data_percentiles_df |>
+        left_join(p1_usgs_flood_stage_gages, by = "site_no") |>
+        left_join(p1_peak_data_max_df, by = "site_no")
     }
   )
 )

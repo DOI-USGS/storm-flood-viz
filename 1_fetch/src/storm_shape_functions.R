@@ -5,7 +5,7 @@
 #' @param shape_type Must be either "cone_of_uncertainty" or "buffer_track".
 #' @param out_folder Folder to output shape folder containing shape files.
 #'
-#' @return Returns the file path of the shape file.
+#' @return Returns the file path of the downloaded shape file.
 
 get_storm_shape <- function(
     storm_code,
@@ -46,8 +46,21 @@ get_storm_shape <- function(
 
 }
 
-# Read in the shape file, and if it's a "buffer_track", apply a buffer to the
-# storm track.
+#' Read in the shape file, and if it's a "buffer_track", apply a buffer to the
+#' storm track.
+#'
+#' @param shape_name String representing file path to storm .shp file.
+#' @param shape_type Must be either "cone_of_uncertainty" or "buffer_track".
+#' @param buffer Numeric. The buffer around the storm track to be applied, in
+#' meters. The buffer previously applied was 250,000 m (250 km). Note that this
+#' value is not used with "cone_of_uncertainty" shapes.
+#' @param proj String describing projection to be applied to the shape
+#' @param bbox An sf::st_bbox() object containing the xmin, xmax, ymin, and ymax
+#' values describing the box over which the shape should be clipped.
+#'
+#' @return An sf object of the clipped, projected, and (if applicable) buffered
+#' storm shape.
+
 read_in_shapefile <- function(
     shape_name,
     shape_type = c("cone_of_uncertainty", "buffer_track"),
@@ -61,6 +74,7 @@ read_in_shapefile <- function(
     sf::st_transform(crs = proj)   |> 
     sf::st_crop(bbox)
   
+  # Apply buffer around storm track
   if(shape_type == "buffer_track"){
     shape_proj_sf <- sf::st_buffer(shape_proj_sf, dist = buffer)
   }

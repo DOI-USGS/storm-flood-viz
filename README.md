@@ -1,12 +1,15 @@
 # Hurricane Revamp
 
-
-
 ## Getting started
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+First, you need to create a conda environment for targets that run python functions. An `environment.yml` has been provided in the repository, which specifies the creation of a conda environment called `hurricane-precip`. Run the following in a terminal to create a new conda environment:
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+```
+conda env create -f environment.yml
+```
+Note: You may to be off VPN for this to run + takes a couple mins to configure everything.
+
+The repo is already set up to find a conda environment called `hurricane-precip` using the `reticulate` R package.
 
 ## Add your files
 
