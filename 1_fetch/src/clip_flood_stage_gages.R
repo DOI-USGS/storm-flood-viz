@@ -10,7 +10,7 @@
 #'
 #' @return An sf dataframe with all flood stage gages within the shape.
 
-clip_flood_stage_gages <- function(flood_stage_file, storm_shape){
+clip_flood_stage_gages <- function(flood_stage_file, storm_shape, proj){
   
   # read in the file
   flood_stage_raw <- readr::read_csv(flood_stage_file) 

@@ -7,25 +7,12 @@ source("1_fetch/src/storm_shape_functions.R")
 source("1_fetch/src/clip_flood_stage_gages.R")
 source("1_fetch/src/fetch_uv_peaks_data.R")
 
-# Input parameters (place in config file?)
-pcodes <- c("00060", "00065")
-storm_name <- 'Helene' # not currently used
-shape_type <- "buffered_storm_track"
-buffer <- 250000
-storm_code <- 'al092024'
-date_start <- '2024-09-24'
-date_end <- '2024-10-01'
-proj <- "EPSG:3086"
-bbox <- sf::st_bbox(c(xmin = -92, xmax = -80, ymin = 23, ymax = 45))
-
-flood_stage_url <-"https://water.noaa.gov/resources/downloads/reports/nwps_all_gauges_report.csv"
-
 p1_targets <- list(
   tar_target(p1_precip_py, 
              "1_fetch/src/get_precip.py",
              format = "file"),
   tar_target(p1_precip_bbox,
-             list(-92.0, 23.0, -80.0, 45.0)),
+             unname(as.list(p0_bbox_sf))),
   tar_target(p1_precip_start,
              "2024-09-26T00"),
   tar_target(p1_precip_end,
@@ -42,13 +29,13 @@ p1_targets <- list(
   tar_target(
     p1_bbox_proj,
     {
-      if (!(proj == "EPSG:4269")) {
-        sf::st_as_sfc(bbox) |> 
-          st_as_sf(crs = "EPSG:4269") |>
-          sf::st_transform(crs = proj) |>
+      if (!identical(sf::st_crs(proj), sf::st_crs("EPSG:4269"))) {
+        sf::st_as_sfc(p0_bbox_sf) |> 
+          sf::st_as_sf(crs = "EPSG:4269") |>
+          sf::st_transform(crs = p0_proj) |>
           sf::st_bbox()
       }else{
-        bbox
+        p0_bbox_sf
       }
     }
   ),
@@ -56,8 +43,8 @@ p1_targets <- list(
   tar_target(
     p1_storm_shape_file,
     get_storm_shape(
-      storm_code = storm_code,
-      shape_type = shape_type,
+      storm_code = p0_storm_info |> pull(storm_code),
+      shape_type =  p0_storm_info |> pull(shape_type),
       out_folder = "1_fetch/out"
     ),
     format = "file"
@@ -67,9 +54,9 @@ p1_targets <- list(
     p1_storm_shape,
     read_in_shapefile(
       shape_name = p1_storm_shape_file,
-      shape_type = shape_type,
-      buffer = buffer,
-      proj = proj, 
+      shape_type = p0_storm_info |> pull(shape_type),
+      buffer = p0_storm_info |> pull(storm_buffer),
+      proj = p0_proj, 
       bbox = p1_bbox_proj
     )
   ),
@@ -78,7 +65,7 @@ p1_targets <- list(
     p1_flood_stage_file,
     {
       out_path <- "1_fetch/out/flood_stage_gages.csv"
-      download.file(flood_stage_url, out_path)
+      download.file(p0_flood_stage_url, out_path)
       return(out_path)
       
     },
@@ -89,7 +76,8 @@ p1_targets <- list(
     p1_usgs_flood_stage_gages,
     clip_flood_stage_gages(
       flood_stage_file = p1_flood_stage_file,
-      storm_shape = p1_storm_shape
+      storm_shape = p1_storm_shape,
+      proj = p0_proj
     )
   ),
   # Get sites chunked up for uv data download
@@ -103,9 +91,9 @@ p1_targets <- list(
     fetch_uv_data(
       outfile_path = "1_fetch/out/gage_uv_data.parquet",
       sites_list = p1_site_id_chunks,
-      pcodes = c("00060", "00065"),
-      startDate = "2024-09-24",
-      endDate = "2024-10-01"
+      pcodes = p0_pcodes,
+      startDate = p0_date_start,
+      endDate = p0_date_end
     ),
     format = "file"
   ),
