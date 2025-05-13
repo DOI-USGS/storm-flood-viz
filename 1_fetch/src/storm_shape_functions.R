@@ -81,3 +81,42 @@ read_in_shapefile <- function(
   
   return(shape_proj_sf)
 }
+
+#' Download and unzip best track storm data from a given URL
+#'
+#' This function parses an HTML index page for a specific `.zip` file,
+#' downloads it, and extracts its contents to output path.
+#'
+#' @param file_name Character. The name of the `.zip` file to download (e.g., `"AL092024_best_track.zip"`).
+#' @param best_track_url Character. The base URL of the directory containing the downloadable `.zip` files
+#' @param out_path Character. The path where the zip file should be saved and unzipped.
+#'
+#' @return A character vector of the file paths to the extracted files.
+#'
+#' @examples
+#' download_best_track_zip(
+#'   file_name = "AL092024_best_track.zip",
+#'   best_track_url = "https://www.nhc.noaa.gov/data/hurdat/",
+#'   out_path = "1_fetch/out"
+#' )
+download_best_track_zip <- function(file_name, best_track_url, out_path) {
+  
+  dest_file <- fs::path(out_path, file_name)
+  
+  file_url <- best_track_url |>
+    read_html() |>
+    html_elements("a") |>
+    html_attr("href") |>
+    tibble(href = _) |>
+    filter(str_detect(href, fixed(file_name))) |>
+    pull(href) |>
+    first() |>
+    url_absolute(best_track_url)
+  
+  httr::GET(file_url, write_disk(dest_file, overwrite = TRUE))
+  
+  extracted_files <- unzip(dest_file, exdir = out_path)
+  
+  message(glue("Downloaded and unzipped to: {out_path}"))
+  return(extracted_files)
+}

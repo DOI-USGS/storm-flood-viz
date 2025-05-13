@@ -1,7 +1,6 @@
 reticulate::use_condaenv("hurricane-precip", required = TRUE)
 reticulate::source_python("1_fetch/src/generate_hyswap_percentiles.py")
 
-# source("1_fetch/src/fetch_utils.R")
 source("1_fetch/src/get_precip_wrapper.R")
 source("1_fetch/src/storm_shape_functions.R")
 source("1_fetch/src/clip_flood_stage_gages.R")
@@ -60,6 +59,23 @@ p1_targets <- list(
       bbox = p1_bbox_proj
     )
   ),
+  # Download storm track points data from NOAA
+  tar_target(
+    p1_storm_track,
+    download_best_track_zip(
+      file_name = str_c(p0_storm_info |> pull(storm_code),
+                        "_best_track.zip"),
+      best_track_url = p0_storm_info |> pull(storm_best_track_url),
+      out_path = "1_fetch/out"),
+    format = "file"
+    ),
+  tar_target(
+    p1_storm_track_pts,
+    sf::read_sf(str_subset(p1_storm_track,
+               "AL092024_pts\\.shp$")) |> 
+      sf::st_transform(crs = p0_proj) |> 
+      filter(STORMNAME %in% pull(p0_storm_info, storm_name))
+    ),
   # Download flood stage csv from NOAA
   tar_target(
     p1_flood_stage_file,

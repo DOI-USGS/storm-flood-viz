@@ -21,10 +21,11 @@ p0_targets <- list(
   ),
   tar_target(
     p0_storm_info,
-    tibble(storm_name = "Helene",
+    tibble(storm_name = "HELENE",
            storm_code = "al092024",
            storm_buffer = 250000,
-           shape_type = "buffered_storm_track")
+           shape_type = "buffered_storm_track",
+           storm_best_track_url = "https://www.nhc.noaa.gov/gis/best_track/")
     ),
   tar_target(
     p0_pcodes,

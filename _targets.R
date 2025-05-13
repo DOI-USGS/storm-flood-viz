@@ -16,7 +16,11 @@ tar_option_set(packages = c('tidyverse',
                             'rmapshaper',
                             'terra',
                             'raster',
-                            'tidyterra'))
+                            'tidyterra',
+                            'rvest',
+                            'httr',
+                            'fs',
+                            'glue'))
 
 # Phase target makefiles
 source("0_config.R")
