@@ -25,7 +25,7 @@ p1_targets <- list(
                                output_path = "1_fetch/out/"),
              format = 'file'),
   tar_target(
-    hyswap_py_file,
+    p1_hyswap_py_file,
     "1_fetch/src/generate_hyswap_percentiles.py",
     format = 'file'
   ),
