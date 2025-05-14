@@ -24,6 +24,11 @@ p1_targets <- list(
                                summed = "cumulative",
                                output_path = "1_fetch/out/"),
              format = 'file'),
+  tar_target(
+    hyswap_py_file,
+    "1_fetch/src/generate_hyswap_percentiles.py",
+    format = 'file'
+  ),
   # Convert projection if needed (from KVL's rmd)
   tar_target(
     p1_bbox_proj,
@@ -138,6 +143,10 @@ p1_targets <- list(
   tar_target(
     p1_uv_data_percentiles_df,
     {
+      # Make this target dependent upon the hyswap python file
+      hyswap_py_file
+      
+      # Print message about time to run
       if(p1_uv_sites == unique(p1_uv_data_df$site_no)[1]){
         print("This branching step may take a while (~30 minutes)")
       }
@@ -163,7 +172,13 @@ p1_targets <- list(
     {
       out <- p1_uv_data_percentiles_df |>
         left_join(p1_usgs_flood_stage_gages, by = "site_no") |>
-        left_join(p1_peak_data_max_df, by = "site_no")
+        left_join(p1_peak_data_max_df, by = c("site_no", "agency_cd")) |>
+        select(
+          site_no, dateTime, X_00060_00000, X_00060_00000_cd, X_00065_00000, X_00065_00000_cd, tz_cd,
+          percentile, action.stage, flood.stage, moderate.flood.stage, major.flood.stage, 
+          peak_va, peak_cd, peak_dateTime
+        ) |>
+        distinct()
     }
   )
 )

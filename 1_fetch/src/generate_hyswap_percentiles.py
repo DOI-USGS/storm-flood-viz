@@ -6,7 +6,8 @@ import datetime
 
 def calculate_uv_percentiles_from_dv(site_id, sites_uv_df, pcode):
     """
-    Calculate percentiles on instantaneous data using daily values fixed percentile thresholds
+    Calculates percentiles on instantaneous data using fixed percentile thresholds
+    estimated using daily values.
     Keyword arguments
     -----------------
     site_id: A single string corresponding to a monitoring location gage
