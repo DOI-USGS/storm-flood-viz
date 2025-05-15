@@ -1,7 +1,7 @@
 reticulate::use_condaenv("hurricane-precip", required = TRUE)
+reticulate::source_python("1_fetch/src/get_precip.py")
 reticulate::source_python("1_fetch/src/generate_hyswap_percentiles.py")
 
-source("1_fetch/src/get_precip_wrapper.R")
 source("1_fetch/src/storm_shape_functions.R")
 source("1_fetch/src/clip_flood_stage_gages.R")
 source("1_fetch/src/fetch_uv_peaks_data.R")
@@ -15,14 +15,23 @@ p1_targets <- list(
   tar_target(p1_precip_start,
              "2024-09-26T00"),
   tar_target(p1_precip_end,
-             "2024-09-26T23"),
+             "2024-10-01T23"),
+  tar_target(
+    p1_precip_py_file,
+    "1_fetch/src/get_precip.py",
+    format = 'file'
+  ),
   tar_target(p1_precip_tifs, 
-             download_precip_r(py_script = p1_precip_py,
-                               bBox = p1_precip_bbox,
+             {
+               # Make this target dependent upon the precip python file
+               p1_precip_py_file
+               
+               download_precip(bBox = p1_precip_bbox,
                                start_time_str = p1_precip_start,
                                end_time_str = p1_precip_end,
-                               summed = "cumulative",
-                               output_path = "1_fetch/out/"),
+                               summed = "none",
+                               output_path = "1_fetch/out/")
+             },
              format = 'file'),
   tar_target(
     p1_hyswap_py_file,
@@ -82,6 +91,25 @@ p1_targets <- list(
       sf::st_transform(crs = p0_proj) |> 
       filter(STORMNAME %in% pull(p0_storm_info, storm_name))
     ),
+  # Download state borders and crop to bbox
+  tar_target(
+    p1_conus_sf,
+    tigris::states(cb = TRUE) |>
+      filter(!STUSPS %in% c("AK", "HI", "MP", "VI", "AS", "GU")) |>
+      st_transform(p0_proj) |>
+      rmapshaper::ms_simplify(keep = 0.2) 
+  ),
+  # Crop state to bbox
+  tar_target(
+    p1_conus_bbox_crop_sf, 
+    p1_conus_sf |> 
+      st_crop(
+        p0_bbox_sf |>
+          st_as_sfc() |>
+          (\(x) st_set_crs(x, 4326))() |>
+          st_transform(p0_proj)
+      )
+  ),
   # Download flood stage csv from NOAA
   tar_target(
     p1_flood_stage_file,
