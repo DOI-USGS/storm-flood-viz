@@ -26,7 +26,7 @@ def calculate_uv_percentiles_from_dv(site_id, sites_uv_df, pcode):
     site_uv_df = sites_uv_df[sites_uv_df['site_no'] == site_id].copy()
 
     if not site_uv_df[pcode_column].isnull().all():
-        # get minimum date
+        # get minimum date for event to determine maximum date for percentiles (day before minimum event date)
         max_date_percentiles = (site_uv_df['dateTime'].min() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
 
         # grab site data
@@ -35,7 +35,7 @@ def calculate_uv_percentiles_from_dv(site_id, sites_uv_df, pcode):
         # get correct column name
         data_column = pcode + "_Mean"
 
-        # if column exists in data, calculate percentiles
+        # if column exists in data, calculate fixed percentiles
         if data_column in dv_data.columns:
             fixed_percentiles = hyswap.calculate_fixed_percentile_thresholds(
                 dv_data,
@@ -43,7 +43,7 @@ def calculate_uv_percentiles_from_dv(site_id, sites_uv_df, pcode):
                 percentiles=percentile_levels
                 )
             
-            # Then, use percentile thresholds to estimate percentiles for uv data
+            # Then, use fixed percentile thresholds to estimate percentiles for uv data
             site_uv_df.loc[:, 'percentile'] = site_uv_df.apply(lambda row: hyswap.percentiles.calculate_fixed_percentile_from_value(  # noqa: E501
                 row[pcode_column], fixed_percentiles), axis = 1)
         

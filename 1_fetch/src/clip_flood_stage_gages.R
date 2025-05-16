@@ -1,5 +1,5 @@
 # Takes the entire file with all flood stage gages and filters to gages
-# contained within the storm shape file.
+# contained within the storm shape.
 #'
 #' @param flood_stage_file A file path to a csv file containing flood stage
 #' information for all USGS stream gages. Must have the following columns:
@@ -21,7 +21,7 @@ clip_flood_stage_gages <- function(flood_stage_file, storm_shape, proj){
     dplyr::select(site_no = "usgs id", state, "action stage", "flood stage", "moderate flood stage", "major flood stage", geometry) |> 
     sf::st_transform(proj)
   
-  # filter to points inside the cone of uncertainty
+  # filter to points inside the storm shape
   target_gages <- sf::st_intersection(flood_stage_sf, storm_shape) |> 
     tidyr::drop_na() |> 
     # filter out unusable site numbers

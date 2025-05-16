@@ -3,10 +3,12 @@ p0_targets <- list(
     p0_flood_stage_url,
     "https://water.noaa.gov/resources/downloads/reports/nwps_all_gauges_report.csv"
     ),
+  # Must be defined using NAD83 ("EPSG:4269") coordinates in decimal degrees
   tar_target(
     p0_bbox_sf,
     sf::st_bbox(c(xmin = -92, xmax = -80, ymin = 23, ymax = 45))
     ),
+  # Select appropriate projection for the area of interest within the bounding box
   tar_target(
     p0_proj,
     'EPSG:3086'

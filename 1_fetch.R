@@ -42,7 +42,7 @@ p1_targets <- list(
   tar_target(
     p1_bbox_proj,
     {
-      if (!identical(sf::st_crs(proj), sf::st_crs("EPSG:4269"))) {
+      if (!identical(sf::st_crs(p0_proj), sf::st_crs("EPSG:4269"))) {
         sf::st_as_sfc(p0_bbox_sf) |> 
           sf::st_as_sf(crs = "EPSG:4269") |>
           sf::st_transform(crs = p0_proj) |>
