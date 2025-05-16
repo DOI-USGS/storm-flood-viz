@@ -43,6 +43,15 @@ p1_targets <- list(
 # Storm shape -------------------------------------------------------------
   # Get storm shape file from NOAA, storm track or cone of uncertainty
   tar_target(
+    p1_storm_track_files,
+    get_storm_shape(
+      storm_code = p0_storm_info |> pull(storm_code),
+      shape_type = "storm_track_files",
+      out_folder = "1_fetch/out"
+    ),
+    format = "file"
+  ),
+  tar_target(
     p1_storm_shape_file,
     get_storm_shape(
       storm_code = p0_storm_info |> pull(storm_code),
@@ -62,24 +71,34 @@ p1_targets <- list(
       bbox = p1_bbox_proj
     )
   ),
-  # Download storm track points data from NOAA
   tar_target(
-    p1_storm_track,
-    download_best_track_zip(
-      file_name = str_c(p0_storm_info |> pull(storm_code),
-                        "_best_track.zip"),
-      best_track_url = p0_storm_info |> pull(storm_best_track_url),
-      out_path = "1_fetch/out"),
-    format = "file"
-    ),
-  tar_target(
-    p1_storm_track_pts,
-    sf::read_sf(str_subset(p1_storm_track,
-        str_c(toupper(p0_storm_info$storm_code),
-              "_pts\\.shp$"))) |> 
-      sf::st_transform(crs = p0_proj) |> 
+    p1_storm_track_pts_sf,
+    {
+      pts_file <- p1_storm_track_files[grepl("_pts\\.shp$", p1_storm_track_files)]
+      sf::read_sf(pts_file) |> 
+      sf::st_transform(crs = p0_proj) |>
       filter(STORMNAME %in% pull(p0_storm_info, storm_name))
-    ),
+    }
+  ),
+
+  # Download storm track points data from NOAA
+  # tar_target(
+  #   p1_storm_track,
+  #   download_best_track_zip(
+  #     file_name = str_c(p0_storm_info |> pull(storm_code),
+  #                       "_best_track.zip"),
+  #     best_track_url = p0_storm_info |> pull(storm_best_track_url),
+  #     out_path = "1_fetch/out"),
+  #   format = "file"
+  #   ),
+  # tar_target(
+  #   p1_storm_track_pts,
+  #   sf::read_sf(str_subset(p1_storm_track,
+  #       str_c(toupper(p0_storm_info$storm_code),
+  #             "_pts\\.shp$"))) |>
+  #     sf::st_transform(crs = p0_proj) |>
+  #     filter(STORMNAME %in% pull(p0_storm_info, storm_name))
+  #   ),
 
 # State data --------------------------------------------------------------
   # Download state borders and crop to bbox

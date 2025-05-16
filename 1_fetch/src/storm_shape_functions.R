@@ -2,48 +2,56 @@
 #'
 #' @param storm_code An alphanumeric code from NOAA's website used to identify
 #' particular storms.
-#' @param shape_type Must be either "cone_of_uncertainty" or "buffered_storm_track".
+#' @param shape_type Must be either "cone_of_uncertainty", "buffered_storm_track" or "storm_track_files".
 #' @param out_folder Folder to output shape folder containing shape files.
 #'
 #' @return Returns the file path of the downloaded shape file.
-
 get_storm_shape <- function(
     storm_code,
-    shape_type = c("cone_of_uncertainty", "buffered_storm_track"),
-    out_folder
-    ){
+    shape_type = c("cone_of_uncertainty", "buffered_storm_track", "storm_track_files"),
+    out_folder){
+  
+  shape_type <- match.arg(shape_type)
   
   unzip_dir <- sprintf("%s/storm_shape_%s", out_folder, storm_code)
   file_name <- paste0(unzip_dir, ".zip")
   
-  if (!dir.exists(unzip_dir)) dir.create(unzip_dir)
+  if (!dir.exists(unzip_dir)) dir.create(unzip_dir, recursive = TRUE)
   
-  if(shape_type == "cone_of_uncertainty"){
+  if (shape_type == "cone_of_uncertainty") {
+    
     file_url <- sprintf(
       "https://www.nhc.noaa.gov/gis/forecast/archive/%s_5day_001.zip",
       storm_code
-      )
+    )
     shp_name <- sprintf("%s/%s-001_5day_pgn.shp", unzip_dir, storm_code)
-  }else{
-    # download url
+  } else {
+    
     file_url <- sprintf(
       "http://www.nhc.noaa.gov/gis/best_track/%s_best_track.zip",
       storm_code
-      )
-    shp_name <- sprintf("%s/%s_lin.shp", unzip_dir, stringr::str_to_upper(storm_code))
+    )
     
+    if (shape_type == "storm_track_files") {
+      
+      # Download and return all unzipped file paths
+      download.file(file_url, file_name)
+      unzipped_files <- unzip(file_name, exdir = unzip_dir)
+      file.remove(file_name)
+      return(unzipped_files)
+      
+    } else {
+      # buffered_storm_track (default to _lin shapefile)
+      shp_name <- sprintf("%s/%s_lin.shp", unzip_dir, stringr::str_to_upper(storm_code))
+    }
   }
   
-  # download the file
+  # Download and unzip a single .shp
   download.file(file_url, file_name)
-  
-  # unzip the file
   unzip(file_name, exdir = unzip_dir)
-  
   file.remove(file_name)
   
   return(shp_name)
-
 }
 
 #' Read in the shape file, and if it's a "buffered_storm_track", apply a buffer to the
