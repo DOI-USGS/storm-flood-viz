@@ -52,24 +52,14 @@ p1_targets <- list(
     format = "file"
   ),
   tar_target(
-    p1_storm_shape_file,
-    get_storm_shape(
-      storm_code = p0_storm_info |> pull(storm_code),
-      shape_type =  p0_storm_info |> pull(shape_type),
-      out_folder = "1_fetch/out"
-    ),
-    format = "file"
-  ),
-  # Read in storm shape to R and add a buffer if needed; clip to bbox
-  tar_target(
-    p1_storm_shape_sf,
-    read_in_shapefile(
-      shape_name = p1_storm_shape_file,
-      shape_type = p0_storm_info |> pull(shape_type),
-      buffer = p0_storm_info |> pull(storm_buffer),
-      proj = p0_proj, 
-      bbox = p1_bbox_proj
-    )
+    p1_storm_path_buffered_sf,
+    {
+      lin_file <- p1_storm_track_files[grepl("_lin\\.shp$", p1_storm_track_files)]
+      sf::read_sf(lin_file) |>
+        sf::st_transform(crs = p0_proj) |>
+        sf::st_crop(p1_bbox_proj) |>
+        sf::st_buffer(dist = p0_storm_info |> pull(storm_buffer))
+    }
   ),
   tar_target(
     p1_storm_track_pts_sf,
@@ -80,25 +70,6 @@ p1_targets <- list(
       filter(STORMNAME %in% pull(p0_storm_info, storm_name))
     }
   ),
-
-  # Download storm track points data from NOAA
-  # tar_target(
-  #   p1_storm_track,
-  #   download_best_track_zip(
-  #     file_name = str_c(p0_storm_info |> pull(storm_code),
-  #                       "_best_track.zip"),
-  #     best_track_url = p0_storm_info |> pull(storm_best_track_url),
-  #     out_path = "1_fetch/out"),
-  #   format = "file"
-  #   ),
-  # tar_target(
-  #   p1_storm_track_pts,
-  #   sf::read_sf(str_subset(p1_storm_track,
-  #       str_c(toupper(p0_storm_info$storm_code),
-  #             "_pts\\.shp$"))) |>
-  #     sf::st_transform(crs = p0_proj) |>
-  #     filter(STORMNAME %in% pull(p0_storm_info, storm_name))
-  #   ),
 
 # State data --------------------------------------------------------------
   # Download state borders and crop to bbox
