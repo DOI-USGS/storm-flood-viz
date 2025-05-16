@@ -10,7 +10,7 @@ source("1_fetch/src/fetch_uv_peaks_data.R")
 
 p1_targets <- list(
 # Fetch precipitation data  -----------------------------------------------
-  tar_target(p1_precip_py, 
+  tar_target(p1_precip_py_file, 
              "1_fetch/src/get_precip.py",
              format = "file"),
   tar_target(p1_precip_tifs, 
@@ -143,11 +143,6 @@ p1_targets <- list(
       sites_list = p1_site_id_chunks
     ),
     format = "file"
-  ),
-  # Make list of sites to run through the percentiles calculations
-  tar_target(
-    p1_uv_sites,
-    unique(p1_uv_data_df$site_no)
   ),
   tar_target(
     p1_hyswap_py_file,

@@ -6,6 +6,11 @@ p2_targets <- list(
     p2_uv_data_df,
     arrow::read_parquet(p1_uv_data_pqt)
   ),
+  # Make list of sites to run through the percentiles calculations
+  tar_target(
+    p2_uv_sites,
+    unique(p2_uv_data_df$site_no)
+  ),
   # Branch over site ids to generate percentiles and place in single df
   # of uv data
   tar_target(
