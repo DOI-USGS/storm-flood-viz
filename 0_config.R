@@ -32,5 +32,16 @@ p0_targets <- list(
   tar_target(
     p0_pcodes,
     c("00060", "00065")
-  )
+  ),
+  # Set precipitation bbox and dates
+  tar_target(p0_precip_bbox,
+             unname(as.list(p0_bbox_sf))),
+  tar_target(
+    p0_precip_start,
+    paste0(p0_date_start, "T00")
+    ),
+  tar_target(
+    p0_precip_end,
+    paste0(p0_date_end, "T23")
+    )
 )
