@@ -1,43 +1,30 @@
+# Set Python environment and run precipitation and percentiles data processing scripts
 reticulate::use_condaenv("hurricane-precip", required = TRUE)
 reticulate::source_python("1_fetch/src/get_precip.py")
 reticulate::source_python("1_fetch/src/generate_hyswap_percentiles.py")
 
+# Source functions
 source("1_fetch/src/storm_shape_functions.R")
 source("1_fetch/src/clip_flood_stage_gages.R")
 source("1_fetch/src/fetch_uv_peaks_data.R")
 
 p1_targets <- list(
+# Fetch precipitation data  -----------------------------------------------
   tar_target(p1_precip_py, 
              "1_fetch/src/get_precip.py",
              format = "file"),
-  tar_target(p1_precip_bbox,
-             unname(as.list(p0_bbox_sf))),
-  tar_target(p1_precip_start,
-             "2024-09-26T00"),
-  tar_target(p1_precip_end,
-             "2024-10-01T23"),
-  tar_target(
-    p1_precip_py_file,
-    "1_fetch/src/get_precip.py",
-    format = 'file'
-  ),
   tar_target(p1_precip_tifs, 
              {
                # Make this target dependent upon the precip python file
                p1_precip_py_file
                
-               download_precip(bBox = p1_precip_bbox,
-                               start_time_str = p1_precip_start,
-                               end_time_str = p1_precip_end,
+               download_precip(bBox = p0_precip_bbox,
+                               start_time_str = p0_precip_start,
+                               end_time_str = p0_precip_end,
                                summed = "none",
                                output_path = "1_fetch/out/")
              },
              format = 'file'),
-  tar_target(
-    p1_hyswap_py_file,
-    "1_fetch/src/generate_hyswap_percentiles.py",
-    format = 'file'
-  ),
   # Convert projection if needed (from KVL's rmd)
   tar_target(
     p1_bbox_proj,
@@ -52,6 +39,8 @@ p1_targets <- list(
       }
     }
   ),
+
+# Storm shape -------------------------------------------------------------
   # Get storm shape file from NOAA, storm track or cone of uncertainty
   tar_target(
     p1_storm_shape_file,
@@ -64,7 +53,7 @@ p1_targets <- list(
   ),
   # Read in storm shape to R and add a buffer if needed; clip to bbox
   tar_target(
-    p1_storm_shape,
+    p1_storm_shape_sf,
     read_in_shapefile(
       shape_name = p1_storm_shape_file,
       shape_type = p0_storm_info |> pull(shape_type),
@@ -91,25 +80,24 @@ p1_targets <- list(
       sf::st_transform(crs = p0_proj) |> 
       filter(STORMNAME %in% pull(p0_storm_info, storm_name))
     ),
+
+# State data --------------------------------------------------------------
   # Download state borders and crop to bbox
   tar_target(
-    p1_conus_sf,
+    p1_conus_bbox_crop_sf, 
     tigris::states(cb = TRUE) |>
       filter(!STUSPS %in% c("AK", "HI", "MP", "VI", "AS", "GU")) |>
       st_transform(p0_proj) |>
-      rmapshaper::ms_simplify(keep = 0.2) 
-  ),
-  # Crop state to bbox
-  tar_target(
-    p1_conus_bbox_crop_sf, 
-    p1_conus_sf |> 
+      rmapshaper::ms_simplify(keep = 0.2) |> 
       st_crop(
         p0_bbox_sf |>
           st_as_sfc() |>
-          (\(x) st_set_crs(x, 4326))() |>
+          sf::st_as_sf(crs = "EPSG:4269") |>
           st_transform(p0_proj)
       )
   ),
+
+# Fetch flood data --------------------------------------------------------
   # Download flood stage csv from NOAA
   tar_target(
     p1_flood_stage_file,
@@ -126,7 +114,7 @@ p1_targets <- list(
     p1_usgs_flood_stage_gages,
     clip_flood_stage_gages(
       flood_stage_file = p1_flood_stage_file,
-      storm_shape = p1_storm_shape,
+      storm_shape = p1_storm_shape_sf,
       proj = p0_proj
     )
   ),
@@ -156,57 +144,14 @@ p1_targets <- list(
     ),
     format = "file"
   ),
-  # Load in uv data df
-  tar_target(
-    p1_uv_data_df,
-    arrow::read_parquet(p1_uv_data_pqt)
-  ),
   # Make list of sites to run through the percentiles calculations
   tar_target(
     p1_uv_sites,
     unique(p1_uv_data_df$site_no)
   ),
-  # Branch over site ids to generate percentiles and place in single df
-  # of uv data
   tar_target(
-    p1_uv_data_percentiles_df,
-    {
-      # Make this target dependent upon the hyswap python file
-      p1_hyswap_py_file
-      
-      # Print message about time to run
-      if(p1_uv_sites == unique(p1_uv_data_df$site_no)[1]){
-        print("This branching step may take a while (~30 minutes)")
-      }
-      
-      calculate_uv_percentiles_from_dv(p1_uv_sites, p1_uv_data_df, pcode = "00060")
-    },
-    pattern = map(p1_uv_sites)
-  ),
-  # Read in peak data and grab max peak value per site, with ties
-  # broken using the latest date in the dataset - makes more sense to compare
-  # to the most recent peak than an earlier peak that was tied more recently.
-  tar_target(
-    p1_peak_data_max_df,
-    arrow::read_parquet(p1_peak_data_pqt) |>
-      group_by(site_no) |>
-      slice_max(peak_va) |>
-      filter(peak_dt == max(peak_dt)) |>
-      ungroup()
-  ),
-  # Merge together uv percentiles with flood stages and peak data
-  tar_target(
-    p1_flow_height_complete_df,
-    {
-      out <- p1_uv_data_percentiles_df |>
-        left_join(p1_usgs_flood_stage_gages, by = "site_no") |>
-        left_join(p1_peak_data_max_df, by = c("site_no", "agency_cd")) |>
-        select(
-          site_no, dateTime, X_00060_00000, X_00060_00000_cd, X_00065_00000, X_00065_00000_cd, tz_cd,
-          percentile, action.stage, flood.stage, moderate.flood.stage, major.flood.stage, 
-          peak_va, peak_cd, peak_dateTime
-        ) |>
-        distinct()
-    }
+    p1_hyswap_py_file,
+    "1_fetch/src/generate_hyswap_percentiles.py",
+    format = 'file'
   )
 )
