@@ -20,13 +20,13 @@ p2_targets <- list(
       p1_hyswap_py_file
       
       # Print message about time to run
-      if(p1_uv_sites == unique(p2_uv_data_df$site_no)[1]){
+      if(p2_uv_sites == unique(p2_uv_data_df$site_no)[1]){
         print("This branching step may take a while (~30 minutes)")
       }
       
-      calculate_uv_percentiles_from_dv(p1_uv_sites, p2_uv_data_df, pcode = "00060")
+      calculate_uv_percentiles_from_dv(p2_uv_sites, p2_uv_data_df, pcode = "00060")
     },
-    pattern = map(p1_uv_sites)
+    pattern = map(p2_uv_sites)
   ),
   # Read in peak data and grab max peak value per site, with ties
   # broken using the latest date in the dataset - makes more sense to compare
@@ -41,11 +41,11 @@ p2_targets <- list(
   ),
   # Merge together uv percentiles with flood stages and peak data
   tar_target(
-    p1_flow_height_complete_df,
+    p2_flow_height_complete_df,
     {
-      out <- p1_uv_data_percentiles_df |>
+      out <- p2_uv_data_percentiles_df |>
         left_join(p1_usgs_flood_stage_gages, by = "site_no") |>
-        left_join(p1_peak_data_max_df, by = c("site_no", "agency_cd")) |>
+        left_join(p2_peak_data_max_df, by = c("site_no", "agency_cd")) |>
         select(
           site_no, dateTime, X_00060_00000, X_00060_00000_cd, X_00065_00000, X_00065_00000_cd, tz_cd,
           percentile, action.stage, flood.stage, moderate.flood.stage, major.flood.stage, 
