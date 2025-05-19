@@ -104,7 +104,7 @@ p1_targets <- list(
     p1_usgs_flood_stage_gages,
     clip_flood_stage_gages(
       flood_stage_file = p1_flood_stage_file,
-      storm_shape = p1_storm_shape_sf,
+      storm_shape = p1_storm_path_buffered_sf,
       proj = p0_proj
     )
   ),
