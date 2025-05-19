@@ -30,7 +30,7 @@ def calculate_uv_percentiles_from_dv(site_id, sites_uv_df, pcode):
         max_date_percentiles = (site_uv_df['dateTime'].min() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
 
         # grab site data
-        dv_data = nwis.get_record(sites='07029500', start="1900-01-01", end=max_date_percentiles, service="dv")
+        dv_data = nwis.get_record(sites=site_id, start="1900-01-01", end=max_date_percentiles, service="dv")
         
         # get correct column name
         data_column = pcode + "_Mean"
@@ -44,7 +44,7 @@ def calculate_uv_percentiles_from_dv(site_id, sites_uv_df, pcode):
                 )
             
             # Then, use fixed percentile thresholds to estimate percentiles for uv data
-            site_uv_df.loc[:, 'percentile'] = site_uv_df.apply(lambda row: hyswap.percentiles.calculate_fixed_percentile_from_value(  # noqa: E501
+            site_uv_df.loc[:, 'percentile'] = site_uv_df.apply(lambda row: hyswap.percentiles.calculate_fixed_percentile_from_value(
                 row[pcode_column], fixed_percentiles), axis = 1)
         
         else:

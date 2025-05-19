@@ -25,7 +25,7 @@ p1_targets <- list(
                                output_path = "1_fetch/out/")
              },
              format = 'file'),
-  # Convert projection if needed (from KVL's rmd)
+  # Convert projection
   tar_target(
     p1_bbox_proj,
     {
