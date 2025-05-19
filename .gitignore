@@ -7,6 +7,7 @@
 .Renviron
 .DS_Store
 _targets/
+1_fetch_src/__pycache__/
 */in/*
 */out/*
 !*/in/.empty

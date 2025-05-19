@@ -15,15 +15,15 @@ def calculate_uv_percentiles_from_dv(site_id, sites_uv_df, pcode):
                 containing instantaneous data for the pcode input
     pcode: A 5-digit string representing a particular parameter code.
     """
-
-    # Check that pcode column is not all NA:
-    pcode_column = "X_" + pcode + "_00000"
     
     # Define percentile levels
-    percentile_levels = [1,5,10,25,50,75,90,95,99]
+    percentile_levels = [1, 5, 10, 25, 50, 75, 90, 95, 99]
 
     # subset to site
     site_uv_df = sites_uv_df[sites_uv_df['site_no'] == site_id].copy()
+    
+    # Check that pcode column is not all NA:
+    pcode_column = "X_" + pcode + "_00000"
 
     if not site_uv_df[pcode_column].isnull().all():
         # get minimum date for event to determine maximum date for percentiles (day before minimum event date)
