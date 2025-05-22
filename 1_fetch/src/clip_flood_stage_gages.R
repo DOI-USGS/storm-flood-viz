@@ -33,7 +33,6 @@ clip_flood_stage_gages <- function(flood_stage_file, storm_shape, proj){
         !moderate.flood.stage == -9999.0 &
         !major.flood.stage == -9999.0
                     ) |>
-    sf::st_drop_geometry() |>
     dplyr::select(site_no, state, action.stage, flood.stage, moderate.flood.stage, major.flood.stage) |>
     dplyr::distinct()
   

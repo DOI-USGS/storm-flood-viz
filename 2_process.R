@@ -49,7 +49,7 @@ p2_targets <- list(
         select(
           site_no, dateTime, X_00060_00000, X_00060_00000_cd, X_00065_00000, X_00065_00000_cd, tz_cd,
           percentile, action.stage, flood.stage, moderate.flood.stage, major.flood.stage, 
-          peak_va, peak_cd, peak_dateTime
+          peak_va, peak_cd, peak_dateTime, geometry
         ) |>
         distinct()
     }
