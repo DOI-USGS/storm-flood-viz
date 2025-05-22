@@ -13,3 +13,7 @@ dependencies:
   - s3fs
   - zarr<3.0
   - dask
+  - dataretrieval
+  - pip
+  - pip:
+    - hyswap

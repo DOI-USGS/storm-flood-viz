@@ -5,6 +5,7 @@ library(reticulate)
 options(tidyverse.quiet = TRUE, timeout = 800)
 tar_option_set(packages = c('tidyverse',
                             'sf',
+                            'reticulate',
                             'janitor',
                             'sbtools',
                             'tigris',
@@ -14,17 +15,24 @@ tar_option_set(packages = c('tidyverse',
                             'cowplot',
                             'rmapshaper',
                             'terra',
-                            'tidyterra'))
+                            'raster',
+                            'tidyterra',
+                            'rvest',
+                            'httr',
+                            'fs',
+                            'glue',
+                            'dataRetrieval'))
 
 # Phase target makefiles
-# source("0_config.R")
+source("0_config.R")
 source("1_fetch.R")
-# source("2_process.R")
+source("2_process.R")
 # source("3_visualize.R")
-# 
-# # Combined list of target outputs
-# c(p0_targets,
-  p1_targets
-#   p2_targets,
-#   p3_targets
-# )
+
+# Combined list of target outputs
+c(
+  p0_targets,
+  p1_targets,
+   p2_targets #,
+  # p3_targets
+)
