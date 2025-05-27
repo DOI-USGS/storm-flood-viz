@@ -1,6 +1,8 @@
-#source('2_process/src/data_utils.R')
+source('2_process/src/process_precip.R')
 
 p2_targets <- list(
+
+# process flood data -----------------------------------------------------
   # Load in uv data df
   tar_target(
     p2_uv_data_df,
@@ -53,5 +55,16 @@ p2_targets <- list(
         ) |>
         distinct()
     }
+  ),
+  
+# process precipitation data ----------------------------------------------
+  tar_target(p2_process_precip_rast,
+             get_precip_df(
+               tif_files = p1_precip_tifs,
+               proj = p0_proj,
+               precip_summ = "none",
+               states = p1_conus_bbox_crop_sf)
+             
   )
+  
 )
