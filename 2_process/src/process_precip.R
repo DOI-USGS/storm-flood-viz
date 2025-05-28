@@ -62,7 +62,8 @@ get_precip_df <- function(tif_files, proj, precip_summ, states) {
       ) |>
       mutate(
         dateTime = as.POSIXct(dateTime, format = "%Y-%m-%dT%H", tz = "UTC"),
-        date = as.Date(dateTime)
+        date = as.Date(dateTime),
+        precip_in = precip_mm * 0.0393701
       )
     
 # total or cumulative -----------------------------------------------------
@@ -76,7 +77,10 @@ get_precip_df <- function(tif_files, proj, precip_summ, states) {
           dplyr::rename(precip_mm = 3) |>
           dplyr::mutate(
             start_dateTime = times$start,
-            end_dateTime = times$end
+            end_dateTime = times$end,
+            dateTime = times$end,  # for compatibility with "none"
+            precip_in = precip_mm * 0.0393701,
+            precip_type = precip_summ
           )
       })
     
