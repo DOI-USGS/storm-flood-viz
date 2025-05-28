@@ -6,12 +6,23 @@ hurricane_viz <- function(precip_summ, precip_data, flow_data, storm_path, state
   dtg_list <- sort(unique(precip_data$dateTime))
   
   if (precip_summ == "none") {
+    frame_dir <- dirname(path_out)
+  
     purrr::imap(dtg_list, function(dtg_now, i) {
       hurr_subset <- storm_path |> dplyr::filter(DTG <= dtg_now)
       precip_now <- precip_data |> dplyr::filter(dateTime <= dtg_now)
-      streamgage_now <- flow_data |> 
+      streamgage_now <- flow_data |>
         dplyr::filter(as.Date(dateTime) == as.Date(dtg_now)) |>
-        dplyr::mutate(flood_exceeded = X_00065_00000 >= flood.stage)
+        dplyr::mutate(
+          flood_status = dplyr::case_when(
+            !is.na(major.flood.stage) & X_00065_00000 >= major.flood.stage ~ "Major",
+            !is.na(moderate.flood.stage) & X_00065_00000 >= moderate.flood.stage ~ "Moderate",
+            !is.na(flood.stage) & X_00065_00000 >= flood.stage ~ "Flood",
+            !is.na(action.stage) & X_00065_00000 >= action.stage ~ "Action",
+            TRUE ~ "Normal"
+          )
+        )
+      
       
       p <- ggplot() +
         geom_sf(data = state_borders, color = "gray60", fill = NA) +
@@ -54,22 +65,26 @@ hurricane_viz <- function(precip_summ, precip_data, flow_data, storm_path, state
         p <- p +
           geom_sf(
             data = streamgage_now,
-            aes(geometry = geometry, fill = X_00065_00000),
+            aes(geometry = geometry, fill = flood_status),
             shape = 21,
             size = 2.5,
             stroke = 0.5,
-            color = dplyr::if_else(streamgage_now$flood_exceeded, "purple", "gray30"),
-            alpha = 0.8
+            color = "gray30",
+            alpha = 0.9
           ) +
-          scale_fill_viridis_c(
-            name = "Gage height (ft)",
-            option = "viridis",
-            limits = c(min(flow_data$X_00065_00000, na.rm = TRUE),
-                       max(flow_data$X_00065_00000, na.rm = TRUE)),
-            guide = guide_colorbar(title.position = "top", title.hjust = 0.5,
-                                   barwidth = unit(8, "cm"), barheight = unit(0.4, "cm"),
-                                   label.position = "bottom")
+          scale_fill_manual(
+            name = "Flood stage status",
+            values = c(
+              "Normal" = "#d9f0a3",
+              "Action" = "#addd8e",
+              "Flood" = "#feb24c",
+              "Moderate" = "#fd8d3c",
+              "Major" = "#e31a1c"
+            ),
+            drop = FALSE,
+            na.value = "gray80"
           )
+        
       }
       
       # Hurricane path
@@ -100,7 +115,6 @@ hurricane_viz <- function(precip_summ, precip_data, flow_data, storm_path, state
       
       # Save image
       timestamp_str <- format(dtg_now, "%Y%m%dT%H%M")
-      frame_dir <- dirname(path_out)
       file_out <- file.path(frame_dir, paste0("frame_", timestamp_str, ".png"))
       message("Creating image for: ", timestamp_str)
       ggsave(filename = file_out, plot = p, width = 8, height = 8, dpi = 300, bg = "white")
