@@ -6,7 +6,7 @@ p0_targets <- list(
   # Must be defined using NAD83 ("EPSG:4269") coordinates in decimal degrees
   tar_target(
     p0_bbox_sf,
-    sf::st_bbox(c(xmin = -92, xmax = -80, ymin = 23, ymax = 45))
+    sf::st_bbox(c(xmin = -98.21, xmax = -69.97, ymin = 23, ymax = 44.6))
     ),
   # Select appropriate projection for the area of interest within the bounding box
   tar_target(
@@ -19,7 +19,7 @@ p0_targets <- list(
   ),
   tar_target(
     p0_date_end,
-    "2024-10-01"
+    "2024-09-28"
   ),
   tar_target(
     p0_storm_info,
