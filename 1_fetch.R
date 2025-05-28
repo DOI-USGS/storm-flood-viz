@@ -21,7 +21,7 @@ p1_targets <- list(
                download_precip(bBox = p0_precip_bbox,
                                start_time_str = p0_precip_start,
                                end_time_str = p0_precip_end,
-                               summed = "none",
+                               summed = "cumulative",
                                output_path = "1_fetch/out/")
              },
              format = 'file'),
@@ -97,6 +97,32 @@ tar_target(
           st_transform(p0_proj)
       )
   ),
+# Download major cities
+  tar_target(
+    p1_major_cities_sf,
+    {
+      city_lookup <- tibble::tibble(
+        name = c("Miami", "Atlanta", "Raleigh", "Philadelphia", "New York", 
+                 "New Orleans", "Memphis", "Jackson", "Houston",
+                 "Richmond", "Mobile", "Chicago"),
+        state_abbr = c("FL", "GA", "NC", "PA", "NY", "LA", "TN", "MS", "TX", 
+                       "VA", "AL", "IL")
+      )
+      
+      state_fips <- tigris::fips_codes |>
+        dplyr::distinct(state_code, state) |>
+        dplyr::rename(state_abbr = state)
+      
+      city_join <- dplyr::left_join(city_lookup, state_fips, by = "state_abbr")
+      
+      tigris::places(cb = TRUE) |>
+        dplyr::inner_join(city_join, by = c("NAME" = "name", "STATEFP" = "state_code")) |>
+        dplyr::select(NAME, geometry) |>
+        sf::st_transform(p0_proj) |>
+        sf::st_centroid()
+    }
+  ),
+
 
 # Fetch flood data --------------------------------------------------------
   # Download flood stage csv from NOAA
