@@ -1,3 +1,19 @@
+#' Create an animated GIF visualizing hurricane impacts
+#'
+#' This fxn generates time series maps of a hurricane's track, precipitation,
+#' and streamgage response (either in percentiles or flood stage categories), 
+#' saves each frame as a PNG, and then compiles them into an animated GIF.
+#'
+#' @param precip_data A data frame of gridded precipitation data with columns `x`, `y`, `precip_in`, and `dateTime`.
+#' @param flow_data A data frame of streamgage data with columns `dateTime`, `X_00065_00000`, 
+#'        flood stage thresholds (`flood.stage`, `action.stage`, etc.), and geometry for plotting.
+#' @param storm_path A `sf` object representing the hurricane path, with `DTG`, `X`, `Y`, and `STORMNAME` columns.
+#' @param state_borders A `sf` object representing the state boundaries for plotting.
+#' @param path_out The output file path (ending in `.gif`) for the final animated visualization.
+#' @param metric A string, either `"percentile"` or `"flood_stage"`, indicating which streamgage metric to visualize.
+#' @param major_cities A `sf` object of city points with a `NAME` column for labeling.
+#'
+#' @return The path to the generated GIF file (same as `path_out`).
 hurricane_viz <- function(precip_data, flow_data, storm_path, state_borders,
                           path_out, metric, major_cities) {
   
