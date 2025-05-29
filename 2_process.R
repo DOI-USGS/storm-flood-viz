@@ -62,7 +62,7 @@ p2_targets <- list(
              get_precip_df(
                tif_files = p1_precip_tifs,
                proj = p0_proj,
-               precip_summ = "total",
+               precip_summ = "cumulative",
                states = p1_conus_bbox_crop_sf)
              
   )
