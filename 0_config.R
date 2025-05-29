@@ -43,5 +43,46 @@ p0_targets <- list(
   tar_target(
     p0_precip_end,
     paste0(p0_date_end, "T23")
+    ),
+  tar_target(
+    # Create a tibble to define color palette for flood stage
+    p0_viz_fs_config_pal,
+    c(
+      "Normal" = "#D5D5D5",
+      "Action" = "#FEFF66",
+      "Flood" = "#FFC76C",
+      "Moderate" = "#FF726F",
+      "Major" = "#E38AFF"
+      )
+    ), 
+  tar_target(
+    # Create a tibble to define color palette for percentile
+    p0_viz_percentile_config_pal,
+    c("#8c2d04", "#cc9e02", "#fee391", 
+      "#C0C0C0", "#80cdc1", "#35978f", "#045a8d")
+    ),
+  tar_target(
+    p0_viz_precip_config_pal,
+    "mako"
+    ),
+  tar_target(
+    # Create a tibble to define fig width and height, conus outline colors,
+    # background color, font name, and font size 
+    p0_viz_config_df,
+    tibble(
+      width = 8,
+      height = 8,
+      dpi = 300, 
+      state_outline_col = "white",
+      major_cities_col = 'gray60',
+      major_cities_text_col = 'gray50',
+      streamgage_col = "gray30",
+      storm_path_col = "red",
+      bg_col = "white",
+      load_font = 'Source Sans Pro',
+      font_size_title = 16,
+      font_size = 14,
+      leg_font_size = 12
     )
+  )
 )
