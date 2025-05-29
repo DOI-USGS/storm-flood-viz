@@ -1,16 +1,18 @@
 #' Process precipitation raster data into a long-format data frame
 #'
 #' This fxn reads one or more precipitation `.tif` raster files, reprojects,
-#' crops, and masks them to a given spatial boundary box, then converts them into a
-#' tidy data frame with precipitation values. It supports hourly ("none"),
-#' total-period ("total"), or cumulative multi-file ("cumulative") precipitation inputs.
+#' crops, and masks them to a given spatial boundary box, then converts
+#' them into a tidy data frame with precipitation values. It supports hourly
+#' ("none"), total-period ("total"), or cumulative multi-file ("cumulative") 
+#' precipitation inputs.
 #'
-#' @param tif_files Character vector of paths to `.tif` files containing precipitation data.
-#'        File names must follow a standard format: either `YYYY-MM-DDTHH.tif` (for hourly)
-#'        or `YYYY-MM-DDTHH_to_YYYY-MM-DDTHH.tif` (for total/cumulative).
+#' @param tif_files Character vector of paths to `.tif` files containing
+#' precipitation data. File names must follow a standard format: either 
+#' `YYYY-MM-DDTHH.tif` (for hourly) or `YYYY-MM-DDTHH_to_YYYY-MM-DDTHH.tif`
+#' (for total/cumulative).
 #' @param proj Character string specifying the target CRS for reprojection.
-#' @param precip_summ Character; one of `"none"`, `"total"`, or `"cumulative"`, specifying
-#'        how to treat the precipitation data:
+#' @param precip_summ Character; one of `"none"`, `"total"`, or `"cumulative"`,
+#' specifying how to treat the precipitation data:
 #'        - `"none"`: each file is a single-hour raster layer;
 #'        - `"total"`: one file represents total precip over a period;
 #'        - `"cumulative"`: multiple files, each representing totals over partial periods.
@@ -18,7 +20,8 @@
 #'
 #' @return A `data.frame` with precipitation values:
 #'   - `"none"` mode: columns `x`, `y`, `dateTime`, `date`, and `precip_mm`
-#'   - `"total"` and `"cumulative"` modes: columns `x`, `y`, `start_dateTime`, `end_dateTime`, and `precip_mm`
+#'   - `"total"` and `"cumulative"` modes: columns `x`, `y`, `start_dateTime`, 
+#'   `end_dateTime`, and `precip_mm`
 get_precip_df <- function(tif_files, proj, precip_summ, states) {
   # Convert sf to terra SpatVector
   state_vect <- terra::vect(states)
@@ -85,7 +88,8 @@ get_precip_df <- function(tif_files, proj, precip_summ, states) {
       })
     
   } else {
-    stop("Invalid value for precip_summ. Must be one of 'none', 'total', or 'cumulative'.")
+    stop("Invalid value for precip_summ. Must be one of 'none',
+         'total', or 'cumulative'.")
   }
   
   return(precip_df)
