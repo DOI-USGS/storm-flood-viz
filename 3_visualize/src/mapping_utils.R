@@ -49,29 +49,65 @@ hurricane_viz <- function(precip_data, flow_data, storm_path, state_borders,
                                 "percentile_frames", "flood_stage_frames"))
   fs::dir_create(frame_dir)  
   
+  # Precompute global max duration for scaling
+  flow_data <- flow_data |> 
+    group_by(site_no) |> 
+    arrange(site_no, dateTime) |> 
+    mutate(
+      above_flood = !is.na(flood.stage) & X_00065_00000 >= flood.stage
+    ) |> 
+    mutate(
+      duration_above_flood_cum = cumsum(above_flood)
+    ) |> 
+    ungroup()
+  
+  global_max_duration <- max(flow_data$duration_above_flood_cum, na.rm = TRUE)
+  
+  
   purrr::imap(dtg_list, function(dtg_now, i) {
     hurr_subset <- storm_path |> dplyr::filter(DTG <= dtg_now)
     precip_now <- precip_data |> dplyr::filter(dateTime <= dtg_now)
 
-    streamgage_now <- flow_data |>
-      dplyr::filter(as.Date(dateTime) == as.Date(dtg_now)) |>
-      dplyr::mutate(
+    flow_up_to_now <- flow_data |> 
+      filter(dateTime <= dtg_now) |>
+      group_by(site_no) |>
+      arrange(site_no, dateTime) |>
+      mutate(
+        above_flood = !is.na(flood.stage) & X_00065_00000 >= flood.stage,
+        duration_above_flood_hr = cumsum(above_flood)
+      ) |> 
+      ungroup()
+    
+    flood_height_map <- c("Flood" = 1, "Moderate" = 2, "Major" = 3)
+    flood_levels <- names(flood_stage_cols)
+    
+    streamgage_now <- flow_up_to_now |> 
+      filter(dateTime == dtg_now) |> 
+      mutate(
         flood_status = dplyr::case_when(
-          !is.na(major.flood.stage) & X_00065_00000 >=
-            major.flood.stage ~ "Major",
-          !is.na(moderate.flood.stage) & X_00065_00000 >= 
-            moderate.flood.stage ~ "Moderate",
-          !is.na(flood.stage) & X_00065_00000 >= 
-            flood.stage ~ "Flood",
-          !is.na(action.stage) & X_00065_00000 >=
-            action.stage ~ "Action",
+          !is.na(major.flood.stage) & X_00065_00000 >= major.flood.stage ~ "Major",
+          !is.na(moderate.flood.stage) & X_00065_00000 >= moderate.flood.stage ~ "Moderate",
+          !is.na(flood.stage) & X_00065_00000 >= flood.stage ~ "Flood",
           TRUE ~ "Normal"
         ),
-        flood_status = factor(flood_status,
-                              levels = c("Normal", "Action",
-                                         "Flood", "Moderate", "Major"))
+        flood_status = factor(flood_status, levels = flood_levels),
+        is_flooded = flood_status != "Normal",
+        triangle_height = dplyr::case_when(
+          flood_status %in% names(flood_height_map) ~ flood_height_map[flood_status],
+          TRUE ~ NA_real_
+        ),
+        triangle_width = ifelse(
+          is_flooded,
+          duration_above_flood_hr / global_max_duration,
+          NA_real_
+        ),
+        triangle_size = ifelse(
+          is_flooded,
+          triangle_height * triangle_width * 4,
+          1
+        )
       )
-
+    
     p <- ggplot() +
       geom_raster(
         data = precip_now,
@@ -139,32 +175,70 @@ hurricane_viz <- function(precip_data, flow_data, storm_path, state_borders,
         theme(text = element_text(family = font_legend,
                                   size = config_vars$font_size))
     } else if (metric == "flood_stage") {
+      
+      # Plot normal (non-flooded) gages as small circles
       p <- p +
         geom_sf(
-          data = streamgage_now,
+          data = streamgage_now |> dplyr::filter(!is_flooded),
           aes(geometry = geometry, fill = flood_status),
           shape = 21,
-          size = 2,
-          stroke = 0.5,
+          size = 1,
+          stroke = 0.1,
           color = config_vars$streamgage_col,
-          alpha = 0.9
+          alpha = 0.6,
+          show.legend = FALSE
+        )
+      
+      # Plot flooded gages as triangles, height = time above flood stage
+      p <- p +
+        geom_sf(
+          data = streamgage_now |> filter(is_flooded),
+          aes(geometry = geometry, fill = flood_status, size = triangle_size),
+          shape = 24,
+          stroke = 0.1,
+          color = config_vars$streamgage_col,
+          alpha = 0.9,
+          show.legend = "fill"
         ) +
+        scale_size_identity() +
         scale_fill_manual(
-          name = "Flood stage status",
+          name = "Peak flood stage",
           values = flood_stage_cols,
+          limits = flood_levels,
           drop = FALSE,
-          na.value = config_vars$streamgage_col
+          na.value = config_vars$streamgage_col,
+          guide = guide_legend(
+            override.aes = list(
+              shape = 24,
+              size = 4,
+              stroke = 0.1,
+              color = NA
+            )
+          )
         ) +
         geom_sf(data = major_cities, shape = 23, fill = NA,
-                color = config_vars$major_cities_col, 
+                color = config_vars$major_cities_col,
                 size = 2.5, stroke = 0.3) +
         geom_sf_text(
-          data = major_cities, aes(label = NAME), 
+          data = major_cities, aes(label = NAME),
           color = config_vars$major_cities_text_col,
           size = 3, nudge_y = 50000, family = font_legend
         ) +
         theme(text = element_text(family = font_legend,
-                                  size = config_vars$font_size))
+                                  size = config_vars$font_size)) +
+        # legend anchor
+        geom_point(
+          data = data.frame(
+            flood_status = factor(names(flood_stage_cols), levels = names(flood_stage_cols)),
+            x = Inf, y = Inf
+          ),
+          aes(x = x, y = y, fill = flood_status),
+          shape = 24,
+          size = 0,
+          stroke = 0,
+          alpha = 0
+        )
+      
     }
 
     p <- p +
@@ -221,7 +295,7 @@ hurricane_viz <- function(precip_data, flow_data, storm_path, state_borders,
                           full.names = TRUE) |> 
     sort()
   img_list <- magick::image_read(img_files)
-  hurr_gif <- magick::image_animate(magick::image_join(img_list), fps = 4)
+  hurr_gif <- magick::image_animate(magick::image_join(img_list), fps = 2)
 
   magick::image_write(hurr_gif, path_out)
   return(path_out)

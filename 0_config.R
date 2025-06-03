@@ -49,7 +49,6 @@ p0_targets <- list(
     p0_viz_fs_config_pal,
     c(
       "Normal" = "#D5D5D5",
-      "Action" = "#FEFF66",
       "Flood" = "#FFC76C",
       "Moderate" = "#FF726F",
       "Major" = "#E38AFF"
