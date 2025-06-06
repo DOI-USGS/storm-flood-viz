@@ -48,7 +48,7 @@ p0_targets <- list(
     # Create a tibble to define color palette for flood stage
     p0_viz_fs_config_pal,
     c(
-      "Normal" = "#D5D5D5",
+      "Not flooded" = "#D5D5D5",
       "Flood" = "#FFC76C",
       "Moderate" = "#FF726F",
       "Major" = "#E38AFF"

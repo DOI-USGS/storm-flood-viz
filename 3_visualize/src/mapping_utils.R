@@ -35,7 +35,8 @@
 #' @return The path to the generated GIF file (same as `path_out`).
 hurricane_viz <- function(precip_data, flow_data, storm_path, state_borders,
                           path_out, metric, major_cities, percentile_cols,
-                          flood_stage_cols, percip_cols, config_vars) {
+                          flood_stage_cols, percip_cols, config_vars, 
+                          state_inner_borders, peak_height) {
   
   font_legend <- config_vars$load_font
   font_add_google(font_legend)
@@ -48,7 +49,7 @@ hurricane_viz <- function(precip_data, flow_data, storm_path, state_borders,
                          ifelse(metric == "percentile", 
                                 "percentile_frames", "flood_stage_frames"))
   fs::dir_create(frame_dir)  
-  
+
   # Precompute global max duration for scaling
   flow_data <- flow_data |> 
     group_by(site_no) |> 
@@ -63,11 +64,9 @@ hurricane_viz <- function(precip_data, flow_data, storm_path, state_borders,
   
   global_max_duration <- max(flow_data$duration_above_flood_cum, na.rm = TRUE)
   
-  
   purrr::imap(dtg_list, function(dtg_now, i) {
     hurr_subset <- storm_path |> dplyr::filter(DTG <= dtg_now)
     precip_now <- precip_data |> dplyr::filter(dateTime <= dtg_now)
-
     flow_up_to_now <- flow_data |> 
       filter(dateTime <= dtg_now) |>
       group_by(site_no) |>
@@ -77,10 +76,7 @@ hurricane_viz <- function(precip_data, flow_data, storm_path, state_borders,
         duration_above_flood_hr = cumsum(above_flood)
       ) |> 
       ungroup()
-    
-    flood_height_map <- c("Flood" = 1, "Moderate" = 2, "Major" = 3)
-    flood_levels <- names(flood_stage_cols)
-    
+  
     streamgage_now <- flow_up_to_now |> 
       filter(dateTime == dtg_now) |> 
       mutate(
@@ -88,39 +84,25 @@ hurricane_viz <- function(precip_data, flow_data, storm_path, state_borders,
           !is.na(major.flood.stage) & X_00065_00000 >= major.flood.stage ~ "Major",
           !is.na(moderate.flood.stage) & X_00065_00000 >= moderate.flood.stage ~ "Moderate",
           !is.na(flood.stage) & X_00065_00000 >= flood.stage ~ "Flood",
-          TRUE ~ "Normal"
+          TRUE ~ "Not flooded"
         ),
-        flood_status = factor(flood_status, levels = flood_levels),
-        is_flooded = flood_status != "Normal",
-        triangle_height = dplyr::case_when(
-          flood_status %in% names(flood_height_map) ~ flood_height_map[flood_status],
-          TRUE ~ NA_real_
-        ),
-        triangle_width = ifelse(
-          is_flooded,
-          duration_above_flood_hr / global_max_duration,
-          NA_real_
-        ),
-        triangle_size = ifelse(
-          is_flooded,
-          triangle_height * triangle_width * 4,
-          1
-        )
-      )
+        flood_status = factor(flood_status, levels =  names(flood_stage_cols)),
+        is_flooded = flood_status != "Not flooded")
     
     p <- ggplot() +
       geom_raster(
         data = precip_now,
         aes(x = x, y = y, fill = precip_in),
-        alpha = 0.7
+        alpha = 0.4
       ) +
-      geom_sf(data = state_borders, color = config_vars$state_outline_col,
-              fill = NA, linewidth = 0.6) +
+      geom_sf(data = state_inner_borders,
+              color = config_vars$state_outline_col,
+              fill = NA, linewidth = 0.7) +
       scale_fill_stepsn(
         colors = viridisLite::viridis(7, option = percip_cols, direction = -1),
-        breaks = c(1.5, 3, 5, 7, 9, 11, 13),
+        breaks = c(2, 4, 6, 8, 10, 12, 14),
         limits = c(1, 14),
-        labels = c("1–2", "2–4", "4–6", "6–8", "8–10", "10–12", "12+"),
+        labels = c("2", "4", "6", "8", "10", "12", "14+"),
         name = "Total precipitation (in)",
         guide = guide_coloursteps(
           title.theme = element_text(family = font_legend, 
@@ -180,42 +162,67 @@ hurricane_viz <- function(precip_data, flow_data, storm_path, state_borders,
       p <- p +
         geom_sf(
           data = streamgage_now |> dplyr::filter(!is_flooded),
-          aes(geometry = geometry, fill = flood_status),
+          aes(geometry = geometry),
           shape = 21,
+          fill = flood_stage_cols["Not flooded"],
           size = 1,
           stroke = 0.1,
           color = config_vars$streamgage_col,
-          alpha = 0.6,
+          alpha = 0.8,
           show.legend = FALSE
         )
       
-      # Plot flooded gages as triangles, height = time above flood stage
-      p <- p +
-        geom_sf(
-          data = streamgage_now |> filter(is_flooded),
-          aes(geometry = geometry, fill = flood_status, size = triangle_size),
-          shape = 24,
-          stroke = 0.1,
-          color = config_vars$streamgage_col,
-          alpha = 0.9,
-          show.legend = "fill"
+      # Get coordinates
+      streamgage_now_coords <- streamgage_now |> 
+        filter(is_flooded) |> 
+        mutate(
+          x = sf::st_coordinates(geometry)[, 1],
+          y = sf::st_coordinates(geometry)[, 2],
+          xend = x,
+          yend = y + (duration_above_flood_hr / global_max_duration) * peak_height
+        )
+      
+      # Add peak-style lines
+      p <- p + 
+        ggforce::geom_link(
+          data = streamgage_now_coords,
+          aes(x = x, xend = xend,
+              y = y, yend = yend,
+              color = flood_status,
+              alpha = after_stat(I(index) + 0.2),
+              linewidth = after_stat(I((1 - index) * 2))),
+          show.legend = FALSE
+        ) + 
+        # legend dummy 
+        geom_point(
+          data = data.frame(
+            flood_status = factor(names(flood_stage_cols), levels = names(flood_stage_cols)),
+            x = NA_real_, y = NA_real_
+          ),
+          aes(x = x, y = y, color = flood_status),
+          shape = 22,
+          size = 5,
+          stroke = 0.2,
+          fill = flood_stage_cols,
+          show.legend = TRUE,
+          na.rm = TRUE
         ) +
-        scale_size_identity() +
-        scale_fill_manual(
+        scale_color_manual(
           name = "Peak flood stage",
           values = flood_stage_cols,
-          limits = flood_levels,
+          limits =  names(flood_stage_cols),
           drop = FALSE,
           na.value = config_vars$streamgage_col,
           guide = guide_legend(
             override.aes = list(
-              shape = 24,
-              size = 4,
-              stroke = 0.1,
-              color = NA
-            )
+          shape = rep(22, length(flood_stage_cols)),   
+          size = rep(5, length(flood_stage_cols)),
+          fill = unname(flood_stage_cols),             #
+          color = NA,
+          stroke = rep(0.1, length(flood_stage_cols))
+        )
           )
-        ) +
+        ) + 
         geom_sf(data = major_cities, shape = 23, fill = NA,
                 color = config_vars$major_cities_col,
                 size = 2.5, stroke = 0.3) +
@@ -225,19 +232,7 @@ hurricane_viz <- function(precip_data, flow_data, storm_path, state_borders,
           size = 3, nudge_y = 50000, family = font_legend
         ) +
         theme(text = element_text(family = font_legend,
-                                  size = config_vars$font_size)) +
-        # legend anchor
-        geom_point(
-          data = data.frame(
-            flood_status = factor(names(flood_stage_cols), levels = names(flood_stage_cols)),
-            x = Inf, y = Inf
-          ),
-          aes(x = x, y = y, fill = flood_status),
-          shape = 24,
-          size = 0,
-          stroke = 0,
-          alpha = 0
-        )
+                                  size = config_vars$font_size)) 
       
     }
 
@@ -295,7 +290,7 @@ hurricane_viz <- function(precip_data, flow_data, storm_path, state_borders,
                           full.names = TRUE) |> 
     sort()
   img_list <- magick::image_read(img_files)
-  hurr_gif <- magick::image_animate(magick::image_join(img_list), fps = 2)
+  hurr_gif <- magick::image_animate(magick::image_join(img_list), fps = 4)
 
   magick::image_write(hurr_gif, path_out)
   return(path_out)

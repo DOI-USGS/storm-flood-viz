@@ -1,4 +1,5 @@
 source('2_process/src/process_precip.R')
+source('2_process/src/process_states.R')
 
 p2_targets <- list(
 
@@ -65,6 +66,10 @@ p2_targets <- list(
                precip_summ = "cumulative",
                states = p1_conus_bbox_crop_sf)
              
-  )
-  
+  ),
+  tar_target(p2_state_inner_lines,
+             get_inner_lines(
+               in_sf = p1_conus_bbox_crop_sf
+             )
+             )
 )
