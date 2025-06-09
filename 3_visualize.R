@@ -73,7 +73,8 @@ p3_targets <- list(
   tar_target(
     p3_flood_stage_hourly_gif,
     {
-      img_list <- magick::image_read(p3_flood_stage_frames)
+      valid_paths <- p3_flood_stage_frames[!is.na(p3_flood_stage_frames)]
+      img_list <- magick::image_read(valid_paths)
       gif <- magick::image_animate(magick::image_join(img_list), fps = 2)
       gif_path <- "3_visualize/out/hurricane_flood_stage_animation.gif"
       magick::image_write(gif, gif_path)
