@@ -25,6 +25,11 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
   showtext_opts(dpi = config_vars$dpi, regular.wt = 200, bold.wt = 700)
   showtext_auto(enable = TRUE)
   
+  # return NA if no streamgage data
+  if (nrow(flow_now) == 0) {
+    return(NA_character_)
+  }
+  
   global_max_duration <- max(flow_now$duration_above_flood_hr, na.rm = TRUE)
 
   p <- ggplot() +
