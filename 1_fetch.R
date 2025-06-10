@@ -104,9 +104,9 @@ tar_target(
       city_lookup <- tibble::tibble(
         name = c("Miami", "Atlanta", "Raleigh", "Philadelphia", "New York", 
                  "New Orleans", "Memphis", "Jackson", "Houston",
-                 "Richmond", "Mobile", "Chicago"),
+                 "Richmond", "Mobile", "Columbia"),
         state_abbr = c("FL", "GA", "NC", "PA", "NY", "LA", "TN", "MS", "TX", 
-                       "VA", "AL", "IL")
+                       "VA", "AL", "SC")
       )
       
       state_fips <- tigris::fips_codes |>

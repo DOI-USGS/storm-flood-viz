@@ -66,6 +66,7 @@ p3_targets <- list(
       percip_cols = p0_viz_precip_config_pal,
       config_vars = p0_viz_config_df,
       peak_height = 250000,
+      logo_path = '3_visualize/in/usgs_logo_black.png',
       frame_dir = "3_visualize/out/flood_stage_frames" 
     ),
     pattern = map(p3_all_precip_timestamps, p3_precip_by_time, p3_flow_by_time, p3_storm_by_time)

@@ -81,7 +81,8 @@ p0_targets <- list(
       load_font = 'Source Sans Pro',
       font_size_title = 16,
       font_size = 14,
-      leg_font_size = 12
+      leg_font_size = 12,
+      plot_margin = 0.025
     )
   )
 )
