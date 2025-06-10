@@ -78,6 +78,7 @@ p0_targets <- list(
       streamgage_col = "gray30",
       storm_path_col = "red",
       bg_col = "white",
+      ocean_col = "#f8fcfc",
       load_font = 'Source Sans Pro',
       font_size_title = 16,
       font_size = 14,

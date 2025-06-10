@@ -173,7 +173,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
   canvas <- grid::rectGrob(
     x = 0, y = 0, 
     width = 16, height = 9,
-    gp = grid::gpar(fill = config_vars$bg_col, alpha = 1, col = config_vars$bg_col)
+    gp = grid::gpar(fill = config_vars$ocean_col, alpha = 1, col =  config_vars$ocean_col)
   )
   
   p <- ggdraw(xlim = c(0, 1), ylim = c(0,1)) +
