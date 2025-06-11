@@ -7,6 +7,7 @@
 #' @param storm_now An sf object representing the storm path up to and including this timestep.
 #' @param state_borders sf object of CONUS boundaries.
 #' @param state_inner_borders sf object of internal CONUS state lines.
+#' @param state_outer_lines sf object of outer CONUS state lines.
 #' @param major_cities sf object with a NAME column.
 #' @param flood_stage_cols Named color vector for flood status ("Flood", "Moderate", etc).
 #' @param percip_cols viridisLite color scheme (e.g., "mako").
@@ -19,7 +20,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                                         state_borders, state_inner_borders,
                                         major_cities, flood_stage_cols,
                                         percip_cols, config_vars, peak_height,
-                                        frame_dir, logo_path) {
+                                        frame_dir, logo_path, state_outer_lines) {
   
   font_legend <- config_vars$load_font
   font_add_google(font_legend)
@@ -32,11 +33,17 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
   }
   
   global_max_duration <- max(flow_now$duration_above_flood_hr, na.rm = TRUE)
-
+  
+  # Mask small values explicitly
+  precip_now <- precip_now |> 
+    mutate(precip_in = ifelse(precip_in < 1, NA, precip_in))
+  
   p <- ggplot() +
     geom_raster(data = precip_now, aes(x = x, y = y, fill = precip_in), alpha = 0.4) +
-    geom_sf(data = state_inner_borders, color = config_vars$state_outline_col,
-            fill = NA, linewidth = 0.7) +
+    geom_sf(data = state_inner_borders, color = "gray80",
+            fill = NA, linewidth = 0.2) +
+    geom_sf(data = state_outer_lines, color = "gray70",
+            fill = NA, linewidth = 0.25) + 
     scale_fill_stepsn(
       colors = scales::alpha(
         viridisLite::viridis(7, option = percip_cols, direction = -1), 0.6),
@@ -44,6 +51,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
       limits = c(1, 14),                   
       labels = c("1", "2", "4", "6", "8", "10", "12+"),
       name = "Total rainfall (in) \nData: NOAA",
+      na.value = scales::alpha("white", 0),
       guide = guide_coloursteps(
         title.theme = element_text(family = font_legend, size = config_vars$font_size),
         title.position = "top", title.vjust = 2,

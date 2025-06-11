@@ -61,6 +61,7 @@ p3_targets <- list(
       storm_now = p3_storm_by_time,
       state_borders = p1_conus_bbox_crop_sf,
       state_inner_borders = p2_state_inner_lines,
+      state_outer_lines = p2_bbox_outer_lines,
       major_cities = p1_major_cities_sf,
       flood_stage_cols = p0_viz_fs_config_pal,
       percip_cols = p0_viz_precip_config_pal,

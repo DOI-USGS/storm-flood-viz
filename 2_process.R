@@ -71,5 +71,10 @@ p2_targets <- list(
              get_inner_lines(
                in_sf = p1_conus_bbox_crop_sf
              )
-             )
+             ),
+tar_target(p2_bbox_outer_lines,
+           get_outer_lines(
+             in_sf = p1_conus_bbox_crop_sf
+           )
+)
 )

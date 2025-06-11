@@ -35,3 +35,30 @@ get_inner_lines <- function(in_sf) {
     st_as_sf()
   
 }
+
+#' Extract Outer Boundary Lines from an sf Object
+#'
+#' This function takes a sf object with polygon or multipolygon geometries
+#' and returns a single geometry representing the outer boundary (outline) of the union of all features.
+#'
+#' @param in_sf An sf object with polygon or multipolygon geometries.
+#'
+#' @return An `sfc` object containing LINESTRING or MULTILINESTRING geometries representing the outer boundary.
+#' 
+#' @examples
+#' library(sf)
+#' data <- p1_conus_bbox_crop_sf
+#' outer_lines <- get_outer_lines(data)
+#' plot(outer_lines)
+#'
+#' @importFrom sf st_union st_boundary
+#' @export
+get_outer_lines <- function(in_sf) {
+  # Union all geometries together into one
+  unified_geom <- st_union(in_sf)
+  
+  # Get the outer boundary of the unioned geometry
+  outer_lines <- st_boundary(unified_geom)
+  
+  return(outer_lines)
+}
