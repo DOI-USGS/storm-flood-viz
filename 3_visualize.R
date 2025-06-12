@@ -32,7 +32,7 @@ p3_targets <- list(
         arrange(site_no, dateTime) |>
         mutate(
           above_flood = !is.na(flood.stage) & X_00065_00000 >= flood.stage,
-          duration_above_flood_hr = cumsum(above_flood)
+          duration_above_flood_hr = ifelse(above_flood, cumsum(above_flood), NA)
         ) |>
         ungroup() |>
         filter(dateTime == p3_all_precip_timestamps) |>
@@ -44,7 +44,7 @@ p3_targets <- list(
             TRUE ~ "Not flooded"
           ),
           flood_status = factor(flood_status, levels = c("Not flooded", "Flood", "Moderate", "Major")),
-          is_flooded = flood_status != "Not flooded"
+          is_flooded = above_flood
         )
     },
     pattern = map(p3_all_precip_timestamps),
@@ -77,6 +77,7 @@ p3_targets <- list(
       config_vars = p0_viz_config_df,
       peak_height = 200000,
       global_max_duration = p3_global_max_flood_duration,
+      landfall_dtg = as.POSIXct("2024-09-27 03:00:00", tz = "UTC"), 
       logo_path = '3_visualize/in/usgs_logo_black.png',
       hurricane_symbol_path = "3_visualize/in/hurricane_symbol.png",
       frame_dir = "3_visualize/out/flood_stage_frames" 

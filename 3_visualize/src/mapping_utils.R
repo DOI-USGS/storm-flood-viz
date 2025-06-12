@@ -17,18 +17,31 @@
 #' @param frame_dir Character path for saving PNGs.
 #' @param logo_path Charcter path for USGS logo.
 #' @param hurricane_symbol_path Charcter path for hurricane symbology.
+#' @param landfall_dtg POSIXct. The expected date-time of hurricane landfall, used to calculate and display a countdown label.
 #' @return Character file path to PNG frame.
 hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                                         state_borders, state_inner_borders,
                                         major_cities, flood_stage_cols,
                                         percip_cols, config_vars, peak_height,
                                         frame_dir, logo_path, state_outer_lines,
-                                        hurricane_symbol_path, global_max_duration) {
-  
+                                        hurricane_symbol_path, global_max_duration,
+                                        landfall_dtg) {
+  # Font configuration
   font_legend <- config_vars$load_font
   font_add_google(font_legend)
   showtext_opts(dpi = config_vars$dpi, regular.wt = 200, bold.wt = 700)
   showtext_auto(enable = TRUE)
+  
+  # Landfall label
+  time_to_landfall <- difftime(landfall_dtg, dtg, units = "hours")
+  
+  # only show label until 2 hours after landfall
+  show_landfall_label <- time_to_landfall > -2 & time_to_landfall <= 72  
+  landfall_label <- if (show_landfall_label && time_to_landfall > 0) {
+    paste0("Landfall in ", round(as.numeric(time_to_landfall), 1), " hours")
+  } else {
+    NULL
+  }
   
   # return NA if no streamgage data
   if (nrow(flow_now) == 0) {
@@ -71,6 +84,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
   # Peak style lines for flooded sites
   flow_now_coords <- flow_now |> 
     filter(is_flooded) |> 
+    arrange(desc(duration_above_flood_hr)) |> 
     mutate(
       x = sf::st_coordinates(geometry)[, 1],
       y = sf::st_coordinates(geometry)[, 2],
@@ -125,21 +139,14 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                  color = config_vars$major_cities_text_col,
                  size = 3, nudge_y = 50000, family = font_legend) 
   
-  # transparency to storm image 
-  transparent <- function(img) {
-    magick::image_fx(img, expression = "0.8*a", channel = "alpha")
-  }
-  
   # Add storm path
   p <- p +
     geom_path(data = storm_now, aes(x = X, y = Y),
-              color = config_vars$storm_path_col, linewidth = 0.8,
-              alpha = 0.25) +
+              color = config_vars$storm_path_col, linewidth = 0.8) +
     ggimage::geom_image(
       data = dplyr::filter(storm_now, DTG <= dtg),
       aes(x = X, y = Y),
       image = hurricane_symbol_path,
-      image_fun = transparent,
       size = 0.04
     )
   
@@ -219,14 +226,24 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                fontface = "bold",
                color = "black",
                lineheight = 1) +
+        draw_label(
+          landfall_label,
+          x = config_vars$plot_margin + 0.008,
+          y = 1 - config_vars$plot_margin -0.11,
+          size = 14,
+          hjust = 0,
+          vjust = 1,
+          fontfamily = font_legend,
+          color = "black"
+        ) + 
     draw_plot(legend_precip,
               x = (1-config_vars$plot_margin)*-0.04,
-              y = 0.17,
+              y = 0.14,
               height = 0.42,
               width = 0.42-config_vars$plot_margin) +
     draw_plot(legend_flood,
               x = (1-config_vars$plot_margin)*-0.07,
-              y = 0.54,
+              y = 0.51,
               height = 0.42,
               width = 0.42-config_vars$plot_margin) + 
     draw_label("Atlantic Ocean",
