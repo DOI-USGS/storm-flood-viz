@@ -13,6 +13,7 @@
 #' @param percip_cols viridisLite color scheme (e.g., "mako").
 #' @param config_vars Named list of styling and theme options.
 #' @param peak_height Maximum height of flood lines (numeric).
+#' @param global_max_duration Numeric. The maximum `duration_above_flood_hr` across all time steps.
 #' @param frame_dir Character path for saving PNGs.
 #' @param logo_path Charcter path for USGS logo.
 #' @param hurricane_symbol_path Charcter path for hurricane symbology.
@@ -22,7 +23,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                                         major_cities, flood_stage_cols,
                                         percip_cols, config_vars, peak_height,
                                         frame_dir, logo_path, state_outer_lines,
-                                        hurricane_symbol_path) {
+                                        hurricane_symbol_path, global_max_duration) {
   
   font_legend <- config_vars$load_font
   font_add_google(font_legend)
@@ -33,9 +34,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
   if (nrow(flow_now) == 0) {
     return(NULL)
   }
-  
-  global_max_duration <- max(flow_now$duration_above_flood_hr, na.rm = TRUE)
-  
+
   p <- ggplot() +
     geom_raster(data = precip_now, aes(x = x, y = y, fill = precip_in), alpha = 0.4) +
     geom_sf(data = state_inner_borders, color = "gray80",
@@ -84,7 +83,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
       data = flow_now_coords,
       aes(x = x, xend = xend, y = y, yend = yend,
           color = flood_status,
-          alpha = after_stat(I(index) + 0.05),
+          alpha = after_stat(I(index)),
           linewidth = after_stat(I((1 - index) * 2))),
       show.legend = FALSE
     ) +
@@ -197,6 +196,8 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
               hjust = 0, vjust = 1) +
     draw_plot(p + theme(legend.position = 'none',
                          plot.title = element_blank()),
+              # shifting plot for focus on florida/south atlantic region
+              # will need to be adjusted if storm is focused elsewhere
                x = (1-config_vars$plot_margin)*-1.75,
                y = -0.01,
                height = 1.125,
