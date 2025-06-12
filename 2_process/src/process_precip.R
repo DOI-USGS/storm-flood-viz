@@ -40,7 +40,7 @@ get_precip_df <- function(tif_files, proj, precip_summ, states) {
   process_raster <- function(file) {
     r <- terra::rast(file)
     r_proj <- terra::project(r, proj)
-    terra::mask(terra::crop(r_proj, state_vect), state_vect)
+    # terra::mask(terra::crop(r_proj, state_vect), state_vect)
   }
   
   # none --------------------------------------------------------------------
@@ -66,7 +66,8 @@ get_precip_df <- function(tif_files, proj, precip_summ, states) {
       mutate(
         dateTime = as.POSIXct(dateTime, format = "%Y-%m-%dT%H", tz = "UTC"),
         date = as.Date(dateTime),
-        precip_in = precip_mm * 0.0393701
+        precip_in = precip_mm * 0.0393701,
+        precip_in = ifelse(precip_in < 1, NA, precip_in)
       )
     
 # total or cumulative -----------------------------------------------------
@@ -83,6 +84,7 @@ get_precip_df <- function(tif_files, proj, precip_summ, states) {
             end_dateTime = times$end,
             dateTime = times$end,  # for compatibility with "none"
             precip_in = precip_mm * 0.0393701,
+            precip_in = ifelse(precip_in < 1, NA, precip_in),
             precip_type = precip_summ
           )
       })

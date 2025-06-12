@@ -66,11 +66,13 @@ p3_targets <- list(
       flood_stage_cols = p0_viz_fs_config_pal,
       percip_cols = p0_viz_precip_config_pal,
       config_vars = p0_viz_config_df,
-      peak_height = 250000,
+      peak_height = 100000,
       logo_path = '3_visualize/in/usgs_logo_black.png',
+      hurricane_symbol_path = "3_visualize/in/hurricane_symbol.png",
       frame_dir = "3_visualize/out/flood_stage_frames" 
     ),
-    pattern = map(p3_all_precip_timestamps, p3_precip_by_time, p3_flow_by_time, p3_storm_by_time)
+    pattern = map(p3_all_precip_timestamps, p3_precip_by_time, p3_flow_by_time, p3_storm_by_time),
+    format = "file"
   ),
   tar_target(
     p3_flood_stage_hourly_gif,

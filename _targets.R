@@ -21,7 +21,8 @@ tar_option_set(packages = c('tidyverse',
                             'httr',
                             'fs',
                             'glue',
-                            'dataRetrieval'))
+                            'dataRetrieval',
+                            'ggimage'))
 
 # Phase target makefiles
 source("0_config.R")
