@@ -84,7 +84,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
       data = flow_now_coords,
       aes(x = x, xend = xend, y = y, yend = yend,
           color = flood_status,
-          alpha = after_stat(I(index) + 0.2),
+          alpha = after_stat(I(index) + 0.05),
           linewidth = after_stat(I((1 - index) * 2))),
       show.legend = FALSE
     ) +
@@ -126,17 +126,23 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                  color = config_vars$major_cities_text_col,
                  size = 3, nudge_y = 50000, family = font_legend) 
   
+  # transparency to storm image 
+  transparent <- function(img) {
+    magick::image_fx(img, expression = "0.8*a", channel = "alpha")
+  }
+  
   # Add storm path
   p <- p +
     geom_path(data = storm_now, aes(x = X, y = Y),
-              color = config_vars$storm_path_col, linewidth = 1, alpha = 0.6) +
+              color = config_vars$storm_path_col, linewidth = 0.8,
+              alpha = 0.25) +
     ggimage::geom_image(
       data = dplyr::filter(storm_now, DTG <= dtg),
       aes(x = X, y = Y),
       image = hurricane_symbol_path,
-      size = 0.03
+      image_fun = transparent,
+      size = 0.04
     )
-  
   
   # Final plot theme and save
   p <- p +
