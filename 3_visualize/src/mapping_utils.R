@@ -15,12 +15,14 @@
 #' @param peak_height Maximum height of flood lines (numeric).
 #' @param frame_dir Character path for saving PNGs.
 #' @param logo_path Charcter path for USGS logo.
+#' @param hurricane_symbol_path Charcter path for hurricane symbology.
 #' @return Character file path to PNG frame.
 hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                                         state_borders, state_inner_borders,
                                         major_cities, flood_stage_cols,
                                         percip_cols, config_vars, peak_height,
-                                        frame_dir, logo_path, state_outer_lines) {
+                                        frame_dir, logo_path, state_outer_lines,
+                                        hurricane_symbol_path) {
   
   font_legend <- config_vars$load_font
   font_add_google(font_legend)
@@ -29,21 +31,17 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
   
   # return NA if no streamgage data
   if (nrow(flow_now) == 0) {
-    return(NA_character_)
+    return(NULL)
   }
   
   global_max_duration <- max(flow_now$duration_above_flood_hr, na.rm = TRUE)
   
-  # Mask small values explicitly
-  precip_now <- precip_now |> 
-    mutate(precip_in = ifelse(precip_in < 1, NA, precip_in))
-  
   p <- ggplot() +
     geom_raster(data = precip_now, aes(x = x, y = y, fill = precip_in), alpha = 0.4) +
     geom_sf(data = state_inner_borders, color = "gray80",
-            fill = NA, linewidth = 0.2) +
+            fill = NA, linewidth = 0.25) +
     geom_sf(data = state_outer_lines, color = "gray70",
-            fill = NA, linewidth = 0.25) + 
+            fill = NA, linewidth = 0.3) + 
     scale_fill_stepsn(
       colors = scales::alpha(
         viridisLite::viridis(7, option = percip_cols, direction = -1), 0.6),
@@ -132,10 +130,12 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
   p <- p +
     geom_path(data = storm_now, aes(x = X, y = Y),
               color = config_vars$storm_path_col, linewidth = 1, alpha = 0.6) +
-    geom_sf(data = storm_now, color = config_vars$storm_path_col,
-            size = 1.5, alpha = 0.4) +
-    geom_sf(data = storm_now |> filter(DTG == dtg),
-            color = config_vars$storm_path_col, size = 1.5)
+    ggimage::geom_image(
+      data = dplyr::filter(storm_now, DTG <= dtg),
+      aes(x = X, y = Y),
+      image = hurricane_symbol_path,
+      size = 0.03
+    )
   
   
   # Final plot theme and save
@@ -191,7 +191,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
               hjust = 0, vjust = 1) +
     draw_plot(p + theme(legend.position = 'none',
                          plot.title = element_blank()),
-               x = (1-config_vars$plot_margin)*-1.7,
+               x = (1-config_vars$plot_margin)*-1.75,
                y = -0.01,
                height = 1.125,
                width = (1-config_vars$plot_margin)+3.3) + 
