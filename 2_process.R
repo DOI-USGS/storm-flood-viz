@@ -49,6 +49,7 @@ p2_targets <- list(
       out <- p2_uv_data_percentiles_df |>
         left_join(p1_usgs_flood_stage_gages, by = "site_no") |>
         left_join(p2_peak_data_max_df, by = c("site_no", "agency_cd")) |>
+        filter(lubridate::minute(dateTime) == 0, lubridate::second(dateTime) == 0) |>  # Keep full hours only
         select(
           site_no, dateTime, X_00060_00000, X_00060_00000_cd, X_00065_00000, X_00065_00000_cd, tz_cd,
           percentile, action.stage, flood.stage, moderate.flood.stage, major.flood.stage, 
