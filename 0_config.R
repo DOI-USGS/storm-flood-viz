@@ -76,7 +76,7 @@ p0_targets <- list(
       major_cities_col = 'gray60',
       major_cities_text_col = 'gray50',
       streamgage_col = "gray30",
-      storm_path_col = "red",
+      storm_path_col = "black",
       bg_col = "white",
       ocean_col = "#f8fcfc",
       load_font = 'Source Sans Pro',
