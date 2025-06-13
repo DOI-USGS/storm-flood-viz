@@ -56,7 +56,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
             fill = NA, linewidth = 0.3) + 
     scale_fill_stepsn(
       colors = scales::alpha(
-        viridisLite::viridis(7, option = percip_cols, direction = -1), 0.6),
+        viridisLite::viridis(7, option = precip_cols, direction = -1), 0.6),
       breaks = c(1, 2, 4, 6, 8, 10, 12),   
       limits = c(1, 14),                   
       labels = c("1", "2", "4", "6", "8", "10", "12+"),
