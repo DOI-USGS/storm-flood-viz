@@ -10,7 +10,7 @@
 #' @param state_outer_lines sf object of outer CONUS state lines.
 #' @param major_cities sf object with a NAME column.
 #' @param flood_stage_cols Named color vector for flood status ("Flood", "Moderate", etc).
-#' @param percip_cols viridisLite color scheme (e.g., "mako").
+#' @param precip_cols viridisLite color scheme (e.g., "mako").
 #' @param config_vars Named list of styling and theme options.
 #' @param peak_height Maximum height of flood lines (numeric).
 #' @param global_max_duration Numeric. The maximum `duration_above_flood_hr` across all time steps.
@@ -22,7 +22,7 @@
 hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                                         state_borders, state_inner_borders,
                                         major_cities, flood_stage_cols,
-                                        percip_cols, config_vars, peak_height,
+                                        precip_cols, config_vars, peak_height,
                                         frame_dir, logo_path, state_outer_lines,
                                         hurricane_symbol_path, global_max_duration,
                                         landfall_dtg) {
