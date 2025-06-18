@@ -1,6 +1,9 @@
-#source('2_process/src/data_utils.R')
+source('2_process/src/process_precip.R')
+source('2_process/src/process_states.R')
 
 p2_targets <- list(
+
+# process flood data -----------------------------------------------------
   # Load in uv data df
   tar_target(
     p2_uv_data_df,
@@ -46,6 +49,7 @@ p2_targets <- list(
       out <- p2_uv_data_percentiles_df |>
         left_join(p1_usgs_flood_stage_gages, by = "site_no") |>
         left_join(p2_peak_data_max_df, by = c("site_no", "agency_cd")) |>
+        filter(lubridate::minute(dateTime) == 0, lubridate::second(dateTime) == 0) |>  # Keep full hours only, since animation timestep is 1 hour
         select(
           site_no, dateTime, X_00060_00000, X_00060_00000_cd, X_00065_00000, X_00065_00000_cd, tz_cd,
           percentile, action.stage, flood.stage, moderate.flood.stage, major.flood.stage, 
@@ -53,5 +57,25 @@ p2_targets <- list(
         ) |>
         distinct()
     }
-  )
+  ),
+  
+# process precipitation data ----------------------------------------------
+  tar_target(p2_process_precip_rast,
+             get_precip_df(
+               tif_files = p1_precip_tifs,
+               proj = p0_proj,
+               precip_summ = "cumulative",
+               states = p1_conus_bbox_crop_sf)
+             
+  ),
+  tar_target(p2_state_inner_lines,
+             get_inner_lines(
+               in_sf = p1_conus_bbox_crop_sf
+             )
+             ),
+tar_target(p2_bbox_outer_lines,
+           get_outer_lines(
+             in_sf = p1_conus_bbox_crop_sf
+           )
+)
 )
