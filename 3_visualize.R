@@ -77,7 +77,7 @@ p3_targets <- list(
       config_vars = p0_viz_config_df,
       peak_height = 200000,
       global_max_duration = p3_global_max_flood_duration,
-      landfall_dtg = as.POSIXct("2024-09-27 03:00:00", tz = "UTC"), 
+      landfall_dtg = p0_landfall_time, 
       logo_path = '3_visualize/in/usgs_logo_black.png',
       hurricane_symbol_path = "3_visualize/in/hurricane_symbol.png",
       frame_dir = "3_visualize/out/flood_stage_frames" 

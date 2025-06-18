@@ -44,6 +44,12 @@ p0_targets <- list(
     p0_precip_end,
     paste0(p0_date_end, "T23")
     ),
+  # Set time for storm landfall to add countdown to landfall
+  # For Helene, this was noted from https://en.wikipedia.org/wiki/Hurricane_Helene 
+  tar_target(
+    p0_landfall_time,
+    as.POSIXct("2024-09-27 03:00:00", tz = "UTC")
+  ),
   tar_target(
     # Create a tibble to define color palette for flood stage
     p0_viz_fs_config_pal,
@@ -51,7 +57,7 @@ p0_targets <- list(
       "Not flooded" = "#D5D5D5",
       "Flood" = "#FFC76C",
       "Moderate" = "#FF726F",
-      "Major" = "#E38AFF"
+      "Major" = "#b00400"
       )
     ), 
   tar_target(
