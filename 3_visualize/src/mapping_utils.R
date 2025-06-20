@@ -47,7 +47,49 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
   if (nrow(flow_now) == 0) {
     return(NULL)
   }
+  
+  # Storm classification label 
+  # Safely get classification label only if DTG has a valid STORMTYPE
+  storm_match <- storm_now |>
+    filter(DTG == dtg, STORMTYPE %in% c("TS", "HU", "LO"))
+  
+  # Only proceed if a valid match exists
+  classification_label <- NULL
+  if (nrow(storm_match) > 0) {
+    storm_type_full <- case_when(
+      storm_match$STORMTYPE[1] == "TS" ~ "Tropical storm",
+      storm_match$STORMTYPE[1] == "HU" ~ "Hurricane",
+      storm_match$STORMTYPE[1] == "LO" ~ "Low pressure system"
+    )
+    classification_label <- paste0("Classification: ", storm_type_full)
+  }
+  
+  # Flood staus dynamic barplot 
+  flood_status_summary <- flow_now |>
+    filter(flood_status %in% c("Flood", "Moderate", "Major")) |>
+    count(flood_status) |>
+    mutate(
+      flood_status = factor(flood_status, levels = c("Flood", "Moderate", "Major"))) |>
+    arrange(flood_status)
 
+  flood_status_bar <- ggplot(flood_status_summary, aes(x = 1, y = n, fill = flood_status)) +
+    geom_col(width = 0.2, color = "white", linewidth = 0.2, alpha = 0.8) +
+    geom_text(
+      aes(label = n),
+      position = position_stack(vjust = 0.5),
+      size = 3, family = font_legend,
+      color = "white"
+    ) +
+    scale_fill_manual(values = flood_stage_cols, drop = FALSE) +
+    scale_color_manual(values = flood_stage_cols, guide = "none") +
+    coord_cartesian(clip = "off") +
+    labs(title = "Gages in \nflood status", x = NULL, y = NULL) +
+    theme_void(base_family = font_legend) +
+    theme(
+      plot.title = element_text(hjust = 0, size = config_vars$font_size, margin = margin(b = 6)),
+      legend.position = "none"
+    )
+  
   p <- ggplot() +
     geom_raster(data = precip_now, aes(x = x, y = y, fill = precip_in), alpha = 0.4) +
     geom_sf(data = state_inner_borders, color = "gray80",
@@ -66,7 +108,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
         title.theme = element_text(family = font_legend, size = config_vars$font_size),
         title.position = "top", title.vjust = 2,
         direction = "vertical", barwidth = unit(0.6, "cm"),
-        barheight = unit(8, "cm"), label.position = "right"
+        barheight = unit(5.5, "cm"), label.position = "right"
       )
     ) +
     theme(text = element_text(family = font_legend, size = config_vars$font_size))
@@ -92,7 +134,17 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
       yend = y + (duration_above_flood_hr / global_max_duration) * peak_height
     )
   
-  p <- p +
+  p <-  p + 
+    # add white layer behind peaks to have them pop more
+    ggforce::geom_link(
+      data = flow_now_coords,
+      aes(x = x, xend = xend, y = y, yend = yend,
+          linewidth = after_stat(I((1 - index) * 2))),
+      color = "white",
+      alpha = 0.9,
+      show.legend = FALSE
+    ) +
+    # Colored peak lines on top
     ggforce::geom_link(
       data = flow_now_coords,
       aes(x = x, xend = xend, y = y, yend = yend,
@@ -122,12 +174,13 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
           shape = rep(22, length(flood_stage_cols)),
           size = rep(6, length(flood_stage_cols)),
           fill = unname(flood_stage_cols),
+          alpha = 0.8,
           color = NA,
           stroke = rep(0.1, length(flood_stage_cols))
         ),
         label.theme = element_text(size = config_vars$font_size, family = font_legend),
         title.theme = element_text(size = config_vars$font_size, family = font_legend),
-        keyheight = unit(0.8, "cm")
+        keyheight = unit(0.7, "cm")
       )
     ) +
     theme(
@@ -139,15 +192,25 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                  color = config_vars$major_cities_text_col,
                  size = 3, nudge_y = 50000, family = font_legend) 
   
-  # Add storm path
+  # Filter storm points up to current DTG
+  past_storm_points <- dplyr::filter(storm_now, DTG <= dtg)
+  
+  # Get the latest point (this will be the only one with the icon)
+  latest_point <- dplyr::slice_tail(past_storm_points, n = 1)
+  
+  # Plot path and only the latest symbol
   p <- p +
-    geom_path(data = storm_now, aes(x = X, y = Y),
-              color = config_vars$storm_path_col, linewidth = 0.8) +
+    geom_path(
+      data = past_storm_points,
+      aes(x = X, y = Y),
+      color = config_vars$storm_path_col,
+      linewidth = 0.8
+    ) +
     ggimage::geom_image(
-      data = dplyr::filter(storm_now, DTG <= dtg),
+      data = latest_point,
       aes(x = X, y = Y),
       image = hurricane_symbol_path,
-      size = 0.04
+      size = 0.035
     )
   
   # Final plot theme and save
@@ -229,7 +292,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
         draw_label(
           landfall_label,
           x = config_vars$plot_margin + 0.008,
-          y = 1 - config_vars$plot_margin -0.11,
+          y = 1 - config_vars$plot_margin -0.099,
           size = 14,
           hjust = 0,
           vjust = 1,
@@ -238,20 +301,37 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
         ) + 
     draw_plot(legend_precip,
               x = (1-config_vars$plot_margin)*-0.04,
-              y = 0.14,
-              height = 0.42,
+              y = 0.44,
+              height = 0.05,
               width = 0.42-config_vars$plot_margin) +
     draw_plot(legend_flood,
               x = (1-config_vars$plot_margin)*-0.07,
-              y = 0.51,
+              y = 0.528,
               height = 0.42,
               width = 0.42-config_vars$plot_margin) + 
     draw_label("Atlantic Ocean",
                x = 0.83, y = config_vars$plot_margin + 0.32,
                fontfamily = font_legend,
                color = config_vars$major_cities_text_col,
-               size = 10)
+               size = 10) +
+    draw_plot(flood_status_bar,
+              x = 0.036,
+              y = 0.02,
+              width = 0.036,
+              height = 0.26)
   
+  if (!is.null(classification_label)) {
+    p <- p + draw_label(
+      classification_label,
+      x = config_vars$plot_margin + 0.008,
+      y = 1 - config_vars$plot_margin - 0.125,
+      size = 14,
+      hjust = 0,
+      vjust = 1,
+      fontfamily = font_legend,
+      color = "black"
+    )
+  }
   
   fs::dir_create(frame_dir)
   timestamp_str <- format(dtg, "%Y%m%dT%H%M")

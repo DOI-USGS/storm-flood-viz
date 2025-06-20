@@ -139,10 +139,10 @@ tar_target(
   # Read in flood stage df and perform some tidying
   tar_target(
     p1_usgs_flood_stage_gages,
-    clip_flood_stage_gages(
+    flood_stage_gages(
       flood_stage_file = p1_flood_stage_file,
-      storm_shape = p1_storm_path_buffered_sf,
-      proj = p0_proj
+      proj = p0_proj,
+      bbox = p1_conus_bbox_crop_sf
     )
   ),
   # Get sites chunked up for uv data download
