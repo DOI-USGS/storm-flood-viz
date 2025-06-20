@@ -245,7 +245,6 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
           plot.title = element_blank()) +
     guides(fill = "none")  # removes precip legend
   
-  
   legend_precip <- get_legend_non0(p_precip_legend)
   legend_flood <- get_legend_non0(p_flood_legend)
 
@@ -306,7 +305,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
               width = 0.42-config_vars$plot_margin) +
     draw_plot(legend_flood,
               x = (1-config_vars$plot_margin)*-0.07,
-              y = 0.528,
+              y = 0.522,
               height = 0.42,
               width = 0.42-config_vars$plot_margin) + 
     draw_label("Atlantic Ocean",
@@ -324,7 +323,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
     p <- p + draw_label(
       classification_label,
       x = config_vars$plot_margin + 0.008,
-      y = 1 - config_vars$plot_margin - 0.125,
+      y = 1 - config_vars$plot_margin - 0.1285,
       size = 14,
       hjust = 0,
       vjust = 1,
@@ -343,7 +342,6 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
   
   return(frame_path)
 }
-
 
 #' Get legend (and avoid returning zeroGrob objects)
 #'
