@@ -70,10 +70,17 @@ tar_target(
       sf::st_transform(crs = p0_proj) |>
       filter(STORMNAME %in% dplyr::pull(p0_storm_info, storm_name)) |>
       mutate(
-        DTG = as.POSIXct(as.character(DTG), format = "%Y%m%d%H", tz = "UTC")
-      )
-    
-    # Now bind coordinates 
+        DTG = as.POSIXct(as.character(DTG), format = "%Y%m%d%H", tz = "UTC"),
+        storm_type_full = dplyr::case_when(
+          STORMTYPE == "TS" ~ "Tropical storm",
+          STORMTYPE == "HU" ~ "Hurricane",
+          STORMTYPE == "LO" ~ "Low pressure system",
+          TRUE ~ NA_character_  # Keep unknowns explicit
+        )
+      ) |> 
+      tidyr::fill(storm_type_full, .direction = "down")
+
+    # now bind coordinates
     bind_cols(
       sf_data,
       sf::st_coordinates(sf_data) |> tibble::as_tibble() |> 

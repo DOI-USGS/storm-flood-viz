@@ -49,19 +49,16 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
   }
   
   # Storm classification label 
-  # Safely get classification label only if DTG has a valid STORMTYPE
+  # latest known classification (up to the current frame's dtg) is shown.
   storm_match <- storm_now |>
-    filter(DTG == dtg, STORMTYPE %in% c("TS", "HU", "LO"))
+    filter(DTG <= dtg, !is.na(storm_type_full)) |>
+    slice_tail(n = 1)
   
+
   # Only proceed if a valid match exists
   classification_label <- NULL
   if (nrow(storm_match) > 0) {
-    storm_type_full <- case_when(
-      storm_match$STORMTYPE[1] == "TS" ~ "Tropical storm",
-      storm_match$STORMTYPE[1] == "HU" ~ "Hurricane",
-      storm_match$STORMTYPE[1] == "LO" ~ "Low pressure system"
-    )
-    classification_label <- paste0("Classification: ", storm_type_full)
+    classification_label <- paste0("Classification: ", storm_match$storm_type_full[1])
   }
   
   # Flood staus dynamic barplot 
