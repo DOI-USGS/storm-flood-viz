@@ -60,6 +60,29 @@ p3_targets <- list(
         max(na.rm = TRUE)
     }
   ),
+  # progress bar targets
+  tar_target(
+    p3_min_timestamp,
+    p3_all_precip_timestamps[[1]]
+  ),
+  tar_target(
+    p3_precip_duration,
+    as.double(p3_all_precip_timestamps[[length(p3_all_precip_timestamps)]] -
+                p3_min_timestamp, 
+              units = "hours")
+  ),
+  tar_target(
+    p3_progress_fract,
+    {
+      hours_since_start <- as.double(p3_all_precip_timestamps - 
+                                       p3_min_timestamp, 
+                                     units = "hours")
+      progress_fraction <- hours_since_start / p3_precip_duration
+      progress_fraction
+    },
+    pattern = map(p3_all_precip_timestamps),
+    iteration = "list"
+  ),
   # Build flood stage animation
   tar_target(
     p3_flood_stage_frames,
@@ -68,6 +91,7 @@ p3_targets <- list(
       precip_now = p3_precip_by_time,
       flow_now = p3_flow_by_time,
       storm_now = p3_storm_by_time,
+      progress_fraction = p3_progress_fract,
       state_borders = p1_conus_bbox_crop_sf,
       state_inner_borders = p2_state_inner_lines,
       state_outer_lines = p2_bbox_outer_lines,
@@ -82,7 +106,8 @@ p3_targets <- list(
       hurricane_symbol_path = "3_visualize/in/hurricane_symbol.png",
       frame_dir = "3_visualize/out/flood_stage_frames" 
     ),
-    pattern = map(p3_all_precip_timestamps, p3_precip_by_time, p3_flow_by_time, p3_storm_by_time),
+    pattern = map(p3_all_precip_timestamps, p3_precip_by_time, p3_flow_by_time,
+                  p3_storm_by_time, p3_progress_fract),
     format = "file"
   ),
   tar_target(

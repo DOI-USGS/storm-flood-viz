@@ -18,6 +18,7 @@
 #' @param logo_path Charcter path for USGS logo.
 #' @param hurricane_symbol_path Charcter path for hurricane symbology.
 #' @param landfall_dtg POSIXct. The expected date-time of hurricane landfall, used to calculate and display a countdown label.
+#' @param progress_fraction Numeric value between 0 and 1 indicating progress through the animation.
 #' @return Character file path to PNG frame.
 hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                                         state_borders, state_inner_borders,
@@ -25,7 +26,8 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                                         precip_cols, config_vars, peak_height,
                                         frame_dir, logo_path, state_outer_lines,
                                         hurricane_symbol_path, global_max_duration,
-                                        landfall_dtg) {
+                                        landfall_dtg, progress_fraction) {
+  
   # Font configuration
   font_legend <- config_vars$load_font
   font_add_google(font_legend)
@@ -54,7 +56,6 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
     filter(DTG <= dtg, !is.na(storm_type_full)) |>
     slice_tail(n = 1)
   
-
   # Only proceed if a valid match exists
   classification_label <- NULL
   if (nrow(storm_match) > 0) {
@@ -70,12 +71,12 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
     arrange(flood_status)
 
   flood_status_bar <- ggplot(flood_status_summary, aes(x = 1, y = n, fill = flood_status)) +
-    geom_col(width = 0.2, color = "white", linewidth = 0.2, alpha = 0.8) +
+    geom_col(width = 0.2, color = config_vars$bg_col, linewidth = 0.2, alpha = 0.8) +
     geom_text(
       aes(label = n),
       position = position_stack(vjust = 0.5),
       size = 3, family = font_legend,
-      color = "white"
+      color = config_vars$bg_col
     ) +
     scale_fill_manual(values = flood_stage_cols, drop = FALSE) +
     scale_color_manual(values = flood_stage_cols, guide = "none") +
@@ -89,9 +90,9 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
   
   p <- ggplot() +
     geom_raster(data = precip_now, aes(x = x, y = y, fill = precip_in), alpha = 0.4) +
-    geom_sf(data = state_inner_borders, color = "gray80",
+    geom_sf(data = state_inner_borders, color = config_vars$state_inner_borders_col,
             fill = NA, linewidth = 0.25) +
-    geom_sf(data = state_outer_lines, color = "gray70",
+    geom_sf(data = state_outer_lines, color = config_vars$state_outer_lines_col,
             fill = NA, linewidth = 0.3) + 
     scale_fill_stepsn(
       colors = scales::alpha(
@@ -137,7 +138,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
       data = flow_now_coords,
       aes(x = x, xend = xend, y = y, yend = yend,
           linewidth = after_stat(I((1 - index) * 2))),
-      color = "white",
+      color = config_vars$bg_col,
       alpha = 0.9,
       show.legend = FALSE
     ) +
@@ -249,6 +250,18 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
     magick::image_resize('x100') |> 
     magick::image_colorize(100, "black")
   
+  # Progress bar plot
+  progress_bar <- ggplot() +
+    geom_rect(aes(xmin = 0, xmax = 1, ymin = 0, ymax = 1),
+              fill = config_vars$progress_bar_bg_col, color = NA ) +
+    geom_rect(aes(xmin = 0, xmax = progress_fraction, ymin = 0, ymax = 1),
+              fill = config_vars$progress_bar_col, color = NA) +
+    theme_void() +
+    theme(
+      plot.margin = margin(0, 0, 0, 0),
+      panel.background = element_rect(fill = NA, color = NA)
+    )
+  
   canvas <- grid::rectGrob(
     x = 0, y = 0, 
     width = 16, height = 9,
@@ -314,7 +327,12 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
               x = 0.036,
               y = 0.02,
               width = 0.036,
-              height = 0.26)
+              height = 0.26) +
+    draw_plot(progress_bar,
+              x = -0.05,
+              y = -0.001,
+              width = 1.1,
+              height = 0.015)
   
   if (!is.null(classification_label)) {
     p <- p + draw_label(
@@ -329,6 +347,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
     )
   }
   
+
   fs::dir_create(frame_dir)
   timestamp_str <- format(dtg, "%Y%m%dT%H%M")
   frame_path <- file.path(frame_dir, paste0("frame_", timestamp_str, ".png"))
