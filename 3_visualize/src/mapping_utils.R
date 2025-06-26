@@ -185,7 +185,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
       text = element_text(family = font_legend)
     ) +
     geom_sf(data = major_cities, shape = 23, fill = NA,
-            color = config_vars$major_cities_col, size = 2.5, stroke = 0.3) +
+            color = config_vars$major_cities_col, size = 1.75, stroke = 0.3) +
     geom_sf_text(data = major_cities, aes(label = NAME),
                  color = config_vars$major_cities_text_col,
                  size = 3, nudge_y = 50000, family = font_legend) 
