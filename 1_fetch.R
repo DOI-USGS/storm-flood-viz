@@ -70,10 +70,17 @@ tar_target(
       sf::st_transform(crs = p0_proj) |>
       filter(STORMNAME %in% dplyr::pull(p0_storm_info, storm_name)) |>
       mutate(
-        DTG = as.POSIXct(as.character(DTG), format = "%Y%m%d%H", tz = "UTC")
-      )
-    
-    # Now bind coordinates 
+        DTG = as.POSIXct(as.character(DTG), format = "%Y%m%d%H", tz = "UTC"),
+        storm_type_full = dplyr::case_when(
+          STORMTYPE == "TS" ~ "Tropical storm",
+          STORMTYPE == "HU" ~ "Hurricane",
+          STORMTYPE == "LO" ~ "Low pressure system",
+          TRUE ~ NA_character_  # Keep unknowns explicit
+        )
+      ) |> 
+      tidyr::fill(storm_type_full, .direction = "down")
+
+    # now bind coordinates
     bind_cols(
       sf_data,
       sf::st_coordinates(sf_data) |> tibble::as_tibble() |> 
@@ -139,10 +146,10 @@ tar_target(
   # Read in flood stage df and perform some tidying
   tar_target(
     p1_usgs_flood_stage_gages,
-    clip_flood_stage_gages(
+    flood_stage_gages(
       flood_stage_file = p1_flood_stage_file,
-      storm_shape = p1_storm_path_buffered_sf,
-      proj = p0_proj
+      proj = p0_proj,
+      bbox = p1_conus_bbox_crop_sf
     )
   ),
   # Get sites chunked up for uv data download
