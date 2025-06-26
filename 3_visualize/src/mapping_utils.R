@@ -117,7 +117,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
       data = flow_now |> filter(!is_flooded),
       aes(geometry = geometry),
       shape = 21, fill = flood_stage_cols["Not flooded"], size = 1,
-      stroke = 0.1, color = config_vars$streamgage_col, alpha = 0.8,
+      stroke = 0.1, color = config_vars$bg_col, alpha = 0.8,
       show.legend = FALSE
     )
   
