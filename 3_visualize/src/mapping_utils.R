@@ -40,7 +40,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
   # only show label until 2 hours after landfall
   show_landfall_label <- time_to_landfall > -2 & time_to_landfall <= 72  
   landfall_label <- if (show_landfall_label && time_to_landfall > 0) {
-    paste0("Landfall in ", round(as.numeric(time_to_landfall), 1), " hours")
+    paste0(round(as.numeric(time_to_landfall), 1), " hours to landfall")
   } else {
     NULL
   }
@@ -59,7 +59,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
   # Only proceed if a valid match exists
   classification_label <- NULL
   if (nrow(storm_match) > 0) {
-    classification_label <- paste0("Classification: ", storm_match$storm_type_full[1])
+    classification_label <- paste0(storm_match$storm_type_full[1])
   }
   
   # Flood staus dynamic barplot 
@@ -287,9 +287,12 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                width = 0.125,
                hjust = 0, vjust = 0, 
                halign = 0, valign = 0) +
-    draw_label(paste0(
-      "Hurricane Helene", "\n",
-      format(dtg, "%Y-%m-%d %H:%M:%S")),
+    draw_label("Atlantic Ocean",
+               x = 0.83, y = config_vars$plot_margin + 0.32,
+               fontfamily = font_legend,
+               color = config_vars$major_cities_text_col,
+               size = 10) + 
+    draw_label("Hurricane Helene",
       x = config_vars$plot_margin, y = 1-config_vars$plot_margin*1.2,
                size = 24,
                hjust = 0,
@@ -298,36 +301,40 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                fontface = "bold",
                color = "black",
                lineheight = 1) +
-        draw_label(
-          landfall_label,
-          x = config_vars$plot_margin + 0.008,
-          y = 1 - config_vars$plot_margin -0.099,
-          size = 14,
-          hjust = 0,
-          vjust = 1,
-          fontfamily = font_legend,
-          color = "black"
-        ) + 
-    draw_plot(legend_precip,
-              x = (1-config_vars$plot_margin)*-0.04,
-              y = 0.44,
-              height = 0.05,
-              width = 0.42-config_vars$plot_margin) +
-    draw_plot(legend_flood,
-              x = (1-config_vars$plot_margin)*-0.07,
-              y = 0.522,
-              height = 0.42,
-              width = 0.42-config_vars$plot_margin) + 
-    draw_label("Atlantic Ocean",
-               x = 0.83, y = config_vars$plot_margin + 0.32,
-               fontfamily = font_legend,
-               color = config_vars$major_cities_text_col,
-               size = 10) +
-    draw_plot(flood_status_bar,
-              x = 0.036,
-              y = 0.02,
-              width = 0.036,
-              height = 0.26) +
+      draw_label(paste0(format(dtg, "%b. %d, %Y %H:%M")),
+        x = config_vars$plot_margin + 0.002, y = 1-config_vars$plot_margin-0.05,
+        size = 14,
+        hjust = 0,
+        vjust = 1,
+        fontfamily = font_legend,
+        fontface = "bold",
+        color = "black",
+        lineheight = 1) + 
+      draw_label(
+        landfall_label,
+        x = config_vars$plot_margin + 0.215, 
+        y = 1-config_vars$plot_margin-0.05,
+        size = 14,
+        hjust = 0,
+        vjust = 1,
+        fontfamily = font_legend,
+        color = "black",
+        lineheight = 1) + 
+    # draw_plot(legend_precip,
+    #           x = (1-config_vars$plot_margin)*-0.04,
+    #           y = 0.44,
+    #           height = 0.05,
+    #           width = 0.42-config_vars$plot_margin) +
+    # draw_plot(legend_flood,
+    #           x = (1-config_vars$plot_margin)*-0.07,
+    #           y = 0.522,
+    #           height = 0.42,
+    #           width = 0.42-config_vars$plot_margin) + 
+    # draw_plot(flood_status_bar,
+    #           x = 0.036,
+    #           y = 0.02,
+    #           width = 0.036,
+    #           height = 0.26) +
     draw_plot(progress_bar,
               x = -0.05,
               y = -0.001,
@@ -337,17 +344,17 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
   if (!is.null(classification_label)) {
     p <- p + draw_label(
       classification_label,
-      x = config_vars$plot_margin + 0.008,
-      y = 1 - config_vars$plot_margin - 0.1285,
+      x = config_vars$plot_margin + 0.002,
+      y = 1-config_vars$plot_margin - 0.08,
       size = 14,
       hjust = 0,
       vjust = 1,
       fontfamily = font_legend,
-      color = "black"
+      color = "black",
+      lineheight = 1
     )
   }
   
-
   fs::dir_create(frame_dir)
   timestamp_str <- format(dtg, "%Y%m%dT%H%M")
   frame_path <- file.path(frame_dir, paste0("frame_", timestamp_str, ".png"))
