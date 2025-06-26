@@ -111,14 +111,22 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
     ) +
     theme(text = element_text(family = font_legend, size = config_vars$font_size))
   
-  # Plot non-flooded gages
-  p <- p +
+  # Plot all non and  flooded gages
+  p <- p + ggnewscale::new_scale_fill() +
     geom_sf(
-      data = flow_now |> filter(!is_flooded),
-      aes(geometry = geometry),
-      shape = 21, fill = flood_stage_cols["Not flooded"], size = 1,
-      stroke = 0.1, color = config_vars$bg_col, alpha = 0.8,
-      show.legend = FALSE
+      data = flow_now |> mutate(flood_status = factor(flood_status, levels = names(flood_stage_cols))) |>
+        filter(!is.na(flood_status)),  # Ensure fill values are valid
+      aes(geometry = geometry, fill = flood_status),
+      shape = 21, size = 0.8,
+      stroke = 0.1,
+      color = config_vars$bg_col,
+      alpha = 0.8,
+      show.legend = TRUE  # set to FALSE if you don’t want legend
+    ) +
+    scale_fill_manual(
+      values = flood_stage_cols,
+      drop = FALSE,
+      name = "Flood status"
     )
   
   # Peak style lines for flooded sites
@@ -151,15 +159,15 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
           linewidth = after_stat(I((1 - index) * 2))),
       show.legend = FALSE
     ) +
-    # Dummy points for legend
-    geom_point(
-      data = data.frame(flood_status = factor(names(flood_stage_cols),
-                                              levels = names(flood_stage_cols)),
-                        x = NA_real_, y = NA_real_),
-      aes(x = x, y = y, color = flood_status),
-      shape = 22, size = 5, stroke = 0.2, fill = flood_stage_cols,
-      show.legend = TRUE, na.rm = TRUE
-    ) +
+    # # Dummy points for legend
+    # geom_point(
+    #   data = data.frame(flood_status = factor(names(flood_stage_cols),
+    #                                           levels = names(flood_stage_cols)),
+    #                     x = NA_real_, y = NA_real_),
+    #   aes(x = x, y = y, color = flood_status),
+    #   shape = 22, size = 5, stroke = 0.2, fill = flood_stage_cols,
+    #   show.legend = TRUE, na.rm = TRUE
+    # ) +
     scale_color_manual(
       name = "Peak flood stage",
       values = flood_stage_cols,
