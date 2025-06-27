@@ -104,6 +104,7 @@ p3_targets <- list(
       landfall_dtg = p0_landfall_time, 
       logo_path = '3_visualize/in/usgs_logo_black.png',
       hurricane_symbol_path = "3_visualize/in/hurricane_symbol.png",
+      flood_stage_leg_path = "3_visualize/in/custom_flood_stage_leg.png", 
       frame_dir = "3_visualize/out/flood_stage_frames" 
     ),
     pattern = map(p3_all_precip_timestamps, p3_precip_by_time, p3_flow_by_time,
