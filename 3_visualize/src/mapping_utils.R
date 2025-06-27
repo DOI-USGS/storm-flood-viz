@@ -467,7 +467,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                color = "black",
                lineheight = 1) + 
     draw_plot(flood_status_bar,
-              x = 0.22,
+              x = 0.155,
               y = 0.048,
               width = 0.2,
               height = 0.055)
