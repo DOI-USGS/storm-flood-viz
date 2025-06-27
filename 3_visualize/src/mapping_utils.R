@@ -321,7 +321,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                          plot.title = element_blank()),
               # shifting plot for focus on florida/south atlantic region
               # will need to be adjusted if storm is focused elsewhere
-               x = (1-config_vars$plot_margin)*-1.75,
+               x = (1-config_vars$plot_margin)*-1.7,
                y = -0.01,
                height = 1.125,
                width = (1-config_vars$plot_margin)+3.3) + 
