@@ -20,6 +20,7 @@
 #' @param landfall_dtg POSIXct. The expected date-time of hurricane landfall, used to calculate and display a countdown label.
 #' @param progress_fraction Numeric value between 0 and 1 indicating progress through the animation.
 #' @param flood_stage_leg_path Charcter path for custom flood stage height explainer legend.
+#' @param precip_grayscale Logical. If TRUE, use a grayscale color palette for precipitation; if FALSE, use the associated viridis palette.
 #' @return Character file path to PNG frame.
 hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                                         state_borders, state_inner_borders,
@@ -28,7 +29,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                                         frame_dir, logo_path, state_outer_lines,
                                         hurricane_symbol_path, global_max_duration,
                                         landfall_dtg, progress_fraction,
-                                        flood_stage_leg_path) {
+                                        flood_stage_leg_path, precip_grayscale) {
   
   # Font configuration
   font_legend <- config_vars$load_font
@@ -103,36 +104,64 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
     coord_cartesian(clip = "off") +
     theme_void(base_family = config_vars$font_size) +
     theme(text = element_text(size = config_vars$font_size))
+  
+  if (precip_grayscale) {
+    # Use grayscale palette
+    precip_fill_scale <- scale_fill_stepsn(
+      colors = scales::alpha(
+        grey.colors(7, start = 0.9, end = 0), 0.5
+      ),
+      breaks = c(1, 2, 4, 6, 8, 10, 12),
+      limits = c(1, 14),
+      labels = c("1", "2", "4", "6", "8", "10", "12+"),
+      name = NULL,
+      na.value = scales::alpha("white", 0),
+      guide = guide_coloursteps(
+        title.theme = element_text(family = font_legend, hjust = 0),
+        title.position = "left",
+        title.hjust = 0,
+        title.vjust = 0.5,
+        direction = "horizontal",
+        barwidth = unit(5, "cm"),
+        barheight = unit(0.3, "cm"),
+        label.position = "bottom",
+        label.theme = element_blank()
+      )
+    )
+  } else {
+    # Use viridis palette
+    precip_fill_scale <- scale_fill_stepsn(
+      colors = scales::alpha(
+        viridisLite::viridis(7, option = precip_cols, direction = -1), 0.6
+      ),
+      breaks = c(1, 2, 4, 6, 8, 10, 12),
+      limits = c(1, 14),
+      labels = c("1", "2", "4", "6", "8", "10", "12+"),
+      name = NULL,
+      na.value = scales::alpha("white", 0),
+      guide = guide_coloursteps(
+        title.theme = element_text(family = font_legend, hjust = 0),
+        title.position = "left",
+        title.hjust = 0,
+        title.vjust = 0.5,
+        direction = "horizontal",
+        barwidth = unit(5, "cm"),
+        barheight = unit(0.3, "cm"),
+        label.position = "bottom",
+        label.theme = element_blank()
+      )
+    )
+  }
 
   p <- ggplot() +
     geom_raster(data = precip_now, aes(x = x, y = y, fill = precip_in), alpha = 0.4) +
     geom_sf(data = state_inner_borders, color = config_vars$state_inner_borders_col,
             fill = NA, linewidth = 0.25) +
     geom_sf(data = state_outer_lines, color = config_vars$state_outer_lines_col,
-            fill = NA, linewidth = 0.3) + 
-    scale_fill_stepsn(
-      colors = scales::alpha(
-        viridisLite::viridis(7, option = precip_cols, direction = -1), 0.6),
-      breaks = c(1, 2, 4, 6, 8, 10, 12),   
-      limits = c(1, 14),                   
-      labels = c("1", "2", "4", "6", "8", "10", "12+"),
-      name = NULL,
-      na.value = scales::alpha("white", 0),
-      guide = guide_coloursteps(
-        title.theme = element_text(family = font_legend,
-                                   hjust = 0),
-        title.position = "left", 
-        title.hjust = 0, 
-        title.vjust = 0.5,
-        direction = "horizontal",
-        barwidth = unit(5, "cm"),
-        barheight = unit(0.3, "cm"), 
-        label.position = "bottom",
-        label.theme = element_blank()
-      )
-    ) +
+            fill = NA, linewidth = 0.3) +
     theme(text = element_text(family = font_legend),
-          legend.spacing.x = unit(0, "cm"))
+          legend.spacing.x = unit(0, "cm")) +
+    precip_fill_scale
   
   # Plot all non andflooded gages
   p <- p + ggnewscale::new_scale_fill() +

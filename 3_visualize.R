@@ -97,6 +97,7 @@ p3_targets <- list(
       state_outer_lines = p2_bbox_outer_lines,
       major_cities = p1_major_cities_sf,
       flood_stage_cols = p0_viz_fs_config_pal,
+      precip_grayscale = TRUE,
       precip_cols = p0_viz_precip_config_pal,
       config_vars = p0_viz_config_df,
       peak_height = 200000,
