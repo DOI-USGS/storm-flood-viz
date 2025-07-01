@@ -170,9 +170,9 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
         filter(!is.na(flood_status)),  
       aes(geometry = geometry, fill = flood_status),
       shape = 21, size = 0.8,
-      stroke = 0.1,
+      stroke = 0.2,
       color = config_vars$bg_col,
-      alpha = 0.8,
+      alpha = 0.7,
       show.legend = FALSE  
     ) +
     scale_fill_manual(
