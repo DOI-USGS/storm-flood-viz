@@ -151,7 +151,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
       name = NULL,
       na.value = scales::alpha("white", 0),
       guide = guide_colorbar(
-        tticks.colour = NA,
+        ticks.colour = NA,
         title.theme = element_text(family = font_legend, hjust = 0),
         title.position = "left",
         title.hjust = 0,
