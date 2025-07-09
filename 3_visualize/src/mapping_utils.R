@@ -123,7 +123,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
     # Use grayscale palette
     precip_fill_scale <- scale_fill_gradientn(
       colors = scales::alpha(
-        grey.colors(7, start = 0.9, end = 0.1), 0.65
+        grey.colors(10, start = 0.95, end = 0.2), 0.65
       ),
       limits = c(1, global_max_precip),
       name = NULL,
@@ -147,7 +147,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
       colors = scales::alpha(
         viridisLite::viridis(256, option = precip_cols, direction = -1), 0.6
       ),
-      limits = c(1, 14),
+      limits = c(1, global_max_precip),
       name = NULL,
       na.value = scales::alpha("white", 0),
       guide = guide_colorbar(
