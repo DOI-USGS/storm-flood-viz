@@ -21,6 +21,7 @@
 #' @param progress_fraction Numeric value between 0 and 1 indicating progress through the animation.
 #' @param flood_stage_leg_path Charcter path for custom flood stage height explainer legend.
 #' @param precip_grayscale Logical. If TRUE, use a grayscale color palette for precipitation; if FALSE, use the associated viridis palette.
+#' @param global_max_precip Numeric value indicating the global max precipitation (in) value to set as precip legend limit
 #' @return Character file path to PNG frame.
 hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                                         state_borders, state_inner_borders,
@@ -29,7 +30,8 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                                         frame_dir, logo_path, state_outer_lines,
                                         hurricane_symbol_path, global_max_duration,
                                         landfall_dtg, progress_fraction,
-                                        flood_stage_leg_path, precip_grayscale) {
+                                        flood_stage_leg_path, precip_grayscale,
+                                        global_max_precip) {
   
   # Font configuration
   font_legend <- config_vars$load_font
@@ -122,7 +124,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
       colors = scales::alpha(
         grey.colors(7, start = 0.9, end = 0.1), 0.65
       ),
-      limits = c(1, 14),
+      limits = c(1, global_max_precip),
       name = NULL,
       na.value = scales::alpha("white", 0),
       guide = guide_colorbar(
@@ -442,7 +444,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                fontfamily = font_legend,
                color = "black",
                lineheight = 1) +
-    draw_label("12",
+    draw_label(paste(global_max_precip),
                x = config_vars$plot_margin + 0.428,
                y = 1-config_vars$plot_margin - 0.716,
                size = 12,
