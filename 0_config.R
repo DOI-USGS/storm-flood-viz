@@ -54,10 +54,10 @@ p0_targets <- list(
     # Create a tibble to define color palette for flood stage
     p0_viz_fs_config_pal,
     c(
-      "Not flooded" = "#c0c0c0",
-      "Flood" = "#FFC76C",
-      "Moderate" = "#FF726F",
-      "Major" = "#b00400"
+      "Not flooded" = "#d3d3d3",
+      "Flood" = "#f4b183",
+      "Moderate" = "#d55a60",
+      "Major" = "#934141"
       )
     ), 
   tar_target(
