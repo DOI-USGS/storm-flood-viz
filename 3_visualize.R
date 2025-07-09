@@ -97,6 +97,7 @@ p3_targets <- list(
       global_max_precip = p3_global_max_precip_in,
       flow_now = p3_flow_by_time,
       storm_now = p3_storm_by_time,
+      storm_info = p0_storm_info,
       progress_fraction = p3_progress_fract,
       state_borders = p1_conus_bbox_crop_sf,
       state_inner_borders = p2_state_inner_lines,

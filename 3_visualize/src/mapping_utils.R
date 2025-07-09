@@ -21,7 +21,8 @@
 #' @param progress_fraction Numeric value between 0 and 1 indicating progress through the animation.
 #' @param flood_stage_leg_path Charcter path for custom flood stage height explainer legend.
 #' @param precip_grayscale Logical. If TRUE, use a grayscale color palette for precipitation; if FALSE, use the associated viridis palette.
-#' @param global_max_precip Numeric value indicating the global max precipitation (in) value to set as precip legend limit
+#' @param global_max_precip Numeric value indicating the global max precipitation (in) value to set as precip legend limit.
+#' @param storm_info tibble of storm information including storm_name, storm_code, and storm_best_track_url from NOAA.
 #' @return Character file path to PNG frame.
 hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                                         state_borders, state_inner_borders,
@@ -31,7 +32,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                                         hurricane_symbol_path, global_max_duration,
                                         landfall_dtg, progress_fraction,
                                         flood_stage_leg_path, precip_grayscale,
-                                        global_max_precip) {
+                                        global_max_precip, storm_info) {
   
   # Font configuration
   font_legend <- config_vars$load_font
@@ -378,7 +379,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                fontfamily = font_legend,
                color = config_vars$major_cities_text_col,
                size = 10) + 
-    draw_label("Hurricane Helene",
+    draw_label(paste("Hurricane", stringr::str_to_sentence(storm_info$storm_name)),
       x = config_vars$plot_margin, y = 1-config_vars$plot_margin*1.2,
                size = 31,
                hjust = 0,
