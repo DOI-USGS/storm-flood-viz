@@ -69,37 +69,48 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
   flood_status_summary <- flow_now |>
     filter(flood_status %in% c("Flood", "Moderate", "Major")) |>
     count(flood_status) |>
+    mutate(flood_status = factor(flood_status, levels = c("Flood", "Moderate", "Major"))) |>
+    complete(flood_status, fill = list(n = 0)) |>  # fill missing flood_status with 0 so the bars don't shift vertically
     mutate(
-      flood_status = factor(flood_status, levels = c("Flood", "Moderate", "Major")),
       label_right = paste(n, "gages"),
       label_left = case_when(
         flood_status %in% c("Moderate", "Major") ~ paste(flood_status, "flood"),
-        TRUE ~ flood_status
+        TRUE ~ as.character(flood_status)
       )
     )
   
+  max_flooded_gages <- flow_now |>
+    filter(flood_status %in% c("Flood", "Moderate", "Major")) |>
+    count(flood_status) |>
+    summarise(max_n = max(n)) |>
+    pull(max_n)
+  
   # Build horizontal barplot
-  flood_status_bar <- ggplot(flood_status_summary, aes(y = flood_status, x = n, fill = flood_status)) +
+  flood_status_bar <- ggplot(flood_status_summary,
+                             aes(y = flood_status, 
+                                 x = n,
+                                 fill = flood_status)) +
     geom_col(width = 0.35, show.legend = FALSE, color = NA, alpha = 0.85) +
     
     # number of gages to the right of bar
     geom_text(
       aes(label = label_right),
       hjust = 0,  
-      x = flood_status_summary$n + max(flood_status_summary$n) * 0.03,
-      family = font_legend, fontface = "bold", size = 4,
+      x = flood_status_summary$n + max_flooded_gages * 0.03,
+      family = font_legend, size = 4,
       color = flood_stage_cols[as.character(flood_status_summary$flood_status)]
     ) +
     # flood status to the left of bar
     geom_text(
       aes(label = label_left),
       hjust = 1, 
-      x = -max(flood_status_summary$n) * 0.03,
+      x = -max_flooded_gages * 0.03,
       family = font_legend, fontface = "bold", size = 4,
       color = flood_stage_cols[as.character(flood_status_summary$flood_status)]
     ) +
     scale_fill_manual(values = flood_stage_cols, drop = FALSE) +
-    scale_x_continuous(expand = expansion(mult = c(0.1, 0.15))) +
+    scale_x_continuous(limits = c(0, max_flooded_gages * 1.15),
+                       expand = c(0, 0)) +
     scale_y_discrete(expand = expansion(add = 0.2)) +
     coord_cartesian(clip = "off") +
     theme_void(base_family = config_vars$font_size) +
@@ -107,16 +118,15 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
   
   if (precip_grayscale) {
     # Use grayscale palette
-    precip_fill_scale <- scale_fill_stepsn(
+    precip_fill_scale <- scale_fill_gradientn(
       colors = scales::alpha(
-        grey.colors(7, start = 0.9, end = 0), 0.5
+        grey.colors(7, start = 0.9, end = 0.1), 0.65
       ),
-      breaks = c(1, 2, 4, 6, 8, 10, 12),
       limits = c(1, 14),
-      labels = c("1", "2", "4", "6", "8", "10", "12+"),
       name = NULL,
       na.value = scales::alpha("white", 0),
-      guide = guide_coloursteps(
+      guide = guide_colorbar(
+        ticks.colour = NA,
         title.theme = element_text(family = font_legend, hjust = 0),
         title.position = "left",
         title.hjust = 0,
@@ -130,16 +140,15 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
     )
   } else {
     # Use viridis palette
-    precip_fill_scale <- scale_fill_stepsn(
+    precip_fill_scale <- scale_fill_gradientn(
       colors = scales::alpha(
-        viridisLite::viridis(7, option = precip_cols, direction = -1), 0.6
+        viridisLite::viridis(256, option = precip_cols, direction = -1), 0.6
       ),
-      breaks = c(1, 2, 4, 6, 8, 10, 12),
       limits = c(1, 14),
-      labels = c("1", "2", "4", "6", "8", "10", "12+"),
       name = NULL,
       na.value = scales::alpha("white", 0),
-      guide = guide_coloursteps(
+      guide = guide_colorbar(
+        tticks.colour = NA,
         title.theme = element_text(family = font_legend, hjust = 0),
         title.position = "left",
         title.hjust = 0,
@@ -166,7 +175,9 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
   # Plot all non andflooded gages
   p <- p + ggnewscale::new_scale_fill() +
     geom_sf(
-      data = flow_now |> mutate(flood_status = factor(flood_status, levels = names(flood_stage_cols))) |>
+      data = flow_now |> mutate(
+        flood_status = factor(flood_status,
+                              levels = names(flood_stage_cols))) |>
         filter(!is.na(flood_status)),  
       aes(geometry = geometry, fill = flood_status),
       shape = 21, size = 0.8,
@@ -367,7 +378,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                size = 10) + 
     draw_label("Hurricane Helene",
       x = config_vars$plot_margin, y = 1-config_vars$plot_margin*1.2,
-               size = 24,
+               size = 31,
                hjust = 0,
                vjust = 1,
                fontfamily = font_legend,
@@ -376,7 +387,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                lineheight = 1) +
     draw_label(paste0(format(dtg, "%b. %d, %Y %H:%M")),
                x = config_vars$plot_margin + 0.002,
-               y = 1-config_vars$plot_margin - 0.05,
+               y = 1-config_vars$plot_margin - 0.055,
                size = 14,
                hjust = 0,
                vjust = 1,
@@ -386,7 +397,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                lineheight = 1) + 
     draw_label(landfall_label,
                x = config_vars$plot_margin + 0.215, 
-               y = 1-config_vars$plot_margin - 0.05,
+               y = 1-config_vars$plot_margin - 0.055,
                size = 14,
                hjust = 0,
                vjust = 1,
@@ -409,7 +420,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                color = "black",
                lineheight = 1) +
     draw_plot(legend_precip,
-              x = config_vars$plot_margin + 0.108,
+              x = config_vars$plot_margin + 0.101,
               y = 0.227,
               height = 0.05,
               width = 0.42-config_vars$plot_margin) +
@@ -423,7 +434,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                color = "black",
                lineheight = 1) + 
     draw_label("1",
-               x = config_vars$plot_margin + 0.167,
+               x = config_vars$plot_margin + 0.158,
                y = 1-config_vars$plot_margin - 0.716,
                size = 12,
                hjust = 0,
@@ -432,7 +443,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                color = "black",
                lineheight = 1) +
     draw_label("12",
-               x = config_vars$plot_margin + 0.437,
+               x = config_vars$plot_margin + 0.428,
                y = 1-config_vars$plot_margin - 0.716,
                size = 12,
                hjust = 0,
@@ -440,8 +451,17 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                fontfamily = font_legend,
                color = "black",
                lineheight = 1) +
-    draw_label("Each dot         is a USGS stream gage",
+    draw_label("Each dot        is a",
                x = config_vars$plot_margin + 0.002, 
+               y = 1-config_vars$plot_margin - 0.746,
+               size = 12,
+               hjust = 0,
+               vjust = 1,
+               fontfamily = font_legend,
+               color = "black",
+               lineheight = 1) +
+    draw_label("USGS stream gage",
+               x = config_vars$plot_margin + 0.145,
                y = 1-config_vars$plot_margin - 0.746,
                size = 12,
                hjust = 0,
@@ -451,12 +471,21 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                color = "black",
                lineheight = 1) +
     draw_plot(p_dot_legend,
-              x = config_vars$plot_margin + 0.063,
+              x = config_vars$plot_margin + 0.058,
               y = 0.208,
               height = 0.03,
               width = 0.1-config_vars$plot_margin) +
-    draw_label("If it floods, a peak appears",
+    draw_label("If it floods, a             appears",
                x = config_vars$plot_margin + 0.002, 
+               y = 1-config_vars$plot_margin - 0.777,
+               size = 12,
+               hjust = 0,
+               vjust = 1,
+               fontfamily = font_legend,
+               color = "black",
+               lineheight = 1) +
+    draw_label("peak",
+               x = config_vars$plot_margin + 0.116, 
                y = 1-config_vars$plot_margin - 0.777,
                size = 12,
                hjust = 0,
@@ -466,12 +495,21 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                color = "black",
                lineheight = 1) +
     draw_plot(p_peak_legend,
-              x = config_vars$plot_margin + 0.219,
+              x = config_vars$plot_margin + 0.209,
               y = 0.182,
               height = 0.03,
               width = 0.1-config_vars$plot_margin) +
-    draw_label("The height is how long it's been flooded",
+    draw_label("The                 is how long it's been flooded",
                x = config_vars$plot_margin + 0.002, 
+               y = 1-config_vars$plot_margin - 0.809,
+               size = 12,
+               hjust = 0,
+               vjust = 1,
+               fontfamily = font_legend,
+               color = "black",
+               lineheight = 1) +
+    draw_label("height",
+               x = config_vars$plot_margin + 0.0415, 
                y = 1-config_vars$plot_margin - 0.809,
                size = 12,
                hjust = 0,
@@ -485,8 +523,17 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                y = 0.146,   
                width = 0.125, 
                height = 0.09) +
-    draw_label("And the color is the severity of the flood",
+    draw_label("And the              is the                     of the flood",
                x = config_vars$plot_margin + 0.002, 
+               y = 1-config_vars$plot_margin - 0.841,
+               size = 12,
+               hjust = 0,
+               vjust = 1,
+               fontfamily = font_legend,
+               color = "black",
+               lineheight = 1) + 
+    draw_label("color              severity",
+               x = config_vars$plot_margin + 0.074, 
                y = 1-config_vars$plot_margin - 0.841,
                size = 12,
                hjust = 0,
