@@ -28,6 +28,17 @@ p3_targets <- list(
     p3_global_max_precip_in,
     round(max(p2_process_precip_rast$precip_in, na.rm = TRUE))
   ),
+  # Global max flood stages to flood stage dynamic barplot x-limit
+  tar_target(
+    p3_global_max_flooded,
+    max(vapply(p3_flow_by_time,
+               function(tbl) {
+                 sum(tbl$flood_status %in% c("Flood","Moderate", "Major"), na.rm = TRUE)
+               },
+               FUN.VALUE = integer(1)
+               )
+        )
+    ), 
   tar_target(
     p3_flow_by_time,
     {
@@ -95,6 +106,7 @@ p3_targets <- list(
       dtg = p3_all_precip_timestamps,
       precip_now = p3_precip_by_time,
       global_max_precip = p3_global_max_precip_in,
+      global_max_flood_stages = p3_global_max_flooded, 
       flow_now = p3_flow_by_time,
       storm_now = p3_storm_by_time,
       storm_info = p0_storm_info,
