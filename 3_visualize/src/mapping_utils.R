@@ -120,7 +120,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
     # Use grayscale palette
     precip_fill_scale <- scale_fill_stepsn(
       colors = scales::alpha(
-        grey.colors(7, start = 0.9, end = 0.1), 0.6
+        grey.colors(7, start = 0.9, end = 0), 0.55
       ),
       breaks = get_precip_breaks(global_max_precip),
       limits = c(1, global_max_precip),
