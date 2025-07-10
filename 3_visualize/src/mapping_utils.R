@@ -22,6 +22,7 @@
 #' @param flood_stage_leg_path Charcter path for custom flood stage height explainer legend.
 #' @param precip_grayscale Logical. If TRUE, use a grayscale color palette for precipitation; if FALSE, use the associated viridis palette.
 #' @param global_max_precip Numeric value indicating the global max precipitation (in) value to set as precip legend limit.
+#' @param global_max_flood_stages Numeric value indicating the single highest count of flooded gages across all timesteps to set as x-limit on flooding barplot
 #' @param storm_info tibble of storm information including storm_name, storm_code, and storm_best_track_url from NOAA.
 #' @return Character file path to PNG frame.
 hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
@@ -32,7 +33,8 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                                         hurricane_symbol_path, global_max_duration,
                                         landfall_dtg, progress_fraction,
                                         flood_stage_leg_path, precip_grayscale,
-                                        global_max_precip, storm_info) {
+                                        global_max_precip, storm_info, 
+                                        global_max_flood_stages) {
   
   # Font configuration
   font_legend <- config_vars$load_font
@@ -82,11 +84,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
       )
     )
   
-  max_flooded_gages <- flow_now |>
-    filter(flood_status %in% c("Flood", "Moderate", "Major")) |>
-    count(flood_status) |>
-    summarise(max_n = max(n)) |>
-    pull(max_n)
+  x_buffer <- global_max_flood_stages * 0.03
   
   # Build horizontal barplot
   flood_status_bar <- ggplot(flood_status_summary,
@@ -94,12 +92,11 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                                  x = n,
                                  fill = flood_status)) +
     geom_col(width = 0.35, show.legend = FALSE, color = NA, alpha = 0.85) +
-    
     # number of gages to the right of bar
     geom_text(
       aes(label = label_right),
       hjust = 0,  
-      x = flood_status_summary$n + max_flooded_gages * 0.03,
+      x = flood_status_summary$n + x_buffer,
       family = font_legend, size = 4,
       color = flood_stage_cols[as.character(flood_status_summary$flood_status)]
     ) +
@@ -107,12 +104,12 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
     geom_text(
       aes(label = label_left),
       hjust = 1, 
-      x = -max_flooded_gages * 0.03,
+      x = -x_buffer,
       family = font_legend, fontface = "bold", size = 4,
       color = flood_stage_cols[as.character(flood_status_summary$flood_status)]
-    ) +
+    )+
     scale_fill_manual(values = flood_stage_cols, drop = FALSE) +
-    scale_x_continuous(limits = c(0, max_flooded_gages * 1.15),
+    scale_x_continuous(limits = c(0, global_max_flood_stages * 1.15),
                        expand = c(0, 0)) +
     scale_y_discrete(expand = expansion(add = 0.2)) +
     coord_cartesian(clip = "off") +
@@ -121,15 +118,15 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
   
   if (precip_grayscale) {
     # Use grayscale palette
-    precip_fill_scale <- scale_fill_gradientn(
+    precip_fill_scale <- scale_fill_stepsn(
       colors = scales::alpha(
-        grey.colors(10, start = 0.95, end = 0.2), 0.65
+        grey.colors(7, start = 0.9, end = 0.1), 0.6
       ),
+      breaks = get_precip_breaks(global_max_precip),
       limits = c(1, global_max_precip),
       name = NULL,
       na.value = scales::alpha("white", 0),
-      guide = guide_colorbar(
-        ticks.colour = NA,
+      guide = guide_coloursteps(
         title.theme = element_text(family = font_legend, hjust = 0),
         title.position = "left",
         title.hjust = 0,
@@ -143,15 +140,15 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
     )
   } else {
     # Use viridis palette
-    precip_fill_scale <- scale_fill_gradientn(
+    precip_fill_scale <- scale_fill_stepsn(
       colors = scales::alpha(
-        viridisLite::viridis(256, option = precip_cols, direction = -1), 0.6
+        viridisLite::viridis(7, option = precip_cols, direction = -1), 0.6
       ),
+      breaks = get_precip_breaks(global_max_precip),
       limits = c(1, global_max_precip),
       name = NULL,
       na.value = scales::alpha("white", 0),
-      guide = guide_colorbar(
-        ticks.colour = NA,
+      guide = guide_coloursteps(
         title.theme = element_text(family = font_legend, hjust = 0),
         title.position = "left",
         title.hjust = 0,
@@ -164,7 +161,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
       )
     )
   }
-
+  
   p <- ggplot() +
     geom_raster(data = precip_now, aes(x = x, y = y, fill = precip_in), alpha = 0.4) +
     geom_sf(data = state_inner_borders, color = config_vars$state_inner_borders_col,
@@ -546,7 +543,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                color = "black",
                lineheight = 1) + 
     draw_plot(flood_status_bar,
-              x = 0.155,
+              x = 0.17,
               y = 0.048,
               width = 0.2,
               height = 0.055)
@@ -596,4 +593,27 @@ get_legend_non0 <- function(plot) {
   }
   
   legends[non0_idx][[1]]
+}
+
+#' Generate clean breakpoints for a precipitation scale.
+#' Ensures the scale always includes 1 as the minimum visible value and avoids 
+#' exceeding a specified maximum number of breaks.
+#'
+#' @param global_max_precip Numeric. The maximum precipitation value (in inches) 
+#'   across all timesteps, used to anchor the upper limit of the scale.
+#' @param max_breaks Integer. The maximum number of breaks to allow in the scale.
+#'
+#' @return A numeric vector of breakpoints for use in a stepped color scale.
+get_precip_breaks <- function(global_max_precip, max_breaks = 8) {
+  if (global_max_precip <= 1) {
+    return(c(1, global_max_precip))
+  }
+  
+  # Create evenly spaced breaks between 1 and global_max_precip
+  breaks <- seq(1, global_max_precip, length.out = max_breaks)
+  
+  # Round to reasonable values for cleaner labels
+  breaks <- signif(breaks, digits = 2)
+  
+  return(breaks)
 }
