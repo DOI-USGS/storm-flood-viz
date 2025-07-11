@@ -23,6 +23,22 @@ p3_targets <- list(
     pattern = map(p3_all_precip_timestamps),
     iteration = "list"
   ),
+  # Global max precip to add to precip legend limit
+  tar_target(
+    p3_global_max_precip_in,
+    round(max(p2_process_precip_rast$precip_in, na.rm = TRUE))
+  ),
+  # Global max flood stages to flood stage dynamic barplot x-limit
+  tar_target(
+    p3_global_max_flooded,
+    max(vapply(p3_flow_by_time,
+               function(tbl) {
+                 sum(tbl$flood_status %in% c("Flood","Moderate", "Major"), na.rm = TRUE)
+               },
+               FUN.VALUE = integer(1)
+               )
+        )
+    ), 
   tar_target(
     p3_flow_by_time,
     {
@@ -89,14 +105,18 @@ p3_targets <- list(
     hurricane_flood_stage_frame(
       dtg = p3_all_precip_timestamps,
       precip_now = p3_precip_by_time,
+      global_max_precip = p3_global_max_precip_in,
+      global_max_flood_stages = p3_global_max_flooded, 
       flow_now = p3_flow_by_time,
       storm_now = p3_storm_by_time,
+      storm_info = p0_storm_info,
       progress_fraction = p3_progress_fract,
       state_borders = p1_conus_bbox_crop_sf,
       state_inner_borders = p2_state_inner_lines,
       state_outer_lines = p2_bbox_outer_lines,
       major_cities = p1_major_cities_sf,
       flood_stage_cols = p0_viz_fs_config_pal,
+      precip_grayscale = TRUE,
       precip_cols = p0_viz_precip_config_pal,
       config_vars = p0_viz_config_df,
       peak_height = 200000,
@@ -104,6 +124,7 @@ p3_targets <- list(
       landfall_dtg = p0_landfall_time, 
       logo_path = '3_visualize/in/usgs_logo_black.png',
       hurricane_symbol_path = "3_visualize/in/hurricane_symbol.png",
+      flood_stage_leg_path = "3_visualize/in/custom_flood_stage_leg.png", 
       frame_dir = "3_visualize/out/flood_stage_frames" 
     ),
     pattern = map(p3_all_precip_timestamps, p3_precip_by_time, p3_flow_by_time,
