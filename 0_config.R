@@ -52,12 +52,22 @@ p0_targets <- list(
   ),
   tar_target(
     # Create a tibble to define color palette for flood stage
-    p0_viz_fs_config_pal,
+    p0_viz_fs_config_pal_blue,
     c(
       "Not flooded" = "#d3d3d3",
-      "Flood" = "#f4b183",
-      "Moderate" = "#d55a60",
-      "Major" = "#934141"
+      "Flood" = "#4ecad7",
+      "Moderate" = "#17718E",
+      "Major" = "#003e6a"
+    )
+  ),
+  tar_target(
+    # Create a tibble to define color palette for flood stage
+    p0_viz_fs_config_pal_red,
+    c(
+      "Not flooded" = "#d3d3d3",
+      "Flood" = "#ffd782",
+      "Moderate" = "#ef7200",
+      "Major" = "#ba0200"
       )
     ), 
   tar_target(
@@ -68,7 +78,11 @@ p0_targets <- list(
     ),
   tar_target(
     p0_viz_precip_config_pal,
-    "mako"
+    c("#E2F2E9", "#9AD3CA", "#08B8A5", "#12A2AB", "#0D7EAA", "#2A5E8F", "#3E3A74")
+    ),
+  tar_target(
+    p0_viz_grayscale_precip,
+    c("#E6E6E6", "#CBCBCB", "#B6B6B6", "#A6A6A6", "#979797", "#858585", "#6D6D6D")
     ),
   tar_target(
     # Create a tibble to define fig width and height, conus outline colors,
