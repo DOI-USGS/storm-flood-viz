@@ -12,6 +12,7 @@
 #' (for total/cumulative).
 #' @param proj Character string specifying the target CRS for reprojection.
 #' @param precip_summ Character; one of `"none"`, `"total"`, or `"cumulative"`,
+#' @param timezone Character, tz time zone 
 #' specifying how to treat the precipitation data:
 #'        - `"none"`: each file is a single-hour raster layer;
 #'        - `"total"`: one file represents total precip over a period;
@@ -22,7 +23,7 @@
 #'   - `"none"` mode: columns `x`, `y`, `dateTime`, `date`, and `precip_mm`
 #'   - `"total"` and `"cumulative"` modes: columns `x`, `y`, `start_dateTime`, 
 #'   `end_dateTime`, and `precip_mm`
-get_precip_df <- function(tif_files, proj, precip_summ, states) {
+get_precip_df <- function(tif_files, proj, precip_summ, states, timezone) {
   # Convert sf to terra SpatVector
   state_vect <- terra::vect(states)
   
@@ -31,8 +32,8 @@ get_precip_df <- function(tif_files, proj, precip_summ, states) {
     fname <- basename(file)
     parts <- stringr::str_match(fname, "(\\d{4}-\\d{2}-\\d{2}T\\d{2})_to_(\\d{4}-\\d{2}-\\d{2}T\\d{2})")
     list(
-      start = as.POSIXct(parts[2], format = "%Y-%m-%dT%H", tz = "UTC"),
-      end   = as.POSIXct(parts[3], format = "%Y-%m-%dT%H", tz = "UTC")
+      start = as.POSIXct(parts[2], format = "%Y-%m-%dT%H", tz = timezone),
+      end   = as.POSIXct(parts[3], format = "%Y-%m-%dT%H", tz = timezone)
     )
   }
   
@@ -47,7 +48,7 @@ get_precip_df <- function(tif_files, proj, precip_summ, states) {
   if (precip_summ == "none") {
     # Extract datetime labels for layer names
     names_vec <- str_extract(tif_files, "\\d{4}-\\d{2}-\\d{2}T\\d{2}")
-    times <- as.POSIXct(names_vec, format = "%Y-%m-%dT%H", tz = "UTC")
+    times <- as.POSIXct(names_vec, format = "%Y-%m-%dT%H", tz = timezone)
 
     # Read, project, crop, and mask each file
     precip_rasters <- tif_files |>
@@ -64,7 +65,7 @@ get_precip_df <- function(tif_files, proj, precip_summ, states) {
         values_to = "precip_mm"
       ) |>
       mutate(
-        dateTime = as.POSIXct(dateTime, format = "%Y-%m-%dT%H", tz = "UTC"),
+        dateTime = as.POSIXct(dateTime, format = "%Y-%m-%dT%H", tz = timezone),
         date = as.Date(dateTime),
         precip_in = precip_mm * 0.0393701,
         precip_in = ifelse(precip_in < 1, NA, precip_in)
