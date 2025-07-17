@@ -25,7 +25,7 @@
 #' @param storm_info tibble of storm information including storm_name, storm_code, and storm_best_track_url from NOAA.
 #' @param precip_grayscale_cols vector of precipitation grayscale colors (7)
 #' @return Character file path to PNG frame.
-hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
+hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_now,
                                         state_borders, state_inner_borders,
                                         major_cities, flood_stage_cols_blue,
                                         flood_stage_cols_red,
@@ -93,7 +93,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                              aes(y = flood_status, 
                                  x = n,
                                  fill = flood_status)) +
-    geom_col(width = 0.35, show.legend = FALSE, color = NA, alpha = 0.85) +
+    geom_col(width = 0.35, show.legend = FALSE, color = NA, alpha = 0.7) +
     # number of gages to the right of bar
     geom_text(
       aes(label = label_right),
@@ -173,7 +173,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
     # Use viridis palette
     precip_fill_scale <- scale_fill_stepsn(
       colors = scales::alpha(
-        precip_cols, 0.6
+        precip_cols, 0.7
       ),
       breaks = get_precip_breaks(global_max_precip),
       limits = c(1, global_max_precip),
@@ -194,9 +194,9 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
   }
   
   p <- ggplot() +
-    geom_raster(data = precip_now, aes(x = x, y = y, fill = precip_in), alpha = 0.4) +
+    geom_raster(data = precip_now, aes(x = x, y = y, fill = precip_in), alpha = 0.6) +
     geom_sf(data = state_inner_borders, color = config_vars$state_inner_borders_col,
-            fill = NA, linewidth = 0.25) +
+            fill = NA, linewidth = 0.27) +
     geom_sf(data = state_outer_lines, color = config_vars$state_outer_lines_col,
             fill = NA, linewidth = 0.3) +
     theme(text = element_text(family = font_legend),
@@ -211,7 +211,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                               levels = names(flood_stage_cols_blue))) |>
         filter(!is.na(flood_status)),  
       aes(geometry = geometry, fill = flood_status),
-      shape = 21, size = 0.8,
+      shape = 21, size = 2,
       stroke = 0.2,
       color = config_vars$bg_col,
       alpha = 0.7,
@@ -239,7 +239,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
     ggforce::geom_link(
       data = flow_now_coords,
       aes(x = x, xend = xend, y = y, yend = yend,
-          linewidth = after_stat(I((1 - index) * 2))),
+          linewidth = after_stat(I((1 - index) * 2.3))),
       color = config_vars$bg_col,
       alpha = 0.9,
       show.legend = FALSE
@@ -249,8 +249,8 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
       data = flow_now_coords,
       aes(x = x, xend = xend, y = y, yend = yend,
           color = flood_status,
-          alpha = after_stat(I(index)),
-          linewidth = after_stat(I((1 - index) * 2))),
+          alpha = after_stat(I(0.4 + index * 0.3)),
+          linewidth = after_stat(I((1 - index) * 2.3))),
       show.legend = FALSE
     ) +
     scale_color_manual(
@@ -416,7 +416,7 @@ hurricane_flood_stage_frame <- function(dtg, precip_now, flow_now, storm_now,
                fontface = "bold",
                color = "black",
                lineheight = 1) +
-    draw_label(paste0(format(dtg, "%b. %d, %Y %H:%M")),
+    draw_label(paste0(format(dtg, "%b. %d, %Y %H:%M "), timezone_abv),
                x = config_vars$plot_margin + 0.002,
                y = 1-config_vars$plot_margin - 0.055,
                size = 14,

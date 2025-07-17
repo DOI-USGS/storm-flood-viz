@@ -1,5 +1,6 @@
 #source('3_visualize/src/plot_utils.R')
 source('3_visualize/src/mapping_utils.R')
+source('3_visualize/src/title_frame.R')
 
 p3_targets <- list(
   # Define the precip timestemps
@@ -102,7 +103,7 @@ p3_targets <- list(
   # Build flood stage animation
   tar_target(
     p3_flood_stage_frames,
-    hurricane_flood_stage_frame(
+    hurricane_flood_stage_spike_frames(
       dtg = p3_all_precip_timestamps,
       precip_now = p3_precip_by_time,
       global_max_precip = p3_global_max_precip_in,
@@ -117,7 +118,8 @@ p3_targets <- list(
       major_cities = p1_major_cities_sf,
       flood_stage_cols_blue = p0_viz_fs_config_pal_blue,
       flood_stage_cols_red = p0_viz_fs_config_pal_red,
-      precip_grayscale = TRUE,
+      precip_grayscale = FALSE,
+      timezone_abv = p0_timezone_abv,
       precip_cols = p0_viz_precip_config_pal,
       precip_grayscale_cols = p0_viz_grayscale_precip, 
       config_vars = p0_viz_config_df,
@@ -127,22 +129,37 @@ p3_targets <- list(
       logo_path = '3_visualize/in/usgs_logo_black.png',
       hurricane_symbol_path = "3_visualize/in/hurricane_symbol.png",
       flood_stage_leg_path = "3_visualize/in/custom_flood_stage_leg.png", 
-      frame_dir = "3_visualize/out/flood_stage_frames" 
+      frame_dir = "3_visualize/out/flood_stage_heline_spike_frames" 
     ),
     pattern = map(p3_all_precip_timestamps, p3_precip_by_time, p3_flow_by_time,
                   p3_storm_by_time, p3_progress_fract),
     format = "file"
-  ),
-  tar_target(
-    p3_flood_stage_hourly_gif,
-    {
-      valid_paths <- p3_flood_stage_frames[!is.na(p3_flood_stage_frames)]
-      img_list <- magick::image_read(valid_paths)
-      gif <- magick::image_animate(magick::image_join(img_list), fps = 2)
-      gif_path <- "3_visualize/out/hurricane_flood_stage_animation.gif"
-      magick::image_write(gif, gif_path)
-      gif_path
-    },
-    format = "file"
   )
+  # tar_target(
+  #   p3_title_spike_frame_png,
+  #   title_frame(title_text_line1 = "Hurricane Helene",
+  #               title_text_line2 = "flooding impact",
+  #               start_date = p0_date_start,
+  #               end_date = p0_date_end,
+  #               logo_path = '3_visualize/in/usgs_logo_black.png',
+  #               frame_bg_path = "3_visualize/out/flood_stage_heline_spike_frames/frame_20250704T1800.png",
+  #               config_vars = p0_viz_config_df,
+  #               out_path = "3_visualize/out/flood_stage_heline_spike_frames/frame_00000000000.png")
+  # ),
+  # tar_target(
+  #   p3_flood_stage_hourly_spike_gif,
+  #   {
+  #     title_img <- magick::image_read(p3_title_spike_frame_png)
+  #     title_frames <- rep(list(title_img), times = 5)
+  #     valid_paths <- p3_flood_stage_spike_frames[!is.na(p3_flood_stage_spike_frames)]
+  #     valid_paths <- valid_paths[valid_paths != p3_title_spike_frame_png]
+  #     flood_frames <- magick::image_read(valid_paths)
+  #     all_frames <- magick::image_join(c(title_frames, flood_frames))
+  #     gif <- magick::image_animate(all_frames, fps = 2)
+  #     gif_path <- "3_visualize/out/helene_flood_stage_spike_animation.gif"
+  #     magick::image_write(gif, gif_path)
+  #     gif_path
+  #   },
+  #   format = "file"
+  # )
 )
