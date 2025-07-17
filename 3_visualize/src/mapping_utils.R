@@ -35,7 +35,8 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
                                         landfall_dtg, progress_fraction,
                                         flood_stage_leg_path, precip_grayscale,
                                         global_max_precip, storm_info, 
-                                        global_max_flood_stages, precip_grayscale_cols) {
+                                        global_max_flood_stages, precip_grayscale_cols,
+                                        timezone_abv) {
   
   # Font configuration
   font_legend <- config_vars$load_font
@@ -208,7 +209,7 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
     geom_sf(
       data = flow_now |> mutate(
         flood_status = factor(flood_status,
-                              levels = names(flood_stage_cols_blue))) |>
+                              levels = names(flood_stage_cols_red))) |>
         filter(!is.na(flood_status)),  
       aes(geometry = geometry, fill = flood_status),
       shape = 21, size = 2,
@@ -218,7 +219,7 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
       show.legend = FALSE  
     ) +
     scale_fill_manual(
-      values = flood_stage_cols_blue,
+      values = flood_stage_cols_red,
       drop = FALSE,
       name = "Flood status"
     )
@@ -255,19 +256,19 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
     ) +
     scale_color_manual(
       name = "Peak flood stage",
-      values = flood_stage_cols_blue,
-      limits = names(flood_stage_cols_blue),
+      values = flood_stage_cols_red,
+      limits = names(flood_stage_cols_red),
       drop = FALSE,
       na.value = config_vars$streamgage_col,
       guide = guide_legend(
         direction = "vertical",
         override.aes = list(
-          shape = rep(22, length(flood_stage_cols_blue)),
-          size = rep(6, length(flood_stage_cols_blue)),
-          fill = unname(flood_stage_cols_blue),
+          shape = rep(22, length(flood_stage_cols_red)),
+          size = rep(6, length(flood_stage_cols_red)),
+          fill = unname(flood_stage_cols_red),
           alpha = 0.8,
           color = NA,
-          stroke = rep(0.1, length(flood_stage_cols_blue))
+          stroke = rep(0.1, length(flood_stage_cols_red))
         ),
         label.theme = element_text(size = config_vars$font_size, family = font_legend),
         title.theme = element_text(size = config_vars$font_size, family = font_legend),

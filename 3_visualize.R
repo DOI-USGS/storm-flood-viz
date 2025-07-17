@@ -102,7 +102,7 @@ p3_targets <- list(
   ),
   # Build flood stage animation
   tar_target(
-    p3_flood_stage_frames,
+    p3_flood_stage_spike_frames,
     hurricane_flood_stage_spike_frames(
       dtg = p3_all_precip_timestamps,
       precip_now = p3_precip_by_time,
