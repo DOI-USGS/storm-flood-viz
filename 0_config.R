@@ -44,6 +44,13 @@ p0_targets <- list(
     p0_precip_end,
     paste0(p0_date_end, "T23")
     ),
+  # Timezone
+  # For refernce: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+  tar_target(p0_timezone,
+             "America/New_York"
+             ),
+  tar_target(p0_timezone_abv,
+             "ET"),
   # Set time for storm landfall to add countdown to landfall
   # For Helene, this was noted from https://en.wikipedia.org/wiki/Hurricane_Helene 
   tar_target(
@@ -64,12 +71,12 @@ p0_targets <- list(
     # Create a tibble to define color palette for flood stage
     p0_viz_fs_config_pal_red,
     c(
-      "Not flooded" = "#d3d3d3",
-      "Flood" = "#ffd782",
-      "Moderate" = "#ef7200",
-      "Major" = "#ba0200"
-      )
-    ), 
+      "Not flooded" = "#b6b6b6",
+      "Flood" = "#e5a000",
+      "Moderate" = "#F7513B",
+      "Major" = "#C917E8"
+    )
+  ), 
   tar_target(
     # Create a tibble to define color palette for percentile
     p0_viz_percentile_config_pal,
@@ -78,7 +85,7 @@ p0_targets <- list(
     ),
   tar_target(
     p0_viz_precip_config_pal,
-    c("#E2F2E9", "#9AD3CA", "#08B8A5", "#12A2AB", "#0D7EAA", "#2A5E8F", "#3E3A74")
+    c("#cce0ef", "#b3cde2", "#9abbd5", "#82a9c9", "#6997bc", "#5185af", "#3973a3")
     ),
   tar_target(
     p0_viz_grayscale_precip,
