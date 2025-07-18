@@ -204,10 +204,28 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
           legend.spacing.x = unit(0, "cm")) +
     precip_fill_scale
   
-  # Plot all non andflooded gages
+  # Plot all non and flooded gages
   p <- p + ggnewscale::new_scale_fill() +
+    # non flooded - make points smaller 
     geom_sf(
-      data = flow_now |> mutate(
+      data = flow_now |> 
+        filter(is_flooded == "FALSE") |> 
+        mutate(
+        flood_status = factor(flood_status,
+                              levels = names(flood_stage_cols_red))) |>
+        filter(!is.na(flood_status)),  
+      aes(geometry = geometry, fill = flood_status),
+      shape = 21, size = 1.25,
+      stroke = 0.2,
+      color = config_vars$bg_col,
+      alpha = 0.7,
+      show.legend = FALSE  
+    ) + 
+    # flooded - make points larger 
+    geom_sf(
+      data = flow_now |>
+        filter(is_flooded == "TRUE") |> 
+        mutate(
         flood_status = factor(flood_status,
                               levels = names(flood_stage_cols_red))) |>
         filter(!is.na(flood_status)),  

@@ -113,7 +113,7 @@ p2_targets <- list(
   tar_target(
     p2_flow_height_complete_df,
     {
-      out <- p2_uv_hourly_max_df |>
+      out <- p2_uv_data_percentiles_df |>
         left_join(p1_usgs_flood_stage_gages, by = "site_no") |>
         left_join(p2_peak_data_max_df, by = c("site_no", "agency_cd")) |>
         filter(lubridate::minute(dateTime) == 0, lubridate::second(dateTime) == 0) |>  # Keep full hours only, since animation timestep is 1 hour
