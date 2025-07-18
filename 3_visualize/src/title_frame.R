@@ -23,7 +23,7 @@ title_frame <- function(title_text_line1, title_text_line2, start_date,
     magick::image_colorize(100, "black")
   
   bg_frame <- magick::image_read(frame_bg_path) |>
-    magick::image_colorize(opacity = 30, color = config_vars$bg_col)
+    magick::image_colorize(opacity = 40, color = config_vars$bg_col)
   
   canvas <- grid::rectGrob(
     x = 0, y = 0, 
@@ -37,8 +37,8 @@ title_frame <- function(title_text_line1, title_text_line2, start_date,
               height = 1, width = 1,
               hjust = 0, vjust = 1)  +
     draw_image(bg_frame,
-               x = -0.22, y = 3.57,
-               height = 6.4, width = 1.8,
+               x = -0.40, y = 3.6,
+               height = 6.4, width = 1.95,
                hjust = 0, vjust = 1) +
     draw_image(logo,
                x = 0.9 - config_vars$plot_margin*2.9,
@@ -69,7 +69,7 @@ title_frame <- function(title_text_line1, title_text_line2, start_date,
                       format(as.Date(end_date), "%b. "),
                       as.integer(format(as.Date(end_date), "%d")), " ",
                       format(as.Date(end_date), "%Y")),
-               x = config_vars$plot_margin, y = 0.08,
+               x = config_vars$plot_margin + 0.01, y = 0.08,
                size = 28,
                hjust = 0,
                vjust = 1,
