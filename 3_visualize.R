@@ -134,18 +134,20 @@ p3_targets <- list(
     pattern = map(p3_all_precip_timestamps, p3_precip_by_time, p3_flow_by_time,
                   p3_storm_by_time, p3_progress_fract),
     format = "file"
+  ),
+  tar_target(
+    p3_title_spike_frame_png,
+    title_frame(title_text_line1 = "Hurricane Helene",
+                title_text_line2 = "Flooding",
+                start_date = p0_date_start,
+                end_date = p0_date_end,
+                logo_path = '3_visualize/in/usgs_logo_black.png',
+                frame_bg_path = as.character(p3_flood_stage_spike_frames)[
+                  grepl("frame_20240928T0800.png$", p3_flood_stage_spike_frames)
+                ],
+                config_vars = p0_viz_config_df,
+                out_path = "3_visualize/out/flood_stage_heline_spike_frames/frame_00000000000.png")
   )
-  # tar_target(
-  #   p3_title_spike_frame_png,
-  #   title_frame(title_text_line1 = "Hurricane Helene",
-  #               title_text_line2 = "flooding impact",
-  #               start_date = p0_date_start,
-  #               end_date = p0_date_end,
-  #               logo_path = '3_visualize/in/usgs_logo_black.png',
-  #               frame_bg_path = "3_visualize/out/flood_stage_heline_spike_frames/frame_20250704T1800.png",
-  #               config_vars = p0_viz_config_df,
-  #               out_path = "3_visualize/out/flood_stage_heline_spike_frames/frame_00000000000.png")
-  # ),
   # tar_target(
   #   p3_flood_stage_hourly_spike_gif,
   #   {
