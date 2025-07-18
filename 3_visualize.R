@@ -147,21 +147,21 @@ p3_targets <- list(
                 ],
                 config_vars = p0_viz_config_df,
                 out_path = "3_visualize/out/flood_stage_heline_spike_frames/frame_00000000000.png")
+  ),
+  tar_target(
+    p3_flood_stage_hourly_spike_gif,
+    {
+      title_img <- magick::image_read(p3_title_spike_frame_png)
+      title_frames <- rep(list(title_img), times = 5)
+      valid_paths <- p3_flood_stage_spike_frames[!is.na(p3_flood_stage_spike_frames)]
+      valid_paths <- valid_paths[valid_paths != p3_title_spike_frame_png]
+      flood_frames <- magick::image_read(valid_paths)
+      all_frames <- magick::image_join(c(title_frames, flood_frames))
+      gif <- magick::image_animate(all_frames, fps = 2)
+      gif_path <- "3_visualize/out/helene_flood_stage_spike_animation.gif"
+      magick::image_write(gif, gif_path)
+      gif_path
+    },
+    format = "file"
   )
-  # tar_target(
-  #   p3_flood_stage_hourly_spike_gif,
-  #   {
-  #     title_img <- magick::image_read(p3_title_spike_frame_png)
-  #     title_frames <- rep(list(title_img), times = 5)
-  #     valid_paths <- p3_flood_stage_spike_frames[!is.na(p3_flood_stage_spike_frames)]
-  #     valid_paths <- valid_paths[valid_paths != p3_title_spike_frame_png]
-  #     flood_frames <- magick::image_read(valid_paths)
-  #     all_frames <- magick::image_join(c(title_frames, flood_frames))
-  #     gif <- magick::image_animate(all_frames, fps = 2)
-  #     gif_path <- "3_visualize/out/helene_flood_stage_spike_animation.gif"
-  #     magick::image_write(gif, gif_path)
-  #     gif_path
-  #   },
-  #   format = "file"
-  # )
 )
