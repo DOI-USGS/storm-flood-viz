@@ -101,7 +101,7 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
       hjust = 0,  
       x = flood_status_summary$n + x_buffer,
       family = font_legend, size = 4,
-      color = flood_stage_cols_blue[as.character(flood_status_summary$flood_status)]
+      color = flood_stage_cols_red[as.character(flood_status_summary$flood_status)]
     ) +
     # flood status to the left of bar
     geom_text(
@@ -109,9 +109,9 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
       hjust = 1, 
       x = -x_buffer,
       family = font_legend, fontface = "bold", size = 4,
-      color = flood_stage_cols_blue[as.character(flood_status_summary$flood_status)]
+      color = flood_stage_cols_red[as.character(flood_status_summary$flood_status)]
     ) +
-    scale_fill_manual(values = flood_stage_cols_blue, drop = FALSE) +
+    scale_fill_manual(values = flood_stage_cols_red, drop = FALSE) +
     scale_x_continuous(limits = c(0, global_max_flood_stages * 1.15),
                        expand = c(0, 0)) +
     scale_y_discrete(expand = expansion(add = 0.2)) +
@@ -428,7 +428,7 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
                color = "black",
                lineheight = 1) + 
     draw_label(landfall_label,
-               x = config_vars$plot_margin + 0.215, 
+               x = config_vars$plot_margin + 0.245, 
                y = 1-config_vars$plot_margin - 0.055,
                size = 14,
                hjust = 0,
