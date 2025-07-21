@@ -36,6 +36,8 @@ p0_targets <- list(
   # Set precipitation bbox and dates
   tar_target(p0_precip_bbox,
              unname(as.list(p0_bbox_sf))),
+  # Set precipitation start and end time
+  # Note: these must be defined in UTC time
   tar_target(
     p0_precip_start,
     paste0(p0_date_start, "T00")
