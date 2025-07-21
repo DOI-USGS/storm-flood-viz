@@ -88,7 +88,7 @@ p0_targets <- list(
     ),
   tar_target(
     p0_viz_precip_config_pal_blue,
-    c("#cce0ef", "#b3cde2", "#9abbd5", "#82a9c9", "#6997bc", "#5185af", "#3973a3")
+    c("#c7f0f6", "#92dce5", "#5fc8d1", "#38b1bc", "#259db0", "#1b88a1", "#16738c")
     ),
   tar_target(
     p0_viz_precip_config_pal_grayscale,
@@ -112,7 +112,7 @@ p0_targets <- list(
       bg_col = "white",
       ocean_col = "#f8fcfc",
       progress_bar_bg_col = 'gray80',
-      progress_bar_col = "#345EC4",
+      progress_bar_col = "gray60",
       load_font = 'Source Sans Pro',
       font_size_title = 16,
       font_size = 14,
