@@ -44,7 +44,7 @@ p0_targets <- list(
     p0_precip_end,
     paste0(p0_date_end, "T23")
     ),
-  # Timezone
+  # Desired timezone for map display
   # For refernce: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
   tar_target(p0_timezone,
              "America/New_York"
@@ -52,6 +52,7 @@ p0_targets <- list(
   tar_target(p0_timezone_abv,
              "ET"),
   # Set time for storm landfall to add countdown to landfall
+  # Be sure to specify the correct local timezone
   # For Helene, this was noted from https://en.wikipedia.org/wiki/Hurricane_Helene 
   tar_target(
     p0_landfall_time,
@@ -84,11 +85,11 @@ p0_targets <- list(
       "#C0C0C0", "#80cdc1", "#35978f", "#045a8d")
     ),
   tar_target(
-    p0_viz_precip_config_pal,
+    p0_viz_precip_config_pal_blue,
     c("#cce0ef", "#b3cde2", "#9abbd5", "#82a9c9", "#6997bc", "#5185af", "#3973a3")
     ),
   tar_target(
-    p0_viz_grayscale_precip,
+    p0_viz_precip_config_pal_grayscale,
     c("#E6E6E6", "#CBCBCB", "#B6B6B6", "#A6A6A6", "#979797", "#858585", "#6D6D6D")
     ),
   tar_target(

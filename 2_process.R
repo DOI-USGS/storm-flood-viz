@@ -136,7 +136,7 @@ p2_targets <- list(
                proj = p0_proj,
                precip_summ = "cumulative",
                states = p1_conus_bbox_crop_sf,
-               timezone = p0_timezone)
+               desired_timezone = p0_timezone)
              
   ),
   tar_target(p2_state_inner_lines,
