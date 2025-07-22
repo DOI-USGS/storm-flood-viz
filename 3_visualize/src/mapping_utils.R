@@ -24,6 +24,7 @@
 #' @param global_max_flood_stages Numeric value indicating the single highest count of flooded gages across all timesteps to set as x-limit on flooding barplot
 #' @param storm_info tibble of storm information including storm_name, storm_code, and storm_best_track_url from NOAA.
 #' @param precip_grayscale_cols vector of precipitation grayscale colors (7)
+#' @param y_baseheight numeric value to add to base height of yend for spikes, so that peaks are immediately visible as peaks when a gage floods
 #' @return Character file path to PNG frame.
 hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_now,
                                                state_borders, state_inner_borders,
@@ -36,7 +37,7 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
                                                flood_stage_leg_path, precip_grayscale,
                                                global_max_precip, storm_info,
                                                global_max_flood_stages, precip_grayscale_cols,
-                                               timezone_abv) {
+                                               timezone_abv, y_baseheight) {
   # Font configuration
   font_legend <- config_vars$load_font
   font_add_google(font_legend)
@@ -186,48 +187,6 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
     ) +
     precip_fill_scale
 
-  # Plot all non and flooded gages
-  p <- p + ggnewscale::new_scale_fill() +
-    # non flooded - make points smaller
-    geom_sf(
-      data = flow_now |>
-        filter(is_flooded == "FALSE") |>
-        mutate(
-          flood_status = factor(flood_status,
-            levels = names(flood_stage_cols_red)
-          )
-        ) |>
-        filter(!is.na(flood_status)),
-      aes(geometry = geometry, fill = flood_status),
-      shape = 21, size = 1.25,
-      stroke = 0.3,
-      color = config_vars$bg_col,
-      alpha = 0.7,
-      show.legend = FALSE
-    ) +
-    # flooded - make points larger
-    geom_sf(
-      data = flow_now |>
-        filter(is_flooded == "TRUE") |>
-        mutate(
-          flood_status = factor(flood_status,
-            levels = names(flood_stage_cols_red)
-          )
-        ) |>
-        filter(!is.na(flood_status)),
-      aes(geometry = geometry, fill = flood_status),
-      shape = 21, size = 2,
-      stroke = 0.3,
-      color = config_vars$bg_col,
-      alpha = 0.7,
-      show.legend = FALSE
-    ) +
-    scale_fill_manual(
-      values = flood_stage_cols_red,
-      drop = FALSE,
-      name = "Flood status"
-    )
-
   # Peak style lines for flooded sites
   flow_now_coords <- flow_now |>
     filter(is_flooded) |>
@@ -235,8 +194,9 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
     mutate(
       x = sf::st_coordinates(geometry)[, 1],
       y = sf::st_coordinates(geometry)[, 2],
+      y_base = y + y_baseheight,
       xend = x,
-      yend = y + (duration_above_flood_hr / global_max_duration) * peak_height
+      yend = y_base + (duration_above_flood_hr / global_max_duration) * peak_height,
     )
 
   p <- p +
@@ -244,7 +204,7 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
     ggforce::geom_link(
       data = flow_now_coords,
       aes(
-        x = x, xend = xend, y = y, yend = yend,
+        x = x, xend = xend, y = y_base, yend = yend,
         linewidth = after_stat(I((1 - index) * 2.3))
       ),
       color = config_vars$bg_col,
@@ -255,7 +215,7 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
     ggforce::geom_link(
       data = flow_now_coords,
       aes(
-        x = x, xend = xend, y = y, yend = yend,
+        x = x, xend = xend, y = y_base, yend = yend,
         color = flood_status,
         alpha = after_stat(I(0.4 + index * 0.3)),
         linewidth = after_stat(I((1 - index) * 2.3))
@@ -295,6 +255,49 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
       color = config_vars$major_cities_text_col,
       size = 3, nudge_y = 50000, family = font_legend
     )
+  
+  # Plot all non and flooded gages
+  p <- p + ggnewscale::new_scale_fill() +
+    # non flooded - make points smaller
+    geom_sf(
+      data = flow_now |>
+        filter(is_flooded == "FALSE") |>
+        mutate(
+          flood_status = factor(flood_status,
+                                levels = names(flood_stage_cols_red)
+          )
+        ) |>
+        filter(!is.na(flood_status)),
+      aes(geometry = geometry, fill = flood_status),
+      shape = 21, size = 1.25,
+      stroke = 0.3,
+      color = config_vars$bg_col,
+      alpha = 0.7,
+      show.legend = FALSE
+    ) +
+    # flooded - make points larger
+    geom_sf(
+      data = flow_now |>
+        filter(is_flooded == "TRUE") |>
+        mutate(
+          flood_status = factor(flood_status,
+                                levels = names(flood_stage_cols_red)
+          )
+        ) |>
+        filter(!is.na(flood_status)),
+      aes(geometry = geometry, fill = flood_status),
+      shape = 21, size = 2,
+      stroke = 0.3,
+      color = config_vars$bg_col,
+      alpha = 0.7,
+      show.legend = FALSE
+    ) +
+    scale_fill_manual(
+      values = flood_stage_cols_red,
+      drop = FALSE,
+      name = "Flood status"
+    )
+  
 
   # Filter storm points up to current DTG
   past_storm_points <- dplyr::filter(storm_now, DTG <= dtg)
@@ -587,7 +590,7 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
       lineheight = 1
     ) +
     draw_image(flood_stage_leg,
-      x = config_vars$plot_margin + 0.344,
+      x = config_vars$plot_margin + 0.339,
       y = 0.146,
       width = 0.14,
       height = 0.118
