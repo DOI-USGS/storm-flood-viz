@@ -87,79 +87,44 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
 
   x_buffer <- global_max_flood_stages * 0.03
 
-  if (precip_grayscale) {
-    # Build horizontal barplot
-    flood_status_bar <- ggplot(
-      flood_status_summary,
-      aes(
-        y = flood_status,
-        x = n,
-        fill = flood_status
-      )
+  # Set conditional parmaters
+  flood_alpha <- if (precip_grayscale) 0.7 else 0.85
+  flood_cols <- if (precip_grayscale) flood_stage_cols_blue else flood_stage_cols_red
+  
+  # Shared base plot
+  flood_status_bar <- ggplot(
+    flood_status_summary,
+    aes( y = flood_status,
+         x = n,
+         fill = flood_status
+         )
     ) +
-      geom_col(width = 0.35, show.legend = FALSE, color = NA, alpha = 0.7) +
-      # number of gages to the right of bar
-      geom_text(
-        aes(label = label_right),
-        hjust = 0,
-        x = flood_status_summary$n + x_buffer,
-        family = font_legend, size = 4,
-        color = flood_stage_cols_red[as.character(flood_status_summary$flood_status)]
-      ) +
-      # flood status to the left of bar
-      geom_text(
-        aes(label = label_left),
-        hjust = 1,
-        x = -x_buffer,
-        family = font_legend, fontface = "bold", size = 4,
-        color = flood_stage_cols_red[as.character(flood_status_summary$flood_status)]
-      ) +
-      scale_fill_manual(values = flood_stage_cols_red, drop = FALSE) +
-      scale_x_continuous(
-        limits = c(0, global_max_flood_stages * 1.15),
-        expand = c(0, 0)
-      ) +
-      scale_y_discrete(expand = expansion(add = 0.2)) +
-      coord_cartesian(clip = "off") +
-      theme_void(base_family = config_vars$font_size) +
-      theme(text = element_text(size = config_vars$font_size))
-  } else {
-    # Build horizontal barplot
-    flood_status_bar <- ggplot(
-      flood_status_summary,
-      aes(
-        y = flood_status,
-        x = n,
-        fill = flood_status
-      )
+    geom_col(width = 0.35, show.legend = FALSE, color = NA, alpha = flood_alpha) +
+    # number of gages to the right of bar
+    geom_text(
+      aes(label = label_right),
+      hjust = 0,
+      x = flood_status_summary$n + x_buffer,
+      family = font_legend, size = 4,
+      color = flood_cols[as.character(flood_status_summary$flood_status)]
     ) +
-      geom_col(width = 0.35, show.legend = FALSE, color = NA, alpha = 0.85) +
-      # number of gages to the right of bar
-      geom_text(
-        aes(label = label_right),
-        hjust = 0,
-        x = flood_status_summary$n + x_buffer,
-        family = font_legend, size = 4,
-        color = flood_stage_cols_red[as.character(flood_status_summary$flood_status)]
-      ) +
-      # flood status to the left of bar
-      geom_text(
-        aes(label = label_left),
-        hjust = 1,
-        x = -x_buffer,
-        family = font_legend, fontface = "bold", size = 4,
-        color = flood_stage_cols_red[as.character(flood_status_summary$flood_status)]
-      ) +
-      scale_fill_manual(values = flood_stage_cols_red, drop = FALSE) +
-      scale_x_continuous(
-        limits = c(0, global_max_flood_stages * 1.15),
-        expand = c(0, 0)
-      ) +
-      scale_y_discrete(expand = expansion(add = 0.2)) +
-      coord_cartesian(clip = "off") +
-      theme_void(base_family = config_vars$font_size) +
-      theme(text = element_text(size = config_vars$font_size))
-  }
+    # flood status to the left of bar
+    geom_text(
+      aes(label = label_left),
+      hjust = 1,
+      x = -x_buffer,
+      family = font_legend, fontface = "bold", size = 4,
+      color = flood_cols[as.character(flood_status_summary$flood_status)]
+    ) +
+    scale_fill_manual(values = flood_cols, drop = FALSE) +
+    scale_x_continuous(
+      limits = c(0, global_max_flood_stages * 1.15),
+      expand = c(0, 0)
+    ) +
+    scale_y_discrete(expand = expansion(add = 0.2)) +
+    coord_cartesian(clip = "off") +
+    theme_void(base_family = config_vars$font_size) +
+    theme(text = element_text(size = config_vars$font_size))
 
   if (precip_grayscale) {
     # Use grayscale palette
