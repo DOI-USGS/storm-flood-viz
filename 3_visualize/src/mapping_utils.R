@@ -76,7 +76,8 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
   flood_status_summary <- flow_now |>
     filter(flood_status %in% c("Flood", "Moderate", "Major")) |>
     count(flood_status) |>
-    mutate(flood_status = factor(flood_status, levels = c("Flood", "Moderate", "Major"))) |>
+    mutate(flood_status = factor(flood_status,
+                                 levels = c("Flood", "Moderate", "Major"))) |>
     complete(flood_status, fill = list(n = 0)) |> # fill missing flood_status with 0 so the bars don't shift vertically
     mutate(
       label_right = paste(n, "gages"),
@@ -172,7 +173,8 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
   }
 
   p <- ggplot() +
-    geom_raster(data = precip_now, aes(x = x, y = y, fill = precip_in), alpha = 0.6) +
+    geom_raster(data = precip_now, aes(x = x, y = y, fill = precip_in),
+                alpha = 0.6) +
     geom_sf(
       data = state_inner_borders, color = config_vars$state_inner_borders_col,
       fill = NA, linewidth = 0.27
@@ -186,7 +188,34 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
       legend.spacing.x = unit(0, "cm")
     ) +
     precip_fill_scale
-
+  
+  # plot non flooded points + city labels
+  p <- p + ggnewscale::new_scale_fill() +
+    geom_sf(
+    data = flow_now |>
+      filter(is_flooded == "FALSE") |>
+      mutate(flood_status = factor(flood_status, levels = names(flood_stage_cols_red))) |>
+      filter(!is.na(flood_status)),
+    aes(geometry = geometry, fill = flood_status),
+    shape = 21, size = 1.25,
+    stroke = 0.3,
+    color = config_vars$bg_col,
+    alpha = 0.7,
+    show.legend = FALSE
+  )  +
+  theme(
+    text = element_text(family = font_legend)
+  ) +
+  geom_sf(
+    data = major_cities, shape = 23, fill = NA,
+    color = config_vars$major_cities_col, size = 1.75, stroke = 0.3
+  ) +
+  geom_sf_text(
+    data = major_cities, aes(label = NAME),
+    color = config_vars$major_cities_text_col,
+    size = 3, nudge_y = 50000, family = font_legend
+  )
+  
   # Peak style lines for flooded sites
   flow_now_coords <- flow_now |>
     filter(is_flooded) |>
@@ -217,7 +246,7 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
       aes(
         x = x, xend = xend, y = y_base, yend = yend,
         color = flood_status,
-        alpha = after_stat(I(0.4 + index * 0.3)),
+        alpha = after_stat(I(0.6 + index * 0.2)),
         linewidth = after_stat(I((1 - index) * 2.3))
       ),
       show.legend = FALSE
@@ -238,59 +267,27 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
           color = NA,
           stroke = rep(0.1, length(flood_stage_cols_red))
         ),
-        label.theme = element_text(size = config_vars$font_size, family = font_legend),
-        title.theme = element_text(size = config_vars$font_size, family = font_legend),
+        label.theme = element_text(size = config_vars$font_size,
+                                   family = font_legend),
+        title.theme = element_text(size = config_vars$font_size,
+                                   family = font_legend),
         keyheight = unit(0.7, "cm")
       )
-    ) +
-    theme(
-      text = element_text(family = font_legend)
-    ) +
-    geom_sf(
-      data = major_cities, shape = 23, fill = NA,
-      color = config_vars$major_cities_col, size = 1.75, stroke = 0.3
-    ) +
-    geom_sf_text(
-      data = major_cities, aes(label = NAME),
-      color = config_vars$major_cities_text_col,
-      size = 3, nudge_y = 50000, family = font_legend
-    )
+    ) 
   
-  # Plot all non and flooded gages
-  p <- p + ggnewscale::new_scale_fill() +
-    # non flooded - make points smaller
-    geom_sf(
-      data = flow_now |>
-        filter(is_flooded == "FALSE") |>
-        mutate(
-          flood_status = factor(flood_status,
-                                levels = names(flood_stage_cols_red)
-          )
-        ) |>
-        filter(!is.na(flood_status)),
-      aes(geometry = geometry, fill = flood_status),
-      shape = 21, size = 1.25,
-      stroke = 0.3,
-      color = config_vars$bg_col,
-      alpha = 0.7,
-      show.legend = FALSE
-    ) +
-    # flooded - make points larger
-    geom_sf(
-      data = flow_now |>
-        filter(is_flooded == "TRUE") |>
-        mutate(
-          flood_status = factor(flood_status,
-                                levels = names(flood_stage_cols_red)
-          )
-        ) |>
-        filter(!is.na(flood_status)),
-      aes(geometry = geometry, fill = flood_status),
-      shape = 21, size = 2,
-      stroke = 0.3,
-      color = config_vars$bg_col,
-      alpha = 0.7,
-      show.legend = FALSE
+  # Plot all flooded gages
+  p <- p + geom_sf(
+    data = flow_now |>
+      filter(is_flooded == "TRUE") |>
+      mutate(flood_status = factor(flood_status,
+                                   levels = names(flood_stage_cols_red))) |>
+      filter(!is.na(flood_status)),
+    aes(geometry = geometry, fill = flood_status),
+    shape = 21, size = 2,
+    stroke = 0.3,
+    color = config_vars$bg_col,
+    alpha = 0.7,
+    show.legend = FALSE 
     ) +
     scale_fill_manual(
       values = flood_stage_cols_red,
@@ -298,7 +295,6 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
       name = "Flood status"
     )
   
-
   # Filter storm points up to current DTG
   past_storm_points <- dplyr::filter(storm_now, DTG <= dtg)
 
@@ -407,7 +403,8 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
   canvas <- grid::rectGrob(
     x = 0, y = 0,
     width = 16, height = 9,
-    gp = grid::gpar(fill = config_vars$bg_col, alpha = 1, col = config_vars$bg_col)
+    gp = grid::gpar(fill = config_vars$bg_col, alpha = 1,
+                    col = config_vars$bg_col)
   )
 
   p <- ggdraw(xlim = c(0, 1), ylim = c(0, 1)) +
@@ -441,7 +438,8 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
       color = config_vars$major_cities_text_col,
       size = 10
     ) +
-    draw_label(paste("Hurricane", stringr::str_to_sentence(storm_info$storm_name)),
+    draw_label(paste("Hurricane",
+                     stringr::str_to_sentence(storm_info$storm_name)),
       x = config_vars$plot_margin, y = 1 - config_vars$plot_margin * 1.2,
       size = 31,
       hjust = 0,
