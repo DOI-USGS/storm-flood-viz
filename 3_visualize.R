@@ -155,7 +155,7 @@ p3_targets <- list(
     p3_flood_stage_hourly_spike_gif,
     {
       title_img <- magick::image_read(p3_title_spike_frame_png)
-      title_frames <- rep(list(title_img), times = 5)
+      title_frames <- rep(list(title_img), times = 8)
       valid_paths <- p3_flood_stage_spike_frames[!is.na(p3_flood_stage_spike_frames)]
       valid_paths <- valid_paths[valid_paths != p3_title_spike_frame_png]
       flood_frames <- magick::image_read(valid_paths)
