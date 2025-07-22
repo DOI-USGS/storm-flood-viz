@@ -149,6 +149,7 @@ p3_targets <- list(
                 config_vars = p0_viz_config_df,
                 out_path = sprintf("3_visualize/out/flood_stage_%s_spike_frames/frame_00000000000.png",
                                    tolower(p0_storm_info$storm_name))
+  )
   ),
   tar_target(
     p3_flood_stage_hourly_spike_gif,
