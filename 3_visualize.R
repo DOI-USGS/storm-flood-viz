@@ -138,7 +138,7 @@ p3_targets <- list(
   ),
   tar_target(
     p3_title_spike_frame_png,
-    title_frame(title_text_line1 = "Hurricane Helene",
+    title_frame(title_text_line1 = sprintf("Hurricane %s", stringr::str_to_sentence(tolower(p0_storm_info$storm_name))),
                 title_text_line2 = "Flooding",
                 start_date = p0_date_start,
                 end_date = p0_date_end,
