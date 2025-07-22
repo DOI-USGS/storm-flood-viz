@@ -129,7 +129,8 @@ p3_targets <- list(
       logo_path = '3_visualize/in/usgs_logo_black.png',
       hurricane_symbol_path = "3_visualize/in/hurricane_symbol.png",
       flood_stage_leg_path = "3_visualize/in/custom_flood_stage_leg.png", 
-      frame_dir = "3_visualize/out/flood_stage_heline_spike_frames" 
+      frame_dir = sprintf("3_visualize/out/flood_stage_%s_spike_frames", 
+                          tolower(p0_storm_info$storm_name))
     ),
     pattern = map(p3_all_precip_timestamps, p3_precip_by_time, p3_flow_by_time,
                   p3_storm_by_time, p3_progress_fract),
@@ -146,7 +147,8 @@ p3_targets <- list(
                   grepl("frame_20240928T0800.png$", p3_flood_stage_spike_frames)
                 ],
                 config_vars = p0_viz_config_df,
-                out_path = "3_visualize/out/flood_stage_heline_spike_frames/frame_00000000000.png")
+                out_path = sprintf("3_visualize/out/flood_stage_%s_spike_frames/frame_00000000000.png",
+                                   tolower(p0_storm_info$storm_name))
   ),
   tar_target(
     p3_flood_stage_hourly_spike_gif,
@@ -158,7 +160,8 @@ p3_targets <- list(
       flood_frames <- magick::image_read(valid_paths)
       all_frames <- magick::image_join(c(title_frames, flood_frames))
       gif <- magick::image_animate(all_frames, fps = 2)
-      gif_path <- "3_visualize/out/helene_flood_stage_spike_animation.gif"
+      gif_path <- sprintf("3_visualize/out/%s_flood_stage_spike_animation.gif", 
+                          tolower(p0_storm_info$storm_name))
       magick::image_write(gif, gif_path)
       gif_path
     },
