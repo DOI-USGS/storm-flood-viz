@@ -41,8 +41,8 @@ title_frame <- function(title_text_line1, title_text_line2, start_date,
                height = 6.4, width = 1.95,
                hjust = 0, vjust = 1) +
     draw_image(logo,
-               x = 0.9 - config_vars$plot_margin*2.9,
-               y = config_vars$plot_margin*1.1,
+               x = 0.9 - config_vars$plot_margin*2.8,
+               y = config_vars$plot_margin*1,
                width = 0.155,
                hjust = 0, vjust = 0, 
                halign = 0, valign = 0) +
