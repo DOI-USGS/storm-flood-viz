@@ -216,7 +216,7 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
         filter(!is.na(flood_status)),  
       aes(geometry = geometry, fill = flood_status),
       shape = 21, size = 1.25,
-      stroke = 0.2,
+      stroke = 0.3,
       color = config_vars$bg_col,
       alpha = 0.7,
       show.legend = FALSE  
@@ -231,7 +231,7 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
         filter(!is.na(flood_status)),  
       aes(geometry = geometry, fill = flood_status),
       shape = 21, size = 2,
-      stroke = 0.2,
+      stroke = 0.3,
       color = config_vars$bg_col,
       alpha = 0.7,
       show.legend = FALSE  
@@ -412,7 +412,7 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
               # shifting plot for focus on florida/south atlantic region
               # will need to be adjusted if storm is focused elsewhere
                x = (1-config_vars$plot_margin)*-1.7,
-               y = -0.01,
+               y = -0.02,
                height = 1.125,
                width = (1-config_vars$plot_margin)+3.3) + 
     draw_image(logo,
@@ -459,16 +459,6 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
               y = -0.001,
               width = 1.1,
               height = 0.015) +
-    draw_label("During the storm, rainfall accumulates",
-               x = config_vars$plot_margin + 0.002, 
-               y = 1-config_vars$plot_margin - 0.685,
-               size = 12,
-               hjust = 0,
-               vjust = 1,
-               fontface = "bold",
-               fontfamily = font_legend,
-               color = "black",
-               lineheight = 1) +
     draw_plot(legend_precip,
               x = config_vars$plot_margin + 0.052,
               y = 0.227,
