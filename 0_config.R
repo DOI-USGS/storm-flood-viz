@@ -27,7 +27,9 @@ p0_targets <- list(
            storm_code = "al092024",
            storm_buffer = 250000,
            shape_type = "buffered_storm_track",
-           storm_best_track_url = "https://www.nhc.noaa.gov/gis/best_track/")
+           storm_best_track_url = "https://www.nhc.noaa.gov/gis/best_track/",
+           # Can find code by looking at REST URLs here: https://stn.wim.usgs.gov/STNDataPortal/#
+           stn_event = 346)
     ),
   tar_target(
     p0_pcodes,
@@ -112,7 +114,7 @@ p0_targets <- list(
       bg_col = "white",
       ocean_col = "#f8fcfc",
       progress_bar_bg_col = 'gray80',
-      progress_bar_col = "gray60",
+      progress_bar_col = "gray65",
       load_font = 'Source Sans Pro',
       font_size_title = 16,
       font_size = 14,
