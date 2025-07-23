@@ -124,7 +124,7 @@ p3_targets <- list(
       precip_grayscale_cols = p0_viz_precip_config_pal_grayscale, 
       config_vars = p0_viz_config_df,
       peak_height = 200000,
-      y_baseheight = 7500,
+      y_baseheight = 10000,
       global_max_duration = p3_global_max_flood_duration,
       landfall_dtg = p0_landfall_time, 
       logo_path = '3_visualize/in/usgs_logo_black.png',
