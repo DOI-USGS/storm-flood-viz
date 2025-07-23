@@ -66,7 +66,7 @@ p0_targets <- list(
     # Create a tibble to define color palette for flood stage
     p0_viz_fs_config_pal_blue,
     c(
-      "Not flooded" = "#d3d3d3",
+      "Not flooded" = "#dcdcdc",
       "Flood" = "#4ecad7",
       "Moderate" = "#17718E",
       "Major" = "#003e6a"
@@ -76,7 +76,7 @@ p0_targets <- list(
     # Create a tibble to define color palette for flood stage
     p0_viz_fs_config_pal_red,
     c(
-      "Not flooded" = "#d3d3d3",
+      "Not flooded" = "#dcdcdc",
       "Flood" = "#e5a000",
       "Moderate" = "#F7513B",
       "Major" = "#C917E8"
@@ -114,7 +114,7 @@ p0_targets <- list(
       bg_col = "white",
       ocean_col = "#f8fcfc",
       progress_bar_bg_col = 'gray80',
-      progress_bar_col = "gray65",
+      progress_bar_col = "gray45",
       load_font = 'Source Sans Pro',
       font_size_title = 16,
       font_size = 14,
