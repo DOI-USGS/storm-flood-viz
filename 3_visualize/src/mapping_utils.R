@@ -200,7 +200,6 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
     shape = 21, size = 1.25,
     stroke = 0.3,
     color = config_vars$bg_col,
-    alpha = 0.7,
     show.legend = FALSE
   )  +
   theme(
@@ -229,24 +228,13 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
     )
 
   p <- p +
-    # add white layer behind peaks to have them pop more
+    # Colored peak lines
     ggforce::geom_link(
       data = flow_now_coords,
       aes(
-        x = x, xend = xend, y = y_base, yend = yend,
-        linewidth = after_stat(I((1 - index) * 2.3))
-      ),
-      color = config_vars$bg_col,
-      alpha = 0.9,
-      show.legend = FALSE
-    ) +
-    # Colored peak lines on top
-    ggforce::geom_link(
-      data = flow_now_coords,
-      aes(
-        x = x, xend = xend, y = y_base, yend = yend,
+        x = x, xend = xend, y = y, yend = yend,
         color = flood_status,
-        alpha = after_stat(I(0.6 + index * 0.2)),
+        alpha = after_stat(I(0.65 + index * 0.4)),
         linewidth = after_stat(I((1 - index) * 2.3))
       ),
       show.legend = FALSE
@@ -286,7 +274,6 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
     shape = 21, size = 2,
     stroke = 0.3,
     color = config_vars$bg_col,
-    alpha = 0.7,
     show.legend = FALSE 
     ) +
     scale_fill_manual(
@@ -588,10 +575,10 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
       lineheight = 1
     ) +
     draw_image(flood_stage_leg,
-      x = config_vars$plot_margin + 0.339,
-      y = 0.146,
-      width = 0.14,
-      height = 0.118
+      x = config_vars$plot_margin + 0.33,
+      y = 0.135,
+      width = 0.13,
+      height = 0.135
     ) +
     draw_label("And the              is the severity of the flood",
       x = config_vars$plot_margin + 0.002,
