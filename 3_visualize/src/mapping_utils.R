@@ -5,39 +5,51 @@
 #' @param flow_now A dataframe of streamgage data (one row per gage at current timestep),
 #'   with flood thresholds and cumulative flood duration.
 #' @param storm_now An sf object representing the storm path up to and including this timestep.
+#' @param rdg_now, An sf object representing rapid deployment gage points and including this timestep
 #' @param state_borders sf object of CONUS boundaries.
 #' @param state_inner_borders sf object of internal CONUS state lines.
 #' @param state_outer_lines sf object of outer CONUS state lines.
 #' @param major_cities sf object with a NAME column.
-#' @param precip_cols viridisLite color scheme (e.g., "mako").
+#' @param precip_cols colorized precip scheme 
 #' @param config_vars Named list of styling and theme options.
 #' @param peak_height Maximum height of flood lines (numeric).
 #' @param global_max_duration Numeric. The maximum `duration_above_flood_hr` across all time steps.
-#' @param frame_dir Character path for saving PNGs.
-#' @param logo_path Charcter path for USGS logo.
-#' @param hurricane_symbol_path Charcter path for hurricane symbology.
+#' @param frame_spike_dir Character path for saving flood stage spike viz PNGs.
+#' @param frame_point_dir Character path for saving flood stage points viz PNGs.
+#' @param logo_path Character path for USGS logo.
+#' @param hurricane_symbol_path Character path for hurricane symbology.
 #' @param landfall_dtg POSIXct. The expected date-time of hurricane landfall, used to calculate and display a countdown label.
 #' @param progress_fraction Numeric value between 0 and 1 indicating progress through the animation.
-#' @param flood_stage_leg_path Charcter path for custom flood stage height explainer legend.
-#' @param precip_grayscale Logical. If TRUE, use a grayscale color palette for precipitation; if FALSE, use the associated viridis palette.
+#' @param flood_stage_spike_leg_path Character path for custom flood stage spikes height explainer legend.
+#' @param flood_stage_point_leg_path Character path for custom flood stage points size explainer legend.
+#' @param precip_grayscale Logical. If TRUE, use a grayscale color palette for precipitation; if FALSE, use the associated colorized palette.
+#' @param flood_spikes Logical. If TRUE, use spikes for visualizing durations above flood stage for flooded gages; if FALSE, use sized flood points instead.
 #' @param global_max_precip Numeric value indicating the global max precipitation (in) value to set as precip legend limit.
 #' @param global_max_flood_stages Numeric value indicating the single highest count of flooded gages across all timesteps to set as x-limit on flooding barplot
 #' @param storm_info tibble of storm information including storm_name, storm_code, and storm_best_track_url from NOAA.
 #' @param precip_grayscale_cols vector of precipitation grayscale colors (7)
 #' @param y_baseheight numeric value to add to base height of yend for spikes, so that peaks are immediately visible as peaks when a gage floods
+#' @param points_range, numeric values for sizing points in `scale_size_continuous()`
+#' @param target_rdg_icon, Character path for target icon for rapid deployment gages points.
+
 #' @return Character file path to PNG frame.
-hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_now,
-                                               state_borders, state_inner_borders,
-                                               major_cities, flood_stage_cols_blue,
-                                               flood_stage_cols_red,
-                                               precip_cols, config_vars, peak_height,
-                                               frame_dir, logo_path, state_outer_lines,
-                                               hurricane_symbol_path, global_max_duration,
-                                               landfall_dtg, progress_fraction,
-                                               flood_stage_leg_path, precip_grayscale,
-                                               global_max_precip, storm_info,
-                                               global_max_flood_stages, precip_grayscale_cols,
-                                               timezone_abv, y_baseheight) {
+hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
+                                         state_borders, state_inner_borders,
+                                         major_cities, flood_stage_cols_blue,
+                                         flood_stage_cols_red,
+                                         precip_cols, config_vars, peak_height,
+                                         frame_spike_dir, frame_point_dir,
+                                         logo_path, state_outer_lines,
+                                         hurricane_symbol_path, global_max_duration,
+                                         landfall_dtg, progress_fraction,
+                                         flood_stage_point_leg_path,
+                                         flood_stage_spike_leg_path,
+                                         precip_grayscale,
+                                         global_max_precip, flood_spikes,
+                                         storm_info, global_max_flood_stages,
+                                         precip_grayscale_cols, points_range,
+                                         timezone_abv, y_baseheight,target_rdg_icon,
+                                         rdg_now) {
   # Font configuration
   font_legend <- config_vars$load_font
   font_add_google(font_legend)
@@ -149,7 +161,7 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
       )
     )
   } else {
-    # Use viridis palette
+    # Use colorized palette
     precip_fill_scale <- scale_fill_stepsn(
       colors = scales::alpha(
         precip_cols, 0.7
@@ -215,6 +227,8 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
     size = 3, nudge_y = 50000, family = font_legend
   )
   
+  # If flood_spikes TRUE, make spikes
+  if (flood_spikes) { 
   # Peak style lines for flooded sites
   flow_now_coords <- flow_now |>
     filter(is_flooded) |>
@@ -275,12 +289,57 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
     stroke = 0.3,
     color = config_vars$bg_col,
     show.legend = FALSE 
-    ) +
+  ) +
     scale_fill_manual(
       values = flood_stage_cols_red,
       drop = FALSE,
       name = "Flood status"
     )
+  
+  # otherwise, do sized points 
+  } else { 
+    # Prepare point data
+    flow_now_points <- flow_now |>
+      filter(is_flooded) |> 
+      arrange(desc(duration_above_flood_hr)) |> 
+      mutate(
+        #  amplify the perceptual effect using a transformation:
+        index = (duration_above_flood_hr / global_max_duration)^3
+      )
+    
+    p <- p + 
+      geom_sf(
+        data = flow_now_points,
+        aes(fill = flood_status, size = index, geometry = geometry),
+        shape = 21,
+        stroke = 0.4,
+        color = config_vars$bg_col,
+        alpha = 0.75,
+        show.legend = FALSE
+      ) +
+      scale_size_continuous(range = points_range, limits = c(0, 1)) +
+      scale_fill_manual(
+        name = "Peak flood stage",
+        values = flood_stage_cols_red,
+        limits = names(flood_stage_cols_red),
+        drop = FALSE,
+        na.value = config_vars$streamgage_col,
+        guide = guide_legend(
+          direction = "vertical",
+          override.aes = list(
+            shape = rep(21, length(flood_stage_cols_red)),
+            size = rep(6, length(flood_stage_cols_red)),
+            fill = unname(flood_stage_cols_red),
+            alpha = 0.8,
+            color = "black",
+            stroke = 0.2
+          ),
+          label.theme = element_text(size = config_vars$font_size, family = font_legend),
+          title.theme = element_text(size = config_vars$font_size, family = font_legend),
+          keyheight = unit(0.7, "cm")
+        )
+      ) 
+    } 
   
   # Filter storm points up to current DTG
   past_storm_points <- dplyr::filter(storm_now, DTG <= dtg)
@@ -295,6 +354,12 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
       aes(x = X, y = Y),
       color = config_vars$storm_path_col,
       linewidth = 0.8
+    ) +
+    geom_point(
+      data = past_storm_points,
+      aes(x = X, y = Y),
+      color = "black",
+      size = 2
     ) +
     ggimage::geom_image(
       data = latest_point,
@@ -369,10 +434,38 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
   logo <- magick::image_read(logo_path) |>
     magick::image_resize("x100") |>
     magick::image_colorize(100, "black")
-
-  flood_stage_leg <- magick::image_read(flood_stage_leg_path) |>
-    magick::image_resize("x200")
-
+  
+  if (flood_spikes) { 
+  flood_stage_leg <- magick::image_read(flood_stage_spike_leg_path)
+  } else { 
+    flood_stage_leg <- magick::image_read(flood_stage_point_leg_path)
+  }
+  
+  flood_stage_leg <- flood_stage_leg |> magick::image_resize("x200")
+  
+   # Rapid deployement gages icon (target)
+  if (nrow(rdg_now) > 0) {
+    rdg_now_coords <- rdg_now |>
+      mutate(
+        X = sf::st_coordinates(geometry)[, 1],
+        Y = sf::st_coordinates(geometry)[, 2]
+      )
+    
+    p <- p + ggimage::geom_image(
+      data = rdg_now_coords,
+      aes(x = X, y = Y),
+      image = target_rdg_icon,
+      size = 0.014
+    )
+  }
+  
+  # rdg icon for legend
+   p_rdg_leg <- ggplot(data.frame(X = 0.5, Y = 0.5),
+           aes(x = X, y = Y)) +
+      ggimage::geom_image(image = target_rdg_icon,
+                          size = 0.6) +
+      theme_void()
+  
   # Progress bar plot
   progress_bar <- ggplot() +
     geom_rect(aes(xmin = 0, xmax = 1, ymin = 0, ymax = 1),
@@ -465,13 +558,13 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
     ) +
     draw_plot(legend_precip,
       x = config_vars$plot_margin + 0.052,
-      y = 0.227,
+      y = 0.227  + 0.015,
       height = 0.05,
       width = 0.42 - config_vars$plot_margin
     ) +
     draw_label("Total rainfall (in)",
       x = config_vars$plot_margin + 0.002,
-      y = 1 - config_vars$plot_margin - 0.715,
+      y = 1 - config_vars$plot_margin - 0.715  + 0.015,
       size = 12,
       hjust = 0,
       vjust = 1,
@@ -481,7 +574,7 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
     ) +
     draw_label("1",
       x = config_vars$plot_margin + 0.158,
-      y = 1 - config_vars$plot_margin - 0.716,
+      y = 1 - config_vars$plot_margin - 0.716  + 0.015,
       size = 12,
       hjust = 0,
       vjust = 1,
@@ -491,7 +584,7 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
     ) +
     draw_label(paste(global_max_precip),
       x = config_vars$plot_margin + 0.333,
-      y = 1 - config_vars$plot_margin - 0.716,
+      y = 1 - config_vars$plot_margin - 0.716  + 0.015,
       size = 12,
       hjust = 0,
       vjust = 1,
@@ -501,7 +594,7 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
     ) +
     draw_label("Each dot        is a",
       x = config_vars$plot_margin + 0.002,
-      y = 1 - config_vars$plot_margin - 0.746,
+      y = 1 - config_vars$plot_margin - 0.746  + 0.015,
       size = 12,
       hjust = 0,
       vjust = 1,
@@ -511,7 +604,7 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
     ) +
     draw_label("USGS streamgage",
       x = config_vars$plot_margin + 0.145,
-      y = 1 - config_vars$plot_margin - 0.746,
+      y = 1 - config_vars$plot_margin - 0.746  + 0.015,
       size = 12,
       hjust = 0,
       vjust = 1,
@@ -522,13 +615,43 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
     ) +
     draw_plot(p_dot_legend,
       x = config_vars$plot_margin + 0.058,
-      y = 0.208,
+      y = 0.208  + 0.015,
       height = 0.03,
       width = 0.1 - config_vars$plot_margin
-    ) +
-    draw_label("If it floods, a               appears",
+    ) 
+    
+    if (flood_spikes) { 
+    p <- p + 
+      draw_label("A target        is a",
+                 x = config_vars$plot_margin + 0.002,
+                 y = 1 - config_vars$plot_margin - 0.775  + 0.015,
+                 size = 12,
+                 hjust = 0,
+                 vjust = 1,
+                 fontfamily = font_legend,
+                 color = "black",
+                 lineheight = 1
+      ) +
+      draw_label("Rapid-Deployment gage",
+                 x = config_vars$plot_margin + 0.138,
+                 y = 1 - config_vars$plot_margin - 0.775  + 0.015,
+                 size = 12,
+                 hjust = 0,
+                 vjust = 1,
+                 fontfamily = font_legend,
+                 fontface = "bold",
+                 color = "black",
+                 lineheight = 1
+      ) +
+      draw_plot(p_rdg_leg,
+                x = config_vars$plot_margin + 0.05,
+                y = 0.177  + 0.015,
+                height = 0.03,
+                width = 0.1 - config_vars$plot_margin
+      ) + 
+      draw_label("If it floods, a               appears",
       x = config_vars$plot_margin + 0.002,
-      y = 1 - config_vars$plot_margin - 0.777,
+      y = 1 - config_vars$plot_margin - 0.806  + 0.015,
       size = 12,
       hjust = 0,
       vjust = 1,
@@ -538,7 +661,7 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
     ) +
     draw_label("spike",
       x = config_vars$plot_margin + 0.116,
-      y = 1 - config_vars$plot_margin - 0.777,
+      y = 1 - config_vars$plot_margin - 0.806  + 0.015,
       size = 12,
       hjust = 0,
       vjust = 1,
@@ -549,13 +672,13 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
     ) +
     draw_plot(p_peak_legend,
       x = config_vars$plot_margin + 0.22,
-      y = 0.182,
+      y = 0.15  + 0.015,
       height = 0.03,
       width = 0.1 - config_vars$plot_margin
     ) +
     draw_label("The                 is how long it's been flooded",
       x = config_vars$plot_margin + 0.002,
-      y = 1 - config_vars$plot_margin - 0.809,
+      y = 1 - config_vars$plot_margin - 0.833  + 0.015,
       size = 12,
       hjust = 0,
       vjust = 1,
@@ -565,7 +688,7 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
     ) +
     draw_label("height",
       x = config_vars$plot_margin + 0.0415,
-      y = 1 - config_vars$plot_margin - 0.809,
+      y = 1 - config_vars$plot_margin - 0.833  + 0.015,
       size = 12,
       hjust = 0,
       vjust = 1,
@@ -576,13 +699,13 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
     ) +
     draw_image(flood_stage_leg,
       x = config_vars$plot_margin + 0.33,
-      y = 0.135,
+      y = 0.111+ 0.015,
       width = 0.13,
       height = 0.135
     ) +
     draw_label("And the              is the severity of the flood",
       x = config_vars$plot_margin + 0.002,
-      y = 1 - config_vars$plot_margin - 0.841,
+      y = 1 - config_vars$plot_margin - 0.861  + 0.015,
       size = 12,
       hjust = 0,
       vjust = 1,
@@ -592,7 +715,7 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
     ) +
     draw_label("color",
       x = config_vars$plot_margin + 0.074,
-      y = 1 - config_vars$plot_margin - 0.841,
+      y = 1 - config_vars$plot_margin - 0.861  + 0.015,
       size = 12,
       hjust = 0,
       vjust = 1,
@@ -603,10 +726,99 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
     ) +
     draw_plot(flood_status_bar,
       x = 0.17,
-      y = 0.048,
+      y = 0.028  + 0.015,
       width = 0.2,
       height = 0.055
     )
+    } else { 
+    p <-  p + 
+      draw_label("A target        is a",
+                 x = config_vars$plot_margin + 0.002,
+                 y = 1 - config_vars$plot_margin - 0.776 + 0.015,
+                 size = 12,
+                 hjust = 0,
+                 vjust = 1,
+                 fontfamily = font_legend,
+                 color = "black",
+                 lineheight = 1
+      ) +
+      draw_label("Rapid-Deployment gage",
+                 x = config_vars$plot_margin + 0.138,
+                 y = 1 - config_vars$plot_margin - 0.776 + 0.015,
+                 size = 12,
+                 hjust = 0,
+                 vjust = 1,
+                 fontfamily = font_legend,
+                 fontface = "bold",
+                 color = "black",
+                 lineheight = 1
+      ) +
+      draw_plot(p_rdg_leg,
+                x = config_vars$plot_margin + 0.049,
+                y = 0.17 + 0.021,
+                height = 0.03,
+                width = 0.1 - config_vars$plot_margin
+      ) + 
+   draw_label("If it floods:",
+              x = config_vars$plot_margin + 0.002, 
+              y = 1-config_vars$plot_margin - 0.805 + 0.015,
+              size = 12,
+              hjust = 0,
+              vjust = 1,
+              fontfamily = font_legend,
+              color = "black",
+              lineheight = 1) +
+   draw_label("     The              is the severity of the flood",
+              x = config_vars$plot_margin + 0.002,
+              y = 1-config_vars$plot_margin - 0.833 + 0.015,
+              size = 12,
+              hjust = 0,
+              vjust = 1,
+              fontfamily = font_legend,
+              color = "black",
+              lineheight = 1) +
+   draw_label("color",
+              x = config_vars$plot_margin + 0.062,
+              y = 1-config_vars$plot_margin - 0.833 + 0.015,
+              size = 12,
+              hjust = 0,
+              vjust = 1,
+              fontfamily = font_legend,
+              fontface = "bold",
+              color = "black",
+              lineheight = 1) +
+   draw_plot(flood_status_bar,
+             x = 0.189,
+             y = 0.057 + 0.015,
+             width = 0.2,
+             height = 0.055) +
+   draw_label("     And the           is how long it's been flooded",
+              x = config_vars$plot_margin + 0.002,
+              y = 1-config_vars$plot_margin - 0.934 + 0.015,
+              size = 12,
+              hjust = 0,
+              vjust = 1,
+              fontfamily = font_legend,
+              color = "black",
+              lineheight = 1) +
+   draw_label("       size",
+              x = config_vars$plot_margin + 0.066,
+              y = 1-config_vars$plot_margin - 0.934 + 0.015,
+              size = 12,
+              hjust = 0,
+              vjust = 1,
+              fontfamily = font_legend,
+              fontface = "bold",
+              color = "black",
+              lineheight = 1) 
+    # Dropping custom flood stage for now, since placement is a bit awkward
+   #  +
+   # draw_image(flood_stage_leg,
+   #            x = config_vars$plot_margin + 0.28,
+   #            y = 0.0465,
+   #            width = 0.145,
+   #            height = 0.125) 
+}
 
   if (!is.null(classification_label)) {
     p <- p + draw_label(
@@ -622,10 +834,16 @@ hurricane_flood_stage_spike_frames <- function(dtg, precip_now, flow_now, storm_
     )
   }
 
-  fs::dir_create(frame_dir)
   timestamp_str <- format(dtg, "%Y%m%dT%H%M")
-  frame_path <- file.path(frame_dir, paste0("frame_", timestamp_str, ".png"))
-
+  
+  if (flood_spikes) {
+  fs::dir_create(frame_spike_dir)
+  frame_path <- file.path(frame_spike_dir, paste0("frame_", timestamp_str, ".png"))
+  } else {
+  fs::dir_create(frame_point_dir)
+  frame_path <- file.path(frame_point_dir, paste0("frame_", timestamp_str, ".png"))
+  }
+  
   ggsave(
     filename = frame_path, plot = p,
     width = config_vars$width, height = config_vars$height,
