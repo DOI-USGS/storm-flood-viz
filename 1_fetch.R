@@ -133,9 +133,14 @@ tar_target(
 
 # Fetch rapid deployment gages  -------------------------------------------
   tar_target(
+    # Note that some rapid deployment gages are placed a weeks or so after
+    # hurricane landfall 
     p1_rapid_dep_gages,
     fetch_rapid_dep_sites(event = p0_storm_info$stn_event,
-                          proj = p0_proj)
+                          proj = p0_proj,
+                          desired_timezone = p0_timezone,
+                          start_day = p0_precip_start,
+                          end_day = p0_precip_end)
   ),
 
 # Fetch flood data --------------------------------------------------------
