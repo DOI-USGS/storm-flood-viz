@@ -19,7 +19,7 @@ p0_targets <- list(
   ),
   tar_target(
     p0_date_end,
-    "2024-09-28"
+    "2024-09-29"
   ),
   tar_target(
     p0_storm_info,
@@ -96,6 +96,19 @@ p0_targets <- list(
     p0_viz_precip_config_pal_grayscale,
     c("#E6E6E6", "#CBCBCB", "#B6B6B6", "#A6A6A6", "#979797", "#858585", "#6D6D6D")
     ),
+  # Set up TRUE/FALSE statement for variables wanted on on or off for viz
+  # FALSE = colorized precipitation
+  # TRUE = grayscale precipitation
+  tar_target(
+    p0_precip_grayscale_var,
+    "FALSE"
+  ),
+  # FALSE = sized flooded points
+  # TRUE = sized flooded spike
+  tar_target(
+    p0_flood_spike_var,
+    "TRUE"
+  ),
   tar_target(
     # Create a tibble to define fig width and height, conus outline colors,
     # background color, font name, and font size 
