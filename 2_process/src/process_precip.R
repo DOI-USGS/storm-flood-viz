@@ -28,12 +28,14 @@ get_precip_df <- function(tif_files, proj, precip_summ, states, desired_timezone
   state_vect <- terra::vect(states)
   
   # extract datetimes from filename
+  # Note: file timestamps are in UTC. Parse as UTC and convert to desired local timezone
   extract_datetimes <- function(file) {
     fname <- basename(file)
     parts <- stringr::str_match(fname, "(\\d{4}-\\d{2}-\\d{2}T\\d{2})_to_(\\d{4}-\\d{2}-\\d{2}T\\d{2})")
     list(
-      start = as.POSIXct(parts[2], format = "%Y-%m-%dT%H", tz = desired_timezone),
-      end   = as.POSIXct(parts[3], format = "%Y-%m-%dT%H", tz = desired_timezone)
+      # Assume filenames are in UTC, then convert to local timezone
+      start = lubridate::with_tz(as.POSIXct(parts[2], format = "%Y-%m-%dT%H", tz = "UTC"), tzone = desired_timezone),
+      end   = lubridate::with_tz(as.POSIXct(parts[3], format = "%Y-%m-%dT%H", tz = "UTC"), tzone = desired_timezone)
     )
   }
   
@@ -48,8 +50,8 @@ get_precip_df <- function(tif_files, proj, precip_summ, states, desired_timezone
   if (precip_summ == "none") {
     # Extract datetime labels for layer names
     names_vec <- str_extract(tif_files, "\\d{4}-\\d{2}-\\d{2}T\\d{2}")
-    times <- as.POSIXct(names_vec, format = "%Y-%m-%dT%H", tz = desired_timezone)
-
+    times <- lubridate::with_tz(as.POSIXct(names_vec, format = "%Y-%m-%dT%H", tz = "UTC"), tzone = desired_timezone)
+    
     # Read, project, crop, and mask each file
     precip_rasters <- tif_files |>
       set_names(names_vec) |>
