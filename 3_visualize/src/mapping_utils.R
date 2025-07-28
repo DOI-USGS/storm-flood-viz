@@ -248,7 +248,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       aes(
         x = x, xend = xend, y = y, yend = yend,
         color = flood_status,
-        alpha = after_stat(I(0.65 + index * 0.4)),
+        alpha = after_stat(I(0.6 + index)),
         linewidth = after_stat(I((1 - index) * 2.3))
       ),
       show.legend = FALSE
