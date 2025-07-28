@@ -138,7 +138,6 @@ tar_target(
     p1_rapid_dep_gages,
     fetch_rapid_dep_sites(event = p0_storm_info$stn_event,
                           proj = p0_proj,
-                          desired_timezone = p0_timezone,
                           start_day = p0_precip_start,
                           end_day = p0_precip_end)
   ),

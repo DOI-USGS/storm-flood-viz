@@ -5,12 +5,11 @@
 #' (SensorType = 5).
 #' @param event Integer. A valid USGS stn evebt ID, found at https://stn.wim.usgs.gov/STNDataPortal/#
 #' @param proj projection to reproject by
-#' @param desired_timeszone character, timezone to convert timeStamp column to 
 #' @param start_day start date, to filter final df by to gather rapid deployment gages
 #' @param end_day end date, to filter final df by to gather rapid deployment gages
 #' @return A data frame of RDG site information, including sensor type, event name, 
 #' timestamp, site number, latitude, longitude, and site description.
-fetch_rapid_dep_sites <- function(event, proj, desired_timezone, start_day, end_day) {
+fetch_rapid_dep_sites <- function(event, proj, start_day, end_day) {
   
   if(is.null(event)) {
     
@@ -37,12 +36,12 @@ fetch_rapid_dep_sites <- function(event, proj, desired_timezone, start_day, end_
   
   rdgs_proj <- st_transform(rdgs_proj, crs = proj)
   
-  start_day <- as.POSIXct(start_day, format = "%Y-%m-%dT%H", tz = desired_timezone)
-  end_day   <- as.POSIXct(end_day,   format = "%Y-%m-%dT%H", tz = desired_timezone)
+  start_day <- as.POSIXct(start_day, format = "%Y-%m-%dT%H", tz = "UTC")
+  end_day   <- as.POSIXct(end_day,   format = "%Y-%m-%dT%H",tz = "UTC")
   
   rdgs_time <- rdgs_proj |>
     mutate(
-      dateTime = as.POSIXct(timeStamp, format = "%Y-%m-%dT%H:%M:%S", tz = desired_timezone),
+      dateTime = as.POSIXct(timeStamp, format = "%Y-%m-%dT%H:%M:%S",  tz = "UTC"),
       dateTime = round_date(dateTime, unit = "hour")
     ) |>
     filter(dateTime >= start_day, dateTime <= end_day)

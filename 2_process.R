@@ -117,7 +117,6 @@ p2_targets <- list(
         left_join(p1_usgs_flood_stage_gages, by = "site_no") |>
         left_join(p2_peak_data_max_df, by = c("site_no", "agency_cd")) |>
         filter(lubridate::minute(dateTime) == 0, lubridate::second(dateTime) == 0) |>  # Keep full hours only, since animation timestep is 1 hour
-        mutate(dateTime = lubridate::with_tz(dateTime, tzone = p0_timezone)) |> 
         select(
           site_no, dateTime, X_00060_00000, X_00065_00000,
           percentile, action.stage, flood.stage, moderate.flood.stage, major.flood.stage, 
@@ -133,8 +132,7 @@ p2_targets <- list(
                tif_files = p1_precip_tifs,
                proj = p0_proj,
                precip_summ = "cumulative",
-               states = p1_conus_bbox_crop_sf,
-               desired_timezone = p0_timezone)
+               states = p1_conus_bbox_crop_sf)
              
   ),
   tar_target(p2_state_inner_lines,
