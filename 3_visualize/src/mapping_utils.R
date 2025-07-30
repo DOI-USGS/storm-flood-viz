@@ -31,6 +31,7 @@
 #' @param y_baseheight numeric value to add to base height of yend for spikes, so that peaks are immediately visible as peaks when a gage floods
 #' @param points_range, numeric values for sizing points in `scale_size_continuous()`
 #' @param target_rdg_icon, Character path for target icon for rapid deployment gages points.
+#' @param timezone_long, Character long name for timezone to be added to map
 
 #' @return Character file path to PNG frame.
 hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
@@ -48,7 +49,8 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
                                          global_max_precip, flood_spikes,
                                          storm_info, global_max_flood_stages,
                                          precip_grayscale_cols, points_range,
-                                         timezone_abv, y_baseheight,target_rdg_icon,
+                                         timezone_long, y_baseheight,
+                                         target_rdg_icon,
                                          rdg_now) {
   # Font configuration
   font_legend <- config_vars$load_font
@@ -529,7 +531,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       color = "black",
       lineheight = 1
     ) +
-    draw_label(paste0(format(dtg, "%b. %d, %Y %H:%M "), timezone_abv),
+    draw_label(paste0(format(lubridate::with_tz(dtg, timezone_long), "%b. %d, %Y %H:%M %Z")),
       x = config_vars$plot_margin + 0.002,
       y = 1 - config_vars$plot_margin - 0.055,
       size = 14,
