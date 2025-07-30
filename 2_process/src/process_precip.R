@@ -33,7 +33,6 @@ get_precip_df <- function(tif_files, proj, precip_summ, states) {
     fname <- basename(file)
     parts <- stringr::str_match(fname, "(\\d{4}-\\d{2}-\\d{2}T\\d{2})_to_(\\d{4}-\\d{2}-\\d{2}T\\d{2})")
     list(
-      # Assume filenames are in UTC, then convert to local timezone
       start = lubridate::with_tz(as.POSIXct(parts[2], format = "%Y-%m-%dT%H", tz = "UTC")),
       end   = lubridate::with_tz(as.POSIXct(parts[3], format = "%Y-%m-%dT%H", tz = "UTC"))
     )
