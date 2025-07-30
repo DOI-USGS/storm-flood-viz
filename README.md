@@ -14,11 +14,7 @@ This pipeline is intentionally structured to be manually adjusted for new storms
 
 -   `p0_bbox_sf`
 
-```         
--   Define the geographic bounding box of interest using NAD83 (`"EPSG:4269"`) coordinates in decimal degrees. This area sets the spatial extent for precipitation, streamgage, and storm track data.
-
--   Example: `sf::st_bbox(c(xmin = -98.21, xmax = -69.97, ymin = 23, ymax = 44.6))`
-```
+    -   Define the geographic bounding box of interest using NAD83 (`"EPSG:4269"`) coordinates in decimal degrees. This area sets the spatial extent for precipitation, streamgage, and storm track data. Example: `sf::st_bbox(c(xmin = -98.21, xmax = -69.97, ymin = 23, ymax = 44.6))`
 
 -   `p0_proj`
 
@@ -80,9 +76,6 @@ This pipeline is intentionally structured to be manually adjusted for new storms
 
     -   Alternative flood stage color palette (red theme) for use in more attention-grabbing contexts, following NOAA National Water Prediction Service (NWPS) colors. Also a named vector with categories like `"Flood"` and `"Major"` tied to color hex codes.
 
-```{=html}
-<!-- -->
-```
 -   `p0_viz_percentile_config_pal`
 
     -   Color scale for streamflow percentiles, typically used in non-storm visualizations or background context. Ordered from very dry to very wet, including a neutral color (`"#C0C0C0"`) for normal conditions.
@@ -95,7 +88,7 @@ This pipeline is intentionally structured to be manually adjusted for new storms
 
     -   Grayscale palette for precipitation, used when visual context or accessibility requires less saturation.
 
--    `p0_precip_grayscale_var`
+-   `p0_precip_grayscale_var`
 
     -   Toggle to use grayscale precipitation styling. Accepts `"TRUE"` or `"FALSE"` as a string. When `"TRUE"`, grayscale colors are applied to precip layers.
 
