@@ -50,13 +50,14 @@ p0_targets <- list(
     ),
   # Desired timezone for map display
   # For refernce: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+  # Note: all data processing/fetching is done in UTC timezone, timezone edits for  
+  # local desired timezone are only done in final mapping step `mapping_utils.R`
   tar_target(p0_timezone,
              "America/New_York"
              ),
   tar_target(p0_timezone_abv,
              "ET"),
   # Set time for storm landfall to add countdown to landfall
-  # Be sure to specify the correct local timezone
   # For Helene, this was noted from https://en.wikipedia.org/wiki/Hurricane_Helene 
   tar_target(
     p0_landfall_time,
