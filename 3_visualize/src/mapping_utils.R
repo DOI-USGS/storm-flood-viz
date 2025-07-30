@@ -543,7 +543,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       lineheight = 1
     ) +
     draw_label(landfall_label,
-      x = config_vars$plot_margin + 0.245,
+      x = config_vars$plot_margin + 0.26,
       y = 1 - config_vars$plot_margin - 0.055,
       size = 14,
       hjust = 0,
