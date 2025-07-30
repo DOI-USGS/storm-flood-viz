@@ -19,7 +19,7 @@ p0_targets <- list(
   ),
   tar_target(
     p0_date_end,
-    "2024-09-28"
+    "2024-09-29"
   ),
   tar_target(
     p0_storm_info,
@@ -27,7 +27,9 @@ p0_targets <- list(
            storm_code = "al092024",
            storm_buffer = 250000,
            shape_type = "buffered_storm_track",
-           storm_best_track_url = "https://www.nhc.noaa.gov/gis/best_track/")
+           storm_best_track_url = "https://www.nhc.noaa.gov/gis/best_track/",
+           # Can find code by looking at REST URLs here: https://stn.wim.usgs.gov/STNDataPortal/#
+           stn_event = 346)
     ),
   tar_target(
     p0_pcodes,
@@ -36,6 +38,8 @@ p0_targets <- list(
   # Set precipitation bbox and dates
   tar_target(p0_precip_bbox,
              unname(as.list(p0_bbox_sf))),
+  # Set precipitation start and end time
+  # Note: these must be defined in UTC time
   tar_target(
     p0_precip_start,
     paste0(p0_date_start, "T00")
@@ -44,6 +48,15 @@ p0_targets <- list(
     p0_precip_end,
     paste0(p0_date_end, "T23")
     ),
+  # Desired timezone for map display
+  # For refernce: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+  # Note: all data processing/fetching is done in UTC timezone, timezone edits for  
+  # local desired timezone are only done in final mapping step `mapping_utils.R`
+  tar_target(p0_timezone,
+             "America/New_York"
+             ),
+  tar_target(p0_timezone_abv,
+             "ET"),
   # Set time for storm landfall to add countdown to landfall
   # For Helene, this was noted from https://en.wikipedia.org/wiki/Hurricane_Helene 
   tar_target(
@@ -52,14 +65,24 @@ p0_targets <- list(
   ),
   tar_target(
     # Create a tibble to define color palette for flood stage
-    p0_viz_fs_config_pal,
+    p0_viz_fs_config_pal_blue,
     c(
-      "Not flooded" = "#d3d3d3",
-      "Flood" = "#f4b183",
-      "Moderate" = "#d55a60",
-      "Major" = "#934141"
-      )
-    ), 
+      "Not flooded" = "#dcdcdc",
+      "Flood" = "#4ecad7",
+      "Moderate" = "#17718E",
+      "Major" = "#003e6a"
+    )
+  ),
+  tar_target(
+    # Create a tibble to define color palette for flood stage
+    p0_viz_fs_config_pal_red,
+    c(
+      "Not flooded" = "#dcdcdc",
+      "Flood" = "#e5a000",
+      "Moderate" = "#F7513B",
+      "Major" = "#C917E8"
+    )
+  ), 
   tar_target(
     # Create a tibble to define color palette for percentile
     p0_viz_percentile_config_pal,
@@ -67,9 +90,26 @@ p0_targets <- list(
       "#C0C0C0", "#80cdc1", "#35978f", "#045a8d")
     ),
   tar_target(
-    p0_viz_precip_config_pal,
-    "mako"
+    p0_viz_precip_config_pal_blue,
+    c("#c7f0f6", "#92dce5", "#5fc8d1", "#38b1bc", "#259db0", "#1b88a1", "#16738c")
     ),
+  tar_target(
+    p0_viz_precip_config_pal_grayscale,
+    c("#E6E6E6", "#CBCBCB", "#B6B6B6", "#A6A6A6", "#979797", "#858585", "#6D6D6D")
+    ),
+  # Set up TRUE/FALSE statement for variables wanted on on or off for viz
+  # FALSE = colorized precipitation
+  # TRUE = grayscale precipitation
+  tar_target(
+    p0_precip_grayscale_var,
+    "FALSE"
+  ),
+  # FALSE = sized flooded points
+  # TRUE = sized flooded spike
+  tar_target(
+    p0_flood_spike_var,
+    "TRUE"
+  ),
   tar_target(
     # Create a tibble to define fig width and height, conus outline colors,
     # background color, font name, and font size 
@@ -88,7 +128,7 @@ p0_targets <- list(
       bg_col = "white",
       ocean_col = "#f8fcfc",
       progress_bar_bg_col = 'gray80',
-      progress_bar_col = "#345EC4",
+      progress_bar_col = "gray45",
       load_font = 'Source Sans Pro',
       font_size_title = 16,
       font_size = 14,

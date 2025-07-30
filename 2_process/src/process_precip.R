@@ -12,6 +12,7 @@
 #' (for total/cumulative).
 #' @param proj Character string specifying the target CRS for reprojection.
 #' @param precip_summ Character; one of `"none"`, `"total"`, or `"cumulative"`,
+#' @param desired_timezone Character, tz time zone 
 #' specifying how to treat the precipitation data:
 #'        - `"none"`: each file is a single-hour raster layer;
 #'        - `"total"`: one file represents total precip over a period;
@@ -27,12 +28,13 @@ get_precip_df <- function(tif_files, proj, precip_summ, states) {
   state_vect <- terra::vect(states)
   
   # extract datetimes from filename
+  # Note: file timestamps are in UTC.
   extract_datetimes <- function(file) {
     fname <- basename(file)
     parts <- stringr::str_match(fname, "(\\d{4}-\\d{2}-\\d{2}T\\d{2})_to_(\\d{4}-\\d{2}-\\d{2}T\\d{2})")
     list(
-      start = as.POSIXct(parts[2], format = "%Y-%m-%dT%H", tz = "UTC"),
-      end   = as.POSIXct(parts[3], format = "%Y-%m-%dT%H", tz = "UTC")
+      start = lubridate::with_tz(as.POSIXct(parts[2], format = "%Y-%m-%dT%H", tz = "UTC")),
+      end   = lubridate::with_tz(as.POSIXct(parts[3], format = "%Y-%m-%dT%H", tz = "UTC"))
     )
   }
   
@@ -48,7 +50,7 @@ get_precip_df <- function(tif_files, proj, precip_summ, states) {
     # Extract datetime labels for layer names
     names_vec <- str_extract(tif_files, "\\d{4}-\\d{2}-\\d{2}T\\d{2}")
     times <- as.POSIXct(names_vec, format = "%Y-%m-%dT%H", tz = "UTC")
-
+    
     # Read, project, crop, and mask each file
     precip_rasters <- tif_files |>
       set_names(names_vec) |>

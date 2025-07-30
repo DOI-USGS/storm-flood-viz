@@ -7,6 +7,7 @@ reticulate::source_python("1_fetch/src/generate_hyswap_percentiles.py")
 source("1_fetch/src/storm_shape_functions.R")
 source("1_fetch/src/clip_flood_stage_gages.R")
 source("1_fetch/src/fetch_uv_peaks_data.R")
+source("1_fetch/src/fetch_rapid_deployment_data.R")
 
 p1_targets <- list(
 # Fetch precipitation data  -----------------------------------------------
@@ -130,6 +131,16 @@ tar_target(
     }
   ),
 
+# Fetch rapid deployment gages  -------------------------------------------
+  tar_target(
+    # Note that some rapid deployment gages are placed a weeks or so after
+    # hurricane landfall 
+    p1_rapid_dep_gages,
+    fetch_rapid_dep_sites(event = p0_storm_info$stn_event,
+                          proj = p0_proj,
+                          start_day = p0_precip_start,
+                          end_day = p0_precip_end)
+  ),
 
 # Fetch flood data --------------------------------------------------------
   # Download flood stage csv from NOAA
