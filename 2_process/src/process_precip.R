@@ -28,7 +28,7 @@ get_precip_df <- function(tif_files, proj, precip_summ, states) {
   state_vect <- terra::vect(states)
   
   # extract datetimes from filename
-  # Note: file timestamps are in UTC. Parse as UTC and convert to desired local timezone
+  # Note: file timestamps are in UTC.
   extract_datetimes <- function(file) {
     fname <- basename(file)
     parts <- stringr::str_match(fname, "(\\d{4}-\\d{2}-\\d{2}T\\d{2})_to_(\\d{4}-\\d{2}-\\d{2}T\\d{2})")
@@ -67,7 +67,7 @@ get_precip_df <- function(tif_files, proj, precip_summ, states) {
         values_to = "precip_mm"
       ) |>
       mutate(
-        dateTime = as.POSIXct(dateTime, format = "%Y-%m-%dT%H"),
+        dateTime = as.POSIXct(dateTime, format = "%Y-%m-%dT%H", tz = "UTC"),
         date = as.Date(dateTime),
         precip_in = precip_mm * 0.0393701,
         precip_in = ifelse(precip_in < 1, NA, precip_in)
