@@ -105,6 +105,17 @@ tar_target(
           st_transform(p0_proj)
       )
   ),
+# Convert bbox to a list with xlim and ylim vector
+  tar_target(
+    p1_bbox_coords,
+    {
+      bbox <- sf::st_bbox(p1_conus_bbox_crop_sf)
+      list(
+        xlim = c(bbox["xmin"], bbox["xmax"]),
+        ylim = c(bbox["ymin"], bbox["ymax"])
+      )
+      }
+    ),
 # Download major cities
   tar_target(
     p1_major_cities_sf,
