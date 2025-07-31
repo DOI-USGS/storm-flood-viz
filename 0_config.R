@@ -129,6 +129,7 @@ p0_targets <- list(
       ocean_col = "#f8fcfc",
       progress_bar_bg_col = 'gray80',
       progress_bar_col = "gray45",
+      x_mark = "#d12009",
       load_font = 'Source Sans Pro',
       font_size_title = 16,
       font_size = 14,

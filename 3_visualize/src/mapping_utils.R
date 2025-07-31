@@ -234,8 +234,16 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       data = major_cities, aes(label = NAME),
       color = config_vars$major_cities_text_col,
       size = 3, nudge_y = 50000, family = font_legend
-    )
-
+    ) + 
+  # decomissioned gages
+    geom_sf(data = flow_now |> filter(is_decommissioned), 
+            aes(geometry = geometry), 
+            shape = 4,     
+            color = config_vars$x_mark, 
+            size = 1.25, 
+            alpha = 0.75,
+            stroke = 1) 
+  
   # If flood_spikes TRUE, make spikes
   if (flood_spikes) {
     # Peak style lines for flooded sites
@@ -484,7 +492,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       size = 0.6
     ) +
     theme_void()
-
+  
   # Progress bar plot
   progress_bar <- ggplot() +
     geom_rect(aes(xmin = 0, xmax = 1, ymin = 0, ymax = 1),
