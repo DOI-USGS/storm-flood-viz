@@ -122,6 +122,7 @@ p3_targets <- list(
       rdg_now = p3_rdg_by_time,
       storm_info = p0_storm_info,
       progress_fraction = p3_progress_fract,
+      bbox_coords = p1_bbox_coords,
       state_borders = p1_conus_bbox_crop_sf,
       state_inner_borders = p2_state_inner_lines,
       state_outer_lines = p2_bbox_outer_lines,

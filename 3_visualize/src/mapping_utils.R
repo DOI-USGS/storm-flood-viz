@@ -32,6 +32,9 @@
 #' @param points_range, numeric values for sizing points in `scale_size_continuous()`
 #' @param target_rdg_icon, Character path for target icon for rapid deployment gages points.
 #' @param timezone_long, Character long name for timezone to be added to map
+#' @param bbox_coords A list with named numeric vectors `xlim` and `ylim`,
+#' representing the projected bounding box coordinates (xmin/xmax and ymin/ymax)
+#'  to be used in `coord_sf()` for consistent map extent across frames
 
 #' @return Character file path to PNG frame.
 hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
@@ -40,7 +43,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
                                          flood_stage_cols_red,
                                          precip_cols, config_vars, peak_height,
                                          frame_spike_dir, frame_point_dir,
-                                         logo_path, state_outer_lines,
+                                         logo_path, bbox_coords, state_outer_lines,
                                          hurricane_symbol_path, global_max_duration,
                                          landfall_dtg, progress_fraction,
                                          flood_stage_point_leg_path,
@@ -382,8 +385,9 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
   # Final plot theme and save
   p <- p +
     coord_sf(
-      xlim = range(precip_now$x, na.rm = TRUE),
-      ylim = range(precip_now$y, na.rm = TRUE), expand = FALSE
+      xlim = bbox_coords$xlim,
+      ylim = bbox_coords$ylim,
+      expand = FALSE
     ) +
     labs(title = paste0(
       "Hurricane ", stringr::str_to_sentence(unique(storm_now$STORMNAME)), "\n",
@@ -515,12 +519,10 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
         legend.position = "none",
         plot.title = element_blank()
       ),
-      # shifting plot for focus on florida/south atlantic region
-      # will need to be adjusted if storm is focused elsewhere
-      x = (1 - config_vars$plot_margin) * -1.7,
-      y = -0.02,
-      height = 1.125,
-      width = (1 - config_vars$plot_margin) + 3.3
+      x = config_vars$plot_shift_x,
+      y = config_vars$plot_shift_y,
+      height = config_vars$plot_height,
+      width = config_vars$plot_width
     ) +
     draw_image(logo,
       x = 0.9 - config_vars$plot_margin * 2,
