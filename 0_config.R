@@ -133,7 +133,11 @@ p0_targets <- list(
       font_size_title = 16,
       font_size = 14,
       leg_font_size = 12,
-      plot_margin = 0.025
+      plot_margin = 0.025,
+      plot_shift_x = -0.15,
+      plot_shift_y = 0.02,
+      plot_width = 1.35,
+      plot_height = 1.15
     )
   )
 )
