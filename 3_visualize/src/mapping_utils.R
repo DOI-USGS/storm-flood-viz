@@ -493,6 +493,20 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
     ) +
     theme_void()
   
+  # decomissioned/ out of service gage legend icon
+  p_decom_leg <- ggplot(
+    data.frame(x = 0, y = 0),
+    aes(x = x, y = y)
+    ) +
+    geom_point(
+      shape = 4, 
+      color = config_vars$x_mark, 
+      size = 1.5, 
+      alpha = 0.75, 
+      stroke = 1
+    ) +
+    theme_void()
+  
   # Progress bar plot
   progress_bar <- ggplot() +
     geom_rect(aes(xmin = 0, xmax = 1, ymin = 0, ymax = 1),
@@ -733,9 +747,9 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
         width = 0.13,
         height = 0.135
       ) +
-      draw_label("And the              is the severity of the flood",
+      draw_label("The              is the severity of the flood",
         x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.861 + 0.015,
+        y = 1 - config_vars$plot_margin - 0.861 + 0.017,
         size = 12,
         hjust = 0,
         vjust = 1,
@@ -744,8 +758,8 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
         lineheight = 1
       ) +
       draw_label("color",
-        x = config_vars$plot_margin + 0.074,
-        y = 1 - config_vars$plot_margin - 0.861 + 0.015,
+        x = config_vars$plot_margin + 0.042,
+        y = 1 - config_vars$plot_margin - 0.861 + 0.017,
         size = 12,
         hjust = 0,
         vjust = 1,
@@ -756,10 +770,26 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       ) +
       draw_plot(flood_status_bar,
         x = 0.17,
-        y = 0.028 + 0.015,
+        y = 0.028 + 0.02,
         width = 0.2,
         height = 0.055
-      )
+      ) +
+      draw_label("And a       is an out-of-service streamgage",
+                 x = config_vars$plot_margin + 0.002,
+                 y = 1 - config_vars$plot_margin - 0.861 - 0.078,
+                 size = 12,
+                 hjust = 0,
+                 vjust = 1,
+                 fontfamily = font_legend,
+                 color = "black",
+                 lineheight = 1
+      ) + 
+      draw_plot(p_decom_leg,
+                x = config_vars$plot_margin + 0.028,
+                y = -0.012,
+                height = 0.08,
+                width = 0.1 - config_vars$plot_margin
+     )
   } else {
     p <- p +
       draw_label("A target        is a",
