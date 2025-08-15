@@ -3,7 +3,7 @@ source("2_process/src/process_states.R")
 source("2_process/src/process_hourly_max_uv.R")
 p2_targets <- list(
 
-  # process flood data -----------------------------------------------------
+  # Process flood data -----------------------------------------------------
   # Load in uv data df
   tar_target(
     p2_uv_data_df,
@@ -83,7 +83,7 @@ p2_targets <- list(
         select(-na_flag, -rleid, -run_length)
     }
   ),
-  # process precipitation data ----------------------------------------------
+  # Process precipitation data ----------------------------------------------
   tar_target(
     p2_process_precip_rast,
     get_precip_df(
