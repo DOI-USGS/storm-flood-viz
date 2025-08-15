@@ -831,7 +831,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       ) +
       draw_label("     The              is the severity of the flood",
         x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.833 + 0.015,
+        y = 1 - config_vars$plot_margin - 0.833 + 0.016,
         size = 12,
         hjust = 0,
         vjust = 1,
@@ -841,7 +841,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       ) +
       draw_label("color",
         x = config_vars$plot_margin + 0.062,
-        y = 1 - config_vars$plot_margin - 0.833 + 0.015,
+        y = 1 - config_vars$plot_margin - 0.833 + 0.016,
         size = 12,
         hjust = 0,
         vjust = 1,
@@ -852,13 +852,13 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       ) +
       draw_plot(flood_status_bar,
         x = 0.189,
-        y = 0.057 + 0.015,
+        y = 0.057 + 0.0165,
         width = 0.2,
         height = 0.055
       ) +
-      draw_label("     And the           is how long it's been flooded",
+      draw_label("      The           is how long it's been flooded",
         x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.934 + 0.015,
+        y = 1 - config_vars$plot_margin - 0.934 + 0.019,
         size = 12,
         hjust = 0,
         vjust = 1,
@@ -867,8 +867,8 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
         lineheight = 1
       ) +
       draw_label("       size",
-        x = config_vars$plot_margin + 0.066,
-        y = 1 - config_vars$plot_margin - 0.934 + 0.015,
+        x = config_vars$plot_margin + 0.036,
+        y = 1 - config_vars$plot_margin - 0.934 + 0.019,
         size = 12,
         hjust = 0,
         vjust = 1,
@@ -876,6 +876,22 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
         fontface = "bold",
         color = "black",
         lineheight = 1
+      ) +
+      draw_label("And a       is an out-of-service streamgage",
+                 x = config_vars$plot_margin + 0.002,
+                 y = 1 - config_vars$plot_margin - 0.861 - 0.078,
+                 size = 12,
+                 hjust = 0,
+                 vjust = 1,
+                 fontfamily = font_legend,
+                 color = "black",
+                 lineheight = 1
+      ) + 
+      draw_plot(p_decom_leg,
+                x = config_vars$plot_margin + 0.028,
+                y = -0.012,
+                height = 0.08,
+                width = 0.1 - config_vars$plot_margin
       )
     # Dropping custom flood stage for now, since placement is a bit awkward
     #  +
