@@ -501,7 +501,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
     geom_point(
       shape = 4, 
       color = config_vars$x_mark, 
-      size = 1.5, 
+      size = 2, 
       alpha = 0.75, 
       stroke = 1
     ) +
@@ -636,93 +636,87 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       color = "black",
       lineheight = 1
     ) +
-    draw_label("Each dot        is a",
-      x = config_vars$plot_margin + 0.002,
-      y = 1 - config_vars$plot_margin - 0.746 + 0.015,
-      size = 12,
-      hjust = 0,
-      vjust = 1,
-      fontfamily = font_legend,
-      color = "black",
-      lineheight = 1
-    ) +
     draw_label("USGS streamgage",
-      x = config_vars$plot_margin + 0.145,
-      y = 1 - config_vars$plot_margin - 0.746 + 0.015,
+      x = config_vars$plot_margin + 0.028,
+      y = 1 - config_vars$plot_margin - 0.746 + 0.017,
       size = 12,
       hjust = 0,
       vjust = 1,
       fontfamily = font_legend,
-      fontface = "bold",
       color = "black",
       lineheight = 1
     ) +
     draw_plot(p_dot_legend,
-      x = config_vars$plot_margin + 0.058,
-      y = 0.208 + 0.015,
+      x = config_vars$plot_margin - 0.025,
+      y = 0.208 + 0.017,
       height = 0.03,
       width = 0.1 - config_vars$plot_margin
     )
 
   if (flood_spikes) {
     p <- p +
-      draw_label("A target        is a",
-        x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.775 + 0.015,
-        size = 12,
-        hjust = 0,
-        vjust = 1,
-        fontfamily = font_legend,
-        color = "black",
-        lineheight = 1
-      ) +
       draw_label("Rapid-Deployment gage",
-        x = config_vars$plot_margin + 0.138,
-        y = 1 - config_vars$plot_margin - 0.775 + 0.015,
+        x = config_vars$plot_margin + 0.028,
+        y = 1 - config_vars$plot_margin - 0.775 + 0.019,
         size = 12,
         hjust = 0,
         vjust = 1,
         fontfamily = font_legend,
-        fontface = "bold",
         color = "black",
         lineheight = 1
       ) +
       draw_plot(p_rdg_leg,
-        x = config_vars$plot_margin + 0.05,
-        y = 0.177 + 0.015,
+        x = config_vars$plot_margin - 0.025,
+        y = 0.177 + 0.019,
         height = 0.03,
         width = 0.1 - config_vars$plot_margin
       ) +
+      draw_label("Out-of-service streamgage",
+                 x = config_vars$plot_margin + 0.028,
+                 y = 1 - config_vars$plot_margin - 0.775 - 0.008,
+                 size = 12,
+                 hjust = 0,
+                 vjust = 1,
+                 fontfamily = font_legend,
+                 color = "black",
+                 lineheight = 1
+      ) +
+      draw_plot(p_decom_leg,
+                x = config_vars$plot_margin - 0.025,
+                y = 0.144,
+                height = 0.08,
+                width = 0.1 - config_vars$plot_margin
+      ) +
       draw_label("If it floods, a               appears",
-        x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.806 + 0.015,
-        size = 12,
-        hjust = 0,
-        vjust = 1,
-        fontfamily = font_legend,
-        color = "black",
-        lineheight = 1
+                 x = config_vars$plot_margin + 0.004,
+                 y = 1 - config_vars$plot_margin - 0.812,
+                 size = 12,
+                 hjust = 0,
+                 vjust = 1,
+                 fontfamily = font_legend,
+                 color = "black",
+                 lineheight = 1
       ) +
       draw_label("spike",
-        x = config_vars$plot_margin + 0.116,
-        y = 1 - config_vars$plot_margin - 0.806 + 0.015,
-        size = 12,
-        hjust = 0,
-        vjust = 1,
-        fontfamily = font_legend,
-        fontface = "bold",
-        color = "black",
-        lineheight = 1
+                 x = config_vars$plot_margin + 0.118,
+                 y = 1 - config_vars$plot_margin - 0.812,
+                 size = 12,
+                 hjust = 0,
+                 vjust = 1,
+                 fontfamily = font_legend,
+                 fontface = "bold",
+                 color = "black",
+                 lineheight = 1
       ) +
       draw_plot(p_peak_legend,
         x = config_vars$plot_margin + 0.22,
-        y = 0.15 + 0.015,
+        y = 0.145,
         height = 0.03,
         width = 0.1 - config_vars$plot_margin
       ) +
       draw_label("The                 is how long it's been flooded",
         x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.833 + 0.015,
+        y = 1 - config_vars$plot_margin - 0.84,
         size = 12,
         hjust = 0,
         vjust = 1,
@@ -732,7 +726,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       ) +
       draw_label("height",
         x = config_vars$plot_margin + 0.0415,
-        y = 1 - config_vars$plot_margin - 0.833 + 0.015,
+        y = 1 - config_vars$plot_margin - 0.84,
         size = 12,
         hjust = 0,
         vjust = 1,
@@ -742,14 +736,14 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
         lineheight = 1
       ) +
       draw_image(flood_stage_leg,
-        x = config_vars$plot_margin + 0.33,
-        y = 0.111 + 0.015,
+        x = config_vars$plot_margin + 0.329,
+        y = 0.105,
         width = 0.13,
         height = 0.135
       ) +
       draw_label("The              is the severity of the flood",
         x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.861 + 0.017,
+        y = 1 - config_vars$plot_margin - 0.867,
         size = 12,
         hjust = 0,
         vjust = 1,
@@ -759,7 +753,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       ) +
       draw_label("color",
         x = config_vars$plot_margin + 0.042,
-        y = 1 - config_vars$plot_margin - 0.861 + 0.017,
+        y = 1 - config_vars$plot_margin - 0.867,
         size = 12,
         hjust = 0,
         vjust = 1,
@@ -770,58 +764,47 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       ) +
       draw_plot(flood_status_bar,
         x = 0.17,
-        y = 0.028 + 0.02,
+        y = 0.026,
         width = 0.2,
         height = 0.055
-      ) +
-      draw_label("And a       is an out-of-service streamgage",
-                 x = config_vars$plot_margin + 0.002,
-                 y = 1 - config_vars$plot_margin - 0.861 - 0.078,
+      )
+  } else {
+    p <- p +
+      draw_label("Rapid-Deployment gage",
+                 x = config_vars$plot_margin + 0.028,
+                 y = 1 - config_vars$plot_margin - 0.775 + 0.019,
                  size = 12,
                  hjust = 0,
                  vjust = 1,
                  fontfamily = font_legend,
                  color = "black",
                  lineheight = 1
-      ) + 
-      draw_plot(p_decom_leg,
-                x = config_vars$plot_margin + 0.028,
-                y = -0.012,
-                height = 0.08,
-                width = 0.1 - config_vars$plot_margin
-     )
-  } else {
-    p <- p +
-      draw_label("A target        is a",
-        x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.776 + 0.015,
-        size = 12,
-        hjust = 0,
-        vjust = 1,
-        fontfamily = font_legend,
-        color = "black",
-        lineheight = 1
-      ) +
-      draw_label("Rapid-Deployment gage",
-        x = config_vars$plot_margin + 0.138,
-        y = 1 - config_vars$plot_margin - 0.776 + 0.015,
-        size = 12,
-        hjust = 0,
-        vjust = 1,
-        fontfamily = font_legend,
-        fontface = "bold",
-        color = "black",
-        lineheight = 1
       ) +
       draw_plot(p_rdg_leg,
-        x = config_vars$plot_margin + 0.049,
-        y = 0.17 + 0.021,
-        height = 0.03,
-        width = 0.1 - config_vars$plot_margin
+                x = config_vars$plot_margin - 0.025,
+                y = 0.177 + 0.019,
+                height = 0.03,
+                width = 0.1 - config_vars$plot_margin
       ) +
+      draw_label("Out-of-service streamgage",
+                 x = config_vars$plot_margin + 0.028,
+                 y = 1 - config_vars$plot_margin - 0.775 - 0.008,
+                 size = 12,
+                 hjust = 0,
+                 vjust = 1,
+                 fontfamily = font_legend,
+                 color = "black",
+                 lineheight = 1
+      ) +
+      draw_plot(p_decom_leg,
+                x = config_vars$plot_margin - 0.025,
+                y = 0.144,
+                height = 0.08,
+                width = 0.1 - config_vars$plot_margin
+      )  +
       draw_label("If it floods:",
-        x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.805 + 0.015,
+        x = config_vars$plot_margin + 0.004,
+        y = 1 - config_vars$plot_margin - 0.810,
         size = 12,
         hjust = 0,
         vjust = 1,
@@ -831,7 +814,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       ) +
       draw_label("     The              is the severity of the flood",
         x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.833 + 0.016,
+        y = 1 - config_vars$plot_margin - 0.836,
         size = 12,
         hjust = 0,
         vjust = 1,
@@ -841,7 +824,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       ) +
       draw_label("color",
         x = config_vars$plot_margin + 0.062,
-        y = 1 - config_vars$plot_margin - 0.833 + 0.016,
+        y = 1 - config_vars$plot_margin - 0.836,
         size = 12,
         hjust = 0,
         vjust = 1,
@@ -852,13 +835,13 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       ) +
       draw_plot(flood_status_bar,
         x = 0.189,
-        y = 0.057 + 0.0165,
+        y = 0.054,
         width = 0.2,
         height = 0.055
-      ) +
+      )  +
       draw_label("      The           is how long it's been flooded",
         x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.934 + 0.019,
+        y = 1 - config_vars$plot_margin - 0.934,
         size = 12,
         hjust = 0,
         vjust = 1,
@@ -868,7 +851,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       ) +
       draw_label("       size",
         x = config_vars$plot_margin + 0.036,
-        y = 1 - config_vars$plot_margin - 0.934 + 0.019,
+        y = 1 - config_vars$plot_margin - 0.934,
         size = 12,
         hjust = 0,
         vjust = 1,
@@ -876,22 +859,6 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
         fontface = "bold",
         color = "black",
         lineheight = 1
-      ) +
-      draw_label("And a       is an out-of-service streamgage",
-                 x = config_vars$plot_margin + 0.002,
-                 y = 1 - config_vars$plot_margin - 0.861 - 0.078,
-                 size = 12,
-                 hjust = 0,
-                 vjust = 1,
-                 fontfamily = font_legend,
-                 color = "black",
-                 lineheight = 1
-      ) + 
-      draw_plot(p_decom_leg,
-                x = config_vars$plot_margin + 0.028,
-                y = -0.012,
-                height = 0.08,
-                width = 0.1 - config_vars$plot_margin
       )
     # Dropping custom flood stage for now, since placement is a bit awkward
     #  +
