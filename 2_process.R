@@ -75,12 +75,13 @@ p2_targets <- list(
         group_by(site_no) |>
         mutate(
           na_flag = is.na(X_00065_00000),
-          rleid = data.table::rleid(na_flag),  # unique run ID
+          rleid = data.table::rleid(na_flag),
           run_length = ave(na_flag, rleid, FUN = length),
-          is_decommissioned = na_flag & run_length >= 4
+          has_data_elsewhere = any(!na_flag),  # did x site ever have a non-NA value?
+          is_decommissioned = has_data_elsewhere & na_flag & run_length >= 4
         ) |>
         ungroup() |>
-        select(-na_flag, -rleid, -run_length)
+        select(-na_flag, -rleid, -run_length, -has_data_elsewhere)
     }
   ),
   # Process precipitation data ----------------------------------------------
