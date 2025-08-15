@@ -112,6 +112,10 @@ This pipeline is intentionally structured to be manually adjusted for new storms
 
         -   Plot margins as a proportion of the frame (e.g., `plot_margin = 0.025`)
 
+        -   Plot x and y movement, as well as plot height and width values (e.g., `plot_shift_x`, `plot_shift_y`, `plot_width`, `plot_height`)
+
+-   In cases where the storm occurs in regions such as Puerto Rico, Alaska, Hawaii, etc, users will need to adjust `p1_conus_bbox_crop_sf` which downloads [tigris](https://github.com/walkerke/tigris) state borders and crops to bbox. Additionally, based on storm region and bbox, users will likely need to edit `p1_major_cities_sf` to manually assign city/state labels in the tibble to help orient viewers.
+
 # Data Citation
 
 National Oceanic and Atmospheric Administration. NWPS all gauges report [Data set]. NOAA National Water Prediction Service. Retrieved June 23, 2025, from <https://water.noaa.gov/resources/downloads/reports/nwps_all_gauges_report.csv>
