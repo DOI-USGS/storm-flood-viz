@@ -1,14 +1,40 @@
-# Hurricane Revamp Animation
+![](USGS_ID_black.png)
+
+# Visualizing Hurricane Impacts Using Flood Stage and Streamgage Data
+
+**Authors**: Elmera Azadpour, Elise Hinman, Jeffrey Kwang, Kaysa Vaarre-Lamoureux, Cee Nell, Hayley Corson-Dosch
+
+**Point of contact**: Elmera Azadpour ([eazadpour\@usgs.gov](mailto:eazadpour@usgs.gov){.email})
+
+**Repository Type**: *R* script supporting publication
+
+**Year of Origin**: 2025 (original publication)
+
+**Year of Version**: 2025
+
+**Digital Object Identifier (DOI)**: <https://doi.org/10.5066/XXXXXXXX>
+
+**USGS Information Product Data System (IPDS) no.**: IP-182360 (internal agency tracking)
+
+------------------------------------------------------------------------
 
 This repository creates a series of hurricane/storm track related maps using NOAA flood data from [water.noaa.gov](https://water.noaa.gov/resources/downloads/reports/) and hurricane track data is from NOAA National Hurricane Center [nhc.noaa.gov](https://www.nhc.noaa.gov/gis/best_track/)
 
 # Running the pipeline
 
-This repository uses a pipeline with the [`targets` library](https://github.com/ropensci/targets) for R. To run the pipeline, install `targets` and run `targets::tar_make()` in the console. You may find that you get errors at first if you do not have all of the necessary packages, e.g. `Error : could not find packages terra, ggimage in library paths`. Install the packages that are needed (using `install.packages("[packageName]")` and try`targets::tar_make()`again. Repeat as needed. You will need the following packages installed:`tidyverse`, `sf`, `reticulate`, `janitor`, `sbtools`, `tigris`, `sysfonts`, `showtext`, `readr`, `cowplot`, `rmapshaper`, `terra`, `raster`, `tidyterra`, `rvest`, `httr`, `fs`, `glue`, `dataRetrieval`, `ggimage`.
+This repository uses a pipeline with the [`targets` library](https://github.com/ropensci/targets) for R. To run the pipeline, install `targets` and run `targets::tar_make()` in the console. You may find that you get errors at first if you do not have all of the necessary packages, e.g. `Error : could not find packages terra, ggimage in library paths`. Install the packages that are needed (using `install.packages("[packageName]")` and try `targets::tar_make()`again. Repeat as needed. You will need the following packages installed:`tidyverse`, `sf`, `reticulate`, `janitor`, `sbtools`, `tigris`, `sysfonts`, `showtext`, `readr`, `cowplot`, `rmapshaper`, `terra`, `raster`, `tidyterra`, `rvest`, `httr`, `fs`, `glue`, `dataRetrieval`, `ggimage`, `ggtext`.
 
 The pipeline will fetch and visualize flood stage and storm track data for provided dates and bounding box. All animation frames will then be loaded in `3_visualize/out/food_stage_frames` and the frames will be compiled to build the final animation in `3_visualize/out`
 
-# Manually adjust components
+## Running the code
+
+This code has been organized into a data pipeline using the [targets](https://books.ropensci.org/targets/) package. Targets is a pipeline building tool that automatically tracks the status (i.e., up-to-date vs. out-of-date) and builds intermediate objects only as needed. To run the entire pipeline, you can run the command [`targets::tar_make()`](https://docs.ropensci.org/targets/reference/tar_make.html), after the steps (above) have been completed. For more information on targets, the package author has written [a walkthrough to get started](https://books.ropensci.org/targets/walkthrough.html) and there is an [Introduction to targets](https://carpentries-incubator.github.io/targets-workshop/) training that is currently in development but still may be useful in its current state.
+
+## Code runtime
+
+The entire pipeline run-time varies based on `p0_date_start` and `p0_date_end`, as well as size of `p0_bbox_sf`. For the default loaded Hurricane Helene, the total run-time is \~5 hours on a high-end laptop (e.g. Apple M1 Max)
+
+## Manually adjust components
 
 This pipeline is intentionally structured to be manually adjusted for new storms/hurricanes that occur. Much of the components needed to be adjusted will be done in `0_config.R`. Namely, these targets:
 
@@ -116,7 +142,28 @@ This pipeline is intentionally structured to be manually adjusted for new storms
 
 -   In cases where the storm occurs in regions such as Puerto Rico, Alaska, Hawaii, etc, users will need to adjust `p1_conus_bbox_crop_sf` which downloads [tigris](https://github.com/walkerke/tigris) state borders and crops to bbox. Additionally, based on storm region and bbox, users will likely need to edit `p1_major_cities_sf` to manually assign city/state labels in the tibble to help orient viewers.
 
-# Data Citation
+## Expertise required
+
+This code assumes the user is familiar with R and familiar with the [targets](https://books.ropensci.org/targets/) package (or willing to become acquainted with it). No subject matter expertise is required to run the code.
+
+## Built With
+
+-   [R](https://www.r-project.org/about.html) - data formatting and processing
+
+## Authors
+
+-   [**Elmera Azadpour**](https://www.usgs.gov/staff-profiles/elmera-azadpour) - *Data scientist/visualization specialist* - [USGS Water Mission Area](https://www.usgs.gov/mission-areas/water-resources)
+-   [**Elise Hinman**](https://www.usgs.gov/staff-profiles/elise-hinman) - *Data scientist* - [USGS Water Mission Area](https://www.usgs.gov/mission-areas/water-resources)
+-   [**Jeffrey Kwang**](https://www.usgs.gov/staff-profiles/jeffrey-kwang) - *Data scientist* - [USGS Water Mission Area](https://www.usgs.gov/mission-areas/water-resources)
+-   [**Kaysa Vaarre-Lamoureux**](https://www.usgs.gov/mission-areas/water-resources) - *Data scientist (former employee)* - [USGS Water Mission Area](https://www.usgs.gov/mission-areas/water-resources)
+-   [**Cee Nell**](https://www.usgs.gov/staff-profiles/cee-nell) - *Lead of the Open Data Science Team* - [USGS Water Mission Area](https://www.usgs.gov/mission-areas/water-resources)
+-   [**Hayley Corson-Dosch**](<https://www.usgs.gov/staff-profiles/hayley-corson-dosch> - *Data scientist* - [USGS Water Mission Area](https://www.usgs.gov/mission-areas/water-resources)
+
+## Acknowledgments
+
+-   Thank you to [Karl Winters](https://www.usgs.gov/staff-profiles/karl-e-winters) and [Athena Clark](https://www.usgs.gov/staff-profiles/athena-p-clark) for their subject matter expert review and guidance.
+
+# References
 
 National Oceanic and Atmospheric Administration. NWPS all gauges report [Data set]. NOAA National Water Prediction Service. Retrieved June 23, 2025, from <https://water.noaa.gov/resources/downloads/reports/nwps_all_gauges_report.csv>
 
