@@ -59,8 +59,7 @@ p2_targets <- list(
       out <- p2_uv_data_percentiles_df |>
         left_join(p1_usgs_flood_stage_gages, by = "site_no") |>
         left_join(p2_peak_data_max_df, by = c("site_no", "agency_cd")) |>
-        filter(lubridate::minute(dateTime) == 0,
-               lubridate::second(dateTime) == 0) |> 
+        mutate(dateTime = lubridate::floor_date(dateTime, unit = "hour")) |> 
         # Keep full hours only, since animation timestep is 1 hour
         select(
           site_no, dateTime, X_00060_00000, X_00065_00000,
