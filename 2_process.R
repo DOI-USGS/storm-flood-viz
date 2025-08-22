@@ -59,15 +59,18 @@ p2_targets <- list(
       out <- p2_uv_data_percentiles_df |>
         left_join(p1_usgs_flood_stage_gages, by = "site_no") |>
         left_join(p2_peak_data_max_df, by = c("site_no", "agency_cd")) |>
-        filter(lubridate::minute(dateTime) == 0,
-               lubridate::second(dateTime) == 0) |> 
-        # Keep full hours only, since animation timestep is 1 hour
         select(
           site_no, dateTime, X_00060_00000, X_00065_00000,
           percentile, action.stage, flood.stage, moderate.flood.stage, major.flood.stage,
           peak_va, peak_cd, peak_dateTime, geometry
         ) |>
-        distinct() 
+        mutate(date = lubridate::date(dateTime),
+               hour = lubridate::hour(dateTime), .after = "dateTime",
+               dateTime = lubridate::floor_date(dateTime, unit = "hour")) |>
+        group_by(site_no, date, hour) |>
+        slice_max(X_00065_00000, n = 1, with_ties = FALSE) |>
+        ungroup() |>
+        select(-c(date, hour))
       
       # Flag only rows that are part of 4+ consecutive NA runs for X_00065_00000
       out <- out |>
