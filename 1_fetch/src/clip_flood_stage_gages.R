@@ -16,7 +16,9 @@ flood_stage_gages <- function(flood_stage_file, proj, bbox){
   # process the data
   flood_stage_sf <- flood_stage_raw |> 
     sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326) |> 
-    dplyr::select(site_no = "usgs id", state, "action stage", "flood stage", "moderate flood stage", "major flood stage", geometry) |> 
+    dplyr::select(site_no = "usgs id", state, "action stage", "flood stage",
+                  "moderate flood stage", "major flood stage", 
+                  vert.datum = "nrldb vertical datum name", geometry) |> 
     sf::st_transform(proj)
   
   # filter to points inside the storm shape
@@ -31,8 +33,14 @@ flood_stage_gages <- function(flood_stage_file, proj, bbox){
         !moderate.flood.stage == -9999.0 &
         !major.flood.stage == -9999.0
     ) |>
-    dplyr::select(site_no, state, action.stage, flood.stage, moderate.flood.stage, major.flood.stage) |>
+    dplyr::select(site_no, state, action.stage, flood.stage,
+                  moderate.flood.stage, major.flood.stage, vert.datum) |>
     dplyr::distinct()
+  
+  # handle duplicates
+  target_gages <- target_gages |> 
+    group_by(site_no) |> 
+    slice_max(factor(vert.datum, levels = c("NAVD88", "NGVD29", NA)))
   
   return(target_gages)
   
