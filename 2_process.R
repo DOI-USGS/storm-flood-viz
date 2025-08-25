@@ -56,6 +56,16 @@ p2_targets <- list(
   tar_target(
     p2_flow_height_complete_df,
     {
+      # get all dateTimes for all sites
+      dateTimes <- p2_uv_data_percentiles_df |>
+        mutate(dateTime = lubridate::floor_date(dateTime, unit = "hour")) |>
+        select(dateTime) |>
+        distinct() |>
+        cross_join(tibble(site_no = unique(p2_uv_data_percentiles_df[["site_no"]])))
+      
+      # join in flood stages and peak data
+      # retain max stage for each hour of each day for each site
+      # floor datetimes to hour for consistency w/ precip timesteps
       out <- p2_uv_data_percentiles_df |>
         left_join(p1_usgs_flood_stage_gages, by = "site_no") |>
         left_join(p2_peak_data_max_df, by = c("site_no", "agency_cd")) |>
@@ -70,6 +80,8 @@ p2_targets <- list(
         group_by(site_no, date, hour) |>
         slice_max(X_00065_00000, n = 1, with_ties = FALSE) |>
         ungroup() |>
+        # make sure all dateTimes represented at all sites
+        right_join(dateTimes, by = c("dateTime", "site_no")) |>
         select(-c(date, hour))
       
       # Flag only rows that are part of 4+ consecutive NA runs for X_00065_00000
