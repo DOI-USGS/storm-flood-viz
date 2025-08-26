@@ -1,0 +1,38 @@
+[
+  {
+    "name": "hurricane-revamp",
+    "organization": "U.S. Geological Survey",
+    "description": "The software combines USGS streamgage data and NOAA precipitaion and storm track data to create a flood stage animation that highlight where floods occurred, how long they lasted, and how storm intensity evolved",
+    "version": "main",
+    "status": "Development",
+    "permissions": {
+      "usageType": "openSource",
+      "licenses": [
+        {
+          "name": "Public Domain, CC0-1.0",
+          "URL": "https://code.usgs.gov/wma/vizlab/hurricane-revamp/-/raw/main/LICENSE.md"
+        }
+      ]
+    },
+    "homepageURL": "https://water.usgs.gov/vizlab/hurricane-revamp/",
+    "downloadURL": "https://code.usgs.gov/wma/vizlab/{app_title}/-/archive/main/hurricane-revamp/-main.zip",
+    "disclaimerURL": "https://code.usgs.gov/wma/vizlab/hurricane-revamp//-/raw/main/DISCLAIMER.md",
+    "repositoryURL": "https://code.usgs.gov/wma/vizlab/hurricane-revamp/.git",
+    "vcs": "git",
+    "laborHours": 200,
+    "tags": [
+      "R",
+      "USGS"
+    ],
+    "languages": [
+      "R"
+    ],
+    "contact": {
+      "name": "Elmera Azadpour",
+      "email": "eazadpour@usgs.gov"
+    },
+    "date": {
+      "metadataLastUpdated": "2025-08-26"
+    }
+  }
+]
