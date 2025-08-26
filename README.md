@@ -142,9 +142,69 @@ This pipeline is intentionally structured to be manually adjusted for new storms
 
 -   In cases where the storm occurs in regions such as Puerto Rico, Alaska, Hawaii, etc, users will need to adjust `p1_conus_bbox_crop_sf` which downloads [tigris](https://github.com/walkerke/tigris) state borders and crops to bbox. Additionally, based on storm region and bbox, users will likely need to edit `p1_major_cities_sf` to manually assign city/state labels in the tibble to help orient viewers.
 
+## Repository organization
+
+-   `0_config/` directory containing files related to configuration.
+-   `1_fetch/` directory containing files related to fetching data.
+    -   `src/` directory containing source code to define functions.
+        -   `clip_flood_stage_gages.R` R script that filters flood-stage gages to bbox
+        -   `fetch_rapid_deployment_data.R` R script that fetches Rapid-Deployment Gage sites from STN as `sf`
+        -   `fetch_uv_peaks_data.R` R script defining downloads of NWIS instantaneous data and peaks; write parquet.
+        -   `get_precip.py` Python script to pull NOAA Stage 4 precipitation and export GeoTIFF rasters.
+        -   `generate_hyswap_percentiles.py` Python script that computes percentiles from historical daily data; tag instantaneous data.
+        -   `storm_shape_functions.R` R script defining percentiles from historical daily data; tag instantaneous data.
+    -   `out/` directory containing output files (once code is run).
+        -   `gage_peak_data.parquet` parquet file of NWIS peaks
+        -   `gage_uv_data.parquet` parquet file of instantaneous NWIS data
+        -   `[p0_precip_start]_to_[p0_precip_end].tif` precipitation raster files for given date and hours.
+        -   `storm_shape_[p0_storm_info$storm_code]` shapefiles associated with hurricane path/points/radii/windswath.
+-   `2_process/` directory containing files related to processing data.
+    -   `src/` directory containing source code to define functions.
+        -   `process_hourly_max_uv.R` R script to extract hourly maximum gage height and discharge from instantaneous values; join parameters; add optional percentiles.
+        -   `process_precip.R` R script to read Stage 4 precipitation rasters, reproject/crop to the bounding box area, reshape to long format, and compute hourly/total/cumulative precipitation.
+        -   `process_states.R` R script to build state boundary layers; derive inner shared borders and the outer outline as `sf` geometries.
+-   `3_visualize/` directory containing files related to visualizing data.
+    -   `src/` directory containing source code to define functions.
+        -   `mapping_utils.R` R script that contains mapping function to create frames of hurricane animation in either spike or point format
+        -   `title_end_frame.R` R script that defines title frame and end frame of the animation
+    -   `out/` directory containing output files of pie and bar charts (once code is run).
+        -   `[p0_storm_info$storm_name]_flood_stage_spike_animation.gif` animation of flood stage spikes
+        -   `[p0_storm_info$storm_name]_flood_stage_point_animation.gif` animation of flood stage points
+        -   `flood_stage_[p0_storm_info$storm_name]_spike_frames`
+            -   `frame_[datehour].png` PNG files of hurricane spike map over time
+            -   `frame_00000000000.png` PNG of spike title frame
+            -   `frame_99999999999.png` PNG of spike final frame
+        -   `flood_stage_[p0_storm_info$storm_name]_point_frames`
+        -   `frame_[datehour].png` PNG files of hurricane point map over time
+        -   `frame_00000000000.png` PNG of point title frame
+        -   `frame_99999999999.png` PNG of point final frame
+    -   `in/`
+        -   `usgs_logo_black.png` PNG of black USGS logo
+        -   `hurricane_symbol.png` PNG of black hurricane icon to add to final viz
+        -   `custom_flood_stage_spike_leg.png` PNG of custom made legend for spike animation to describe height component of spike (duration above flood stage).
+        -   `custom_flood_stage_point_leg.png` PNG of custom made legend for point animation to describe size component of point (duration above flood stage).
+        -   `billeye.png` PNG of target/bullseye to serve as icon for rapid deployment gage on visualization.
+-   `.gitignore` file specifying which files should not be tracked in git repository
+-   `_targets.R` a [target script file](https://books.ropensci.org/targets/walkthrough.html#target-script-file) used to define a [targets pipeline](https://docs.ropensci.org/targets/index.html). See the [targets documentation](https://books.ropensci.org/targets/walkthrough.html) for how to run a targets pipeline.
+-   `1_fetch.R` R script defining the "fetch" phase of the data pipeline.
+-   `2_process.R` R script defining the "process" phase of the pipeline
+-   `3_visualize.R` R script defining the "visualizing" phase of the pipeline
+-   `code.json` metadata file containing information for code contained in this repository. Compliant with [USGS template](https://www.usgs.gov/products/software/software-management/distribution-usgs-code).
+-   `CODE_OF_CONDUCT.md` information on the contribution code of conduct.
+-   `CONTRIBUTING.md` information on how to contribute to this repository
+-   `DISCLAIMER.md` Provisional USGS disclaimer of code in repository. Should be removed when approved.
+-   `LICENSE.md` license information for code
+-   `README.md` general information about the project
+-   `USGS_ID_black.png` USGS logo used at the top of README.md.
+-   `hurricane-revamp.Rproj` an R project file. See [6.2 Projects \| R for data science](https://r4ds.hadley.nz/workflow-scripts#projects) for more information on RStudio projects
+
 ## Expertise required
 
 This code assumes the user is familiar with R and familiar with the [targets](https://books.ropensci.org/targets/) package (or willing to become acquainted with it). No subject matter expertise is required to run the code.
+
+## Contributing
+
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on the process for submitting pull requests to us. Please read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for details on adhering by the [USGS Code of Scientific Conduct](https://www2.usgs.gov/fsp/fsp_code_of_scientific_conduct.asp).
 
 ## Built With
 
@@ -157,7 +217,17 @@ This code assumes the user is familiar with R and familiar with the [targets](ht
 -   [**Jeffrey Kwang**](https://www.usgs.gov/staff-profiles/jeffrey-kwang) - *Data scientist* - [USGS Water Mission Area](https://www.usgs.gov/mission-areas/water-resources)
 -   [**Kaysa Vaarre-Lamoureux**](https://www.usgs.gov/mission-areas/water-resources) - *Data scientist (former employee)* - [USGS Water Mission Area](https://www.usgs.gov/mission-areas/water-resources)
 -   [**Cee Nell**](https://www.usgs.gov/staff-profiles/cee-nell) - *Lead of the Open Data Science Team* - [USGS Water Mission Area](https://www.usgs.gov/mission-areas/water-resources)
--   [**Hayley Corson-Dosch**](<https://www.usgs.gov/staff-profiles/hayley-corson-dosch> - *Data scientist* - [USGS Water Mission Area](https://www.usgs.gov/mission-areas/water-resources)
+-   [**Hayley Corson-Dosch**](https://www.usgs.gov/staff-profiles/hayley-corson-dosch)- *Data scientist* - [USGS Water Mission Area](https://www.usgs.gov/mission-areas/water-resources)
+
+## License
+
+This project is licensed under the Creative Commons CC0 1.0 Universal License - see the [LICENSE.md](LICENSE.md) file for details.
+
+## Suggested Citation
+
+In the spirit of open source, please cite any re-use of the source code stored in this repository. Below is the suggested citation:
+
+> Azadpour E, Hinman ED, Kwang JS, Vaarre-Lamoureux K, Nell C, Corson-Dosch HR. 2025. Visualizing Hurricane Impacts Using Flood Stage and Streamgage Data. U.S. Geological Survey software release. Reston, Va. <https://doi.org/10.5066/P1CGKFTD>.
 
 ## Acknowledgments
 
