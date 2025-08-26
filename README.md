@@ -12,7 +12,7 @@
 
 **Year of Version**: 2025
 
-**Digital Object Identifier (DOI)**: <https://doi.org/10.5066/XXXXXXXX>
+**Digital Object Identifier (DOI)**: <https://doi.org/10.5066/P1CGKFTD>
 
 **USGS Information Product Data System (IPDS) no.**: IP-182360 (internal agency tracking)
 
