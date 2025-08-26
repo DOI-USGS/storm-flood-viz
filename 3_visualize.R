@@ -52,25 +52,34 @@ p3_targets <- list(
   tar_target(
     p3_flow_by_time,
     {
-      p2_flow_height_complete_df |>
-        filter(dateTime <= p3_all_precip_timestamps) |>
-        group_by(site_no) |>
-        arrange(site_no, dateTime) |>
+      p2_flow_height_complete_df %>%
+        filter(dateTime <= p3_all_precip_timestamps) %>%
+        group_by(site_no) %>%
+        arrange(site_no, dateTime) %>%
         mutate(
           above_flood = !is.na(flood.stage) & X_00065_00000 >= flood.stage,
           duration_above_flood_hr = ifelse(above_flood, cumsum(above_flood), NA)
-        ) |>
-        ungroup() |>
-        filter(dateTime == p3_all_precip_timestamps) |>
+        ) %>%
+        ungroup() %>%
+        filter(dateTime == p3_all_precip_timestamps) %>%
         mutate(
           flood_status = case_when(
-            !is.na(major.flood.stage) & X_00065_00000 >= major.flood.stage ~ "Major",
+            !is.na(major.flood.stage)    & X_00065_00000 >= major.flood.stage    ~ "Major",
             !is.na(moderate.flood.stage) & X_00065_00000 >= moderate.flood.stage ~ "Moderate",
-            !is.na(flood.stage) & X_00065_00000 >= flood.stage ~ "Flood",
+            !is.na(flood.stage)          & X_00065_00000 >= flood.stage          ~ "Flood",
             TRUE ~ "Not flooded"
           ),
-          flood_status = factor(flood_status, levels = c("Not flooded", "Flood", "Moderate", "Major")),
-          is_flooded = above_flood
+          flood_status = factor(flood_status, levels = c("Not flooded","Flood","Moderate","Major")),
+          is_flooded   = above_flood,
+          # rank for draw order: lower draws first (so it goes behind)
+          sev_rank = c("Not flooded"=0L,"Flood"=1L,"Moderate"=2L,"Major"=3L)[as.character(flood_status)],
+          # how far above the reached stage (helps break ties within a severity)
+          above_amt = dplyr::case_when(
+            flood_status == "Major"    ~ X_00065_00000 - major.flood.stage,
+            flood_status == "Moderate" ~ X_00065_00000 - moderate.flood.stage,
+            flood_status == "Flood"    ~ X_00065_00000 - flood.stage,
+            TRUE ~ NA_real_
+          )
         )
     },
     pattern = map(p3_all_precip_timestamps),

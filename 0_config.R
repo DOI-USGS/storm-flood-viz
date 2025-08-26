@@ -141,10 +141,10 @@ p0_targets <- list(
       # Note: these vals are relative to the 0-1 canvas limits & 
       # adjust these parameters when bbox area is adjusted
       plot_margin = 0.025,
-      plot_shift_x = -0.15,
-      plot_shift_y = -0.438,
+      plot_shift_x = -0.18,
+      plot_shift_y = -0.212,
       plot_width = 1.39,
-      plot_height = 2
+      plot_height = 1.6
     )
   )
 )

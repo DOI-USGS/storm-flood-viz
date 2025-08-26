@@ -214,8 +214,8 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
   p <- p + ggnewscale::new_scale_fill() +
     geom_sf(
       data = flow_now |>
-        filter(is_flooded == "FALSE") |>
-        mutate(flood_status = factor(flood_status, levels = names(flood_stage_cols_red))) |>
+        filter(is_flooded == "FALSE") |> 
+        mutate(flood_status = factor(flood_status, levels = names(flood_stage_cols_red))) |> 
         filter(!is.na(flood_status)),
       aes(geometry = geometry, fill = flood_status),
       shape = 21, size = 1.25,
@@ -247,15 +247,20 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
   # If flood_spikes TRUE, make spikes
   if (flood_spikes) {
     # Peak style lines for flooded sites
-    flow_now_coords <- flow_now |>
-      filter(is_flooded) |>
-      arrange(desc(duration_above_flood_hr)) |>
+    flow_now_coords <- flow_now |> 
+      filter(is_flooded) |> 
+      arrange(             
+        sev_rank,          # Not flooded (0), Flood (1), Moderate (2), Major (3),  Major on top
+        desc(above_amt),   # more above stage sits on top within severity
+        desc(duration_above_flood_hr),
+        desc(dateTime)
+      ) |> 
       mutate(
-        x = sf::st_coordinates(geometry)[, 1],
-        y = sf::st_coordinates(geometry)[, 2],
-        y_base = y + y_baseheight,
-        xend = x,
-        yend = y_base + (duration_above_flood_hr / global_max_duration) * peak_height,
+        x     = sf::st_coordinates(geometry)[, 1],
+        y     = sf::st_coordinates(geometry)[, 2],
+        y_base= y + y_baseheight,
+        xend  = x,
+        yend  = y_base + (duration_above_flood_hr / global_max_duration) * peak_height
       )
 
     p <- p +
@@ -321,13 +326,16 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
     # otherwise, do sized points
   } else {
     # Prepare point data
-    flow_now_points <- flow_now |>
-      filter(is_flooded) |>
-      arrange(desc(duration_above_flood_hr)) |>
-      mutate(
-        #  amplify the perceptual effect using a transformation:
-        index = (duration_above_flood_hr / global_max_duration)^3
-      )
+    flow_now_points <- flow_now |> 
+      filter(is_flooded) |> 
+      arrange(
+        sev_rank,
+        desc(above_amt),
+        desc(duration_above_flood_hr),
+        desc(dateTime)
+      ) |> 
+      mutate(index = (duration_above_flood_hr / global_max_duration)^3)
+    
 
     p <- p +
       geom_sf(
