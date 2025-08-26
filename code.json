@@ -14,10 +14,10 @@
         }
       ]
     },
-    "homepageURL": "https://water.usgs.gov/vizlab/hurricane-revamp/",
-    "downloadURL": "https://code.usgs.gov/wma/vizlab/{app_title}/-/archive/main/hurricane-revamp/-main.zip",
-    "disclaimerURL": "https://code.usgs.gov/wma/vizlab/hurricane-revamp//-/raw/main/DISCLAIMER.md",
-    "repositoryURL": "https://code.usgs.gov/wma/vizlab/hurricane-revamp/.git",
+    "homepageURL": "https://labs.waterdata.usgs.gov/visualizations/index.html#/",
+    "downloadURL": "https://code.usgs.gov/wma/vizlab/hurricane-revamp/-/archive/main/hurricane-revamp-main.zip",
+    "disclaimerURL":  "https://code.usgs.gov/wma/vizlab/hurricane-revamp/-/raw/main/DISCLAIMER.md",
+    "repositoryURL": "https://code.usgs.gov/wma/vizlab/hurricane-revamp.git",
     "vcs": "git",
     "laborHours": 200,
     "tags": [
