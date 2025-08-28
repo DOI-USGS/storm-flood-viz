@@ -56,47 +56,61 @@ p2_targets <- list(
   tar_target(
     p2_flow_height_complete_df,
     {
-      # get all dateTimes for all sites
-      dateTimes <- p2_uv_data_percentiles_df |>
-        mutate(dateTime = lubridate::floor_date(dateTime, unit = "hour")) |>
-        select(dateTime) |>
-        distinct() |>
-        cross_join(tibble(site_no = unique(p2_uv_data_percentiles_df[["site_no"]])))
-      
-      # join in flood stages and peak data
-      # retain max stage for each hour of each day for each site
-      # floor datetimes to hour for consistency w/ precip timesteps
-      out <- p2_uv_data_percentiles_df |>
-        left_join(p1_usgs_flood_stage_gages, by = "site_no") |>
-        left_join(p2_peak_data_max_df, by = c("site_no", "agency_cd")) |>
+      # Keep geometry per site
+      site_geom <- p1_usgs_flood_stage_gages |> 
+        select(site_no, geometry) |> 
+        distinct(site_no, .keep_all = TRUE)
+
+      out <- p2_uv_data_percentiles_df |> 
+        # Keep stage cols
+        left_join(p1_usgs_flood_stage_gages |>  
+                    st_drop_geometry(), by = "site_no") |>  
+        # Keep peaks data
+        left_join(p2_peak_data_max_df, by = c("site_no", "agency_cd")) |> 
         select(
           site_no, dateTime, X_00060_00000, X_00065_00000,
           percentile, action.stage, flood.stage, moderate.flood.stage, major.flood.stage,
-          peak_va, peak_cd, peak_dateTime, geometry
-        ) |>
-        mutate(date = lubridate::date(dateTime),
-               hour = lubridate::hour(dateTime), .after = "dateTime",
-               dateTime = lubridate::floor_date(dateTime, unit = "hour")) |>
-        group_by(site_no, date, hour) |>
-        slice_max(X_00065_00000, n = 1, with_ties = FALSE) |>
-        ungroup() |>
-        # make sure all dateTimes represented at all sites
-        right_join(dateTimes, by = c("dateTime", "site_no")) |>
-        select(-c(date, hour))
+          peak_va, peak_cd, peak_dateTime
+        ) |> 
+        mutate(
+          date = lubridate::date(dateTime),
+          hour = lubridate::hour(dateTime),
+          dateTime = lubridate::floor_date(dateTime, "hour"),
+          .after = "dateTime"
+        ) |> 
+        group_by(site_no, date, hour) |> 
+        slice_max(X_00065_00000, n = 1, with_ties = FALSE) |> 
+        ungroup() |> 
+        distinct(site_no, dateTime, .keep_all = TRUE) |> 
+        group_by(site_no) |> 
+        complete(
+          dateTime = seq(
+            floor_date(min(dateTime, na.rm = TRUE), "hour"),
+            floor_date(max(dateTime, na.rm = TRUE), "hour"),
+            by = "1 hour"
+          )
+        ) |> 
+        ungroup() |> 
+        select(-c(date, hour)) |> 
+        # Put geometry back
+        left_join(site_geom, by = "site_no") |>                  
+        st_as_sf(crs = st_crs(site_geom))
       
       # Flag only rows that are part of 4+ consecutive NA runs for X_00065_00000
-      out <- out |>
-        arrange(site_no, dateTime) |>
-        group_by(site_no) |>
+      out <- out |> 
+        arrange(site_no, dateTime) |> 
+        group_by(site_no) |> 
         mutate(
           na_flag = is.na(X_00065_00000),
-          rleid = data.table::rleid(na_flag),
-          run_length = ave(na_flag, rleid, FUN = length),
-          has_data_elsewhere = any(!na_flag),  # did x site ever have a non-NA value?
-          is_decommissioned = has_data_elsewhere & na_flag & run_length >= 4
-        ) |>
-        ungroup() |>
-        select(-na_flag, -rleid, -run_length, -has_data_elsewhere)
+          has_data_elsewhere = any(!na_flag),
+          # unique identifier that increments every time a variable changes
+          run_id  = dplyr::consecutive_id(na_flag)      
+        ) |> 
+        group_by(site_no, run_id) |> 
+        mutate(run_length = dplyr::n()) |> 
+        ungroup() |> 
+        mutate(is_decommissioned = has_data_elsewhere & na_flag & run_length >= 4) |> 
+        select(-na_flag, -run_id, -run_length, -has_data_elsewhere)
     }
   ),
   # Process precipitation data ----------------------------------------------
