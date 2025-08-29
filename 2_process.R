@@ -61,17 +61,10 @@ p2_targets <- list(
         select(site_no, geometry) |> 
         distinct(site_no, .keep_all = TRUE)
 
+      min_datetime <- min(p2_uv_data_percentiles_df[["dateTime"]])
+      max_datetime <- max(p2_uv_data_percentiles_df[["dateTime"]])
+      
       out <- p2_uv_data_percentiles_df |> 
-        # Keep stage cols
-        left_join(p1_usgs_flood_stage_gages |>  
-                    st_drop_geometry(), by = "site_no") |>  
-        # Keep peaks data
-        left_join(p2_peak_data_max_df, by = c("site_no", "agency_cd")) |> 
-        select(
-          site_no, dateTime, X_00060_00000, X_00065_00000,
-          percentile, action.stage, flood.stage, moderate.flood.stage, major.flood.stage,
-          peak_va, peak_cd, peak_dateTime
-        ) |> 
         mutate(
           date = lubridate::date(dateTime),
           hour = lubridate::hour(dateTime),
@@ -80,21 +73,25 @@ p2_targets <- list(
         ) |> 
         group_by(site_no, date, hour) |> 
         slice_max(X_00065_00000, n = 1, with_ties = FALSE) |> 
-        ungroup() |> 
-        distinct(site_no, dateTime, .keep_all = TRUE) |> 
         group_by(site_no) |> 
         complete(
           dateTime = seq(
-            floor_date(min(dateTime, na.rm = TRUE), "hour"),
-            floor_date(max(dateTime, na.rm = TRUE), "hour"),
+            floor_date(min_datetime, "hour"),
+            floor_date(max_datetime, "hour"),
             by = "1 hour"
           )
         ) |> 
+        fill(agency_cd, .direction = "downup") |>
         ungroup() |> 
-        select(-c(date, hour)) |> 
-        # Put geometry back
-        left_join(site_geom, by = "site_no") |>                  
-        st_as_sf(crs = st_crs(site_geom))
+        # Add in stage data
+        left_join(p1_usgs_flood_stage_gages, by = "site_no") |>  
+        # Add in peaks data
+        left_join(p2_peak_data_max_df, by = c("site_no", "agency_cd")) |> 
+        select(
+          site_no, dateTime, X_00060_00000, X_00065_00000,
+          percentile, action.stage, flood.stage, moderate.flood.stage, major.flood.stage,
+          peak_va, peak_cd, peak_dateTime, geometry
+        )
       
       # Flag only rows that are part of 4+ consecutive NA runs for X_00065_00000
       out <- out |> 
