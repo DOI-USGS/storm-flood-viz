@@ -59,22 +59,7 @@ p2_targets <- list(
       min_datetime <- min(p2_uv_data_percentiles_df[["dateTime"]])
       max_datetime <- max(p2_uv_data_percentiles_df[["dateTime"]])
       
-      # Keep geometry per site
-      site_geom <- p1_usgs_flood_stage_gages |> 
-        select(site_no, geometry) |> 
-        distinct(site_no, .keep_all = TRUE)
-      
-      out <- p2_uv_data_percentiles_df |> 
-        # Keep stage cols
-        left_join(p1_usgs_flood_stage_gages |>  
-                    st_drop_geometry(), by = "site_no") |>  
-        # Keep peaks data
-        left_join(p2_peak_data_max_df, by = c("site_no", "agency_cd")) |> 
-        select(
-          site_no, dateTime, X_00060_00000, X_00065_00000,
-          percentile, action.stage, flood.stage, moderate.flood.stage, major.flood.stage,
-          peak_va, peak_cd, peak_dateTime
-        ) |> 
+      out <- p2_uv_data_percentiles_df |>
         mutate(
           date = lubridate::date(dateTime),
           hour = lubridate::hour(dateTime),
@@ -91,12 +76,18 @@ p2_targets <- list(
             by = "1 hour"
           )
         ) |> 
+        fill(agency_cd, .direction = "downup") |>
         ungroup() |> 
-        select(-c(date, hour)) |> 
-        # Put geometry back
-        left_join(site_geom, by = "site_no") |>                  
-        st_as_sf(crs = st_crs(site_geom))
-      
+        # Add in stage data
+        left_join(p1_usgs_flood_stage_gages, by = "site_no") |>  
+        # Add in peaks data
+        left_join(p2_peak_data_max_df, by = c("site_no", "agency_cd")) |> 
+        select(
+          site_no, dateTime, X_00060_00000, X_00065_00000,
+          percentile, action.stage, flood.stage, moderate.flood.stage, major.flood.stage,
+          peak_va, peak_cd, peak_dateTime, geometry
+        )
+
       # Flag only rows that are part of 4+ consecutive NA runs for X_00065_00000
       out <- out |> 
         arrange(site_no, dateTime) |> 
