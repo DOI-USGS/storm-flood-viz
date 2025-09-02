@@ -83,6 +83,10 @@ This pipeline is intentionally structured to be manually adjusted for new storms
 -   `p0_precip_start / p0_precip_end`
 
     -   Start and end timestamps (in `"YYYY-MM-DDTHH"` format) for retrieving gridded precipitation data. Must align with the desired animation timeframe.
+    
+- `p0_nwis_start / p0_nwis_end` 
+
+    - Start and end timestamps (in `"YYYY-MM-DDTHH:MMZ"` format) for pulling instantaneous values for gage height from `dataRetrieval::readNWISuv()`. We define these in UTC time to match the precip data pull. 
 
 -   `p0_timezone`
 
