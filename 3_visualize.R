@@ -52,16 +52,16 @@ p3_targets <- list(
   tar_target(
     p3_flow_by_time,
     {
-      p2_flow_height_complete_df %>%
-        filter(dateTime <= p3_all_precip_timestamps) %>%
-        group_by(site_no) %>%
-        arrange(site_no, dateTime) %>%
+      p2_flow_height_complete_df |> 
+        filter(dateTime <= p3_all_precip_timestamps) |> 
+        group_by(site_no) |> 
+        arrange(site_no, dateTime) |> 
         mutate(
-          above_flood = !is.na(flood.stage) & X_00065_00000 >= flood.stage,
+          above_flood = ifelse(is.na(X_00065_00000), FALSE, X_00065_00000 >= flood.stage),
           duration_above_flood_hr = ifelse(above_flood, cumsum(above_flood), NA)
-        ) %>%
-        ungroup() %>%
-        filter(dateTime == p3_all_precip_timestamps) %>%
+        ) |> 
+        ungroup() |> 
+        filter(dateTime == p3_all_precip_timestamps) |> 
         mutate(
           flood_status = case_when(
             !is.na(major.flood.stage)    & X_00065_00000 >= major.flood.stage    ~ "Major",
@@ -210,11 +210,11 @@ p3_targets <- list(
     {
       fade_frames     <- 10L  # how smooth/long the fade is
       end_hold_frames <- 4L   # how long to hold the end frame
-      fps             <- 2
+      fps             <- 2    # frames per second
 
       title_img    <- magick::image_read(p3_title_frame_png)
-      title_frames <- rep(title_img, times = 8L)  # <-- use rep()
-
+      title_frames <- rep(title_img, times = 8L)
+      
       valid_paths <- p3_flood_stage_frames[!is.na(p3_flood_stage_frames)]
       valid_paths <- valid_paths[valid_paths != p3_title_frame_png]
 
@@ -226,7 +226,7 @@ p3_targets <- list(
 
       last_flood <- flood_frames[length(flood_frames)]
       crossfade  <- magick::image_morph(c(last_flood, end_img), frames = fade_frames)
-      end_hold   <- rep(end_img, end_hold_frames)  # <-- use rep()
+      end_hold   <- rep(end_img, end_hold_frames)  
 
       all_frames <- c(title_frames, flood_frames, crossfade, end_hold)
       # coalesce to be safe before animating
