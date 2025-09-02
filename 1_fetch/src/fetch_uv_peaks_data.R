@@ -28,9 +28,9 @@ chunk_up_sites <- function(site_ids, n_sites_per_vector){
 #' @param sites_list List of site vectors created by `chunk_up_sites()` function.
 #' @param pcodes A vector of strings representing desired USGS pcodes.
 #' @param startDate A string in the format "YYYY-MM-DD" representing the start
-#' date over which to pull data.
+#' date over which to pull data, in Universal time (e.g. "2024-09-24T00:00Z")
 #' @param endDate A string in the format "YYYY-MM-DD" representing the end date
-#' of the time period over which to pull uv data.
+#' of the time period over which to pull uv data, Universal time (e.g. "2024-09-29T23:00Z")
 #'
 #' @return The outfile path to a parquet file containing uv data.
 

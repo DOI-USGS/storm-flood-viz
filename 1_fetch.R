@@ -186,8 +186,8 @@ p1_targets <- list(
       outfile_path = "1_fetch/out/gage_uv_data.parquet",
       sites_list = p1_site_id_chunks,
       pcodes = p0_pcodes,
-      startDate = p0_date_start,
-      endDate = p0_date_end
+      startDate = p0_nwis_start,
+      endDate = p0_nwis_end
     ),
     format = "file"
   ),

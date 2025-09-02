@@ -52,6 +52,16 @@ p0_targets <- list(
     p0_precip_end,
     paste0(p0_date_end, "T23")
     ),
+  # Set streamflow start and end time**
+  # Note: we are defining these in UTC time to match the precip data
+  tar_target(
+    p0_nwis_start,
+    paste0(p0_date_start, "T00:00Z")
+  ),
+  tar_target(
+    p0_nwis_end,
+    paste0(p0_date_end, "T23:00Z")
+  ),
   # Desired timezone for map display
   # For refernce: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
   # Note: all data processing/fetching is done in UTC timezone, timezone edits for  
