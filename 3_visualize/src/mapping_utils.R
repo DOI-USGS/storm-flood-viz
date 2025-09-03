@@ -65,7 +65,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
   time_to_landfall <- difftime(landfall_dtg, dtg, units = "hours")
 
   # only show label until 2 hours after landfall
-  show_landfall_label <- time_to_landfall > -2 & time_to_landfall <= 72
+  show_landfall_label <- time_to_landfall > -2 
   landfall_label <- if (show_landfall_label && time_to_landfall > 0) {
     paste0(round(as.numeric(time_to_landfall), 1), " hours to landfall")
   } else {
