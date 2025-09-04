@@ -52,25 +52,34 @@ p3_targets <- list(
   tar_target(
     p3_flow_by_time,
     {
-      p2_flow_height_complete_df |>
-        filter(dateTime <= p3_all_precip_timestamps) |>
-        group_by(site_no) |>
-        arrange(site_no, dateTime) |>
+      p2_flow_height_complete_df |> 
+        filter(dateTime <= p3_all_precip_timestamps) |> 
+        group_by(site_no) |> 
+        arrange(site_no, dateTime) |> 
         mutate(
-          above_flood = !is.na(flood.stage) & X_00065_00000 >= flood.stage,
+          above_flood = ifelse(is.na(X_00065_00000), FALSE, X_00065_00000 >= flood.stage),
           duration_above_flood_hr = ifelse(above_flood, cumsum(above_flood), NA)
-        ) |>
-        ungroup() |>
-        filter(dateTime == p3_all_precip_timestamps) |>
+        ) |> 
+        ungroup() |> 
+        filter(dateTime == p3_all_precip_timestamps) |> 
         mutate(
           flood_status = case_when(
-            !is.na(major.flood.stage) & X_00065_00000 >= major.flood.stage ~ "Major",
+            !is.na(major.flood.stage)    & X_00065_00000 >= major.flood.stage    ~ "Major",
             !is.na(moderate.flood.stage) & X_00065_00000 >= moderate.flood.stage ~ "Moderate",
-            !is.na(flood.stage) & X_00065_00000 >= flood.stage ~ "Flood",
+            !is.na(flood.stage)          & X_00065_00000 >= flood.stage          ~ "Flood",
             TRUE ~ "Not flooded"
           ),
-          flood_status = factor(flood_status, levels = c("Not flooded", "Flood", "Moderate", "Major")),
-          is_flooded = above_flood
+          flood_status = factor(flood_status, levels = c("Not flooded","Flood","Moderate","Major")),
+          is_flooded   = above_flood,
+          # rank for draw order: lower draws first (so it goes behind)
+          sev_rank = c("Not flooded"=0L,"Flood"=1L,"Moderate"=2L,"Major"=3L)[as.character(flood_status)],
+          # how far above the reached stage (helps break ties within a severity)
+          above_amt = dplyr::case_when(
+            flood_status == "Major"    ~ X_00065_00000 - major.flood.stage,
+            flood_status == "Moderate" ~ X_00065_00000 - moderate.flood.stage,
+            flood_status == "Flood"    ~ X_00065_00000 - flood.stage,
+            TRUE ~ NA_real_
+          )
         )
     },
     pattern = map(p3_all_precip_timestamps),
@@ -122,6 +131,7 @@ p3_targets <- list(
       rdg_now = p3_rdg_by_time,
       storm_info = p0_storm_info,
       progress_fraction = p3_progress_fract,
+      bbox_coords = p1_bbox_coords,
       state_borders = p1_conus_bbox_crop_sf,
       state_inner_borders = p2_state_inner_lines,
       state_outer_lines = p2_bbox_outer_lines,
@@ -200,11 +210,11 @@ p3_targets <- list(
     {
       fade_frames     <- 10L  # how smooth/long the fade is
       end_hold_frames <- 4L   # how long to hold the end frame
-      fps             <- 2
+      fps             <- 2    # frames per second
 
       title_img    <- magick::image_read(p3_title_frame_png)
-      title_frames <- rep(title_img, times = 8L)  # <-- use rep()
-
+      title_frames <- rep(title_img, times = 8L)
+      
       valid_paths <- p3_flood_stage_frames[!is.na(p3_flood_stage_frames)]
       valid_paths <- valid_paths[valid_paths != p3_title_frame_png]
 
@@ -216,7 +226,7 @@ p3_targets <- list(
 
       last_flood <- flood_frames[length(flood_frames)]
       crossfade  <- magick::image_morph(c(last_flood, end_img), frames = fade_frames)
-      end_hold   <- rep(end_img, end_hold_frames)  # <-- use rep()
+      end_hold   <- rep(end_img, end_hold_frames)  
 
       all_frames <- c(title_frames, flood_frames, crossfade, end_hold)
       # coalesce to be safe before animating

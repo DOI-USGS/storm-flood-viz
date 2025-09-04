@@ -62,33 +62,33 @@ p1_targets <- list(
         sf::st_buffer(dist = p0_storm_info |> pull(storm_buffer))
     }
   ),
-tar_target(
-  p1_storm_track_pts_sf,
-  {
-    pts_file <- p1_storm_track_files[grepl("_pts\\.shp$", p1_storm_track_files)]
-    
-    sf_data <- sf::read_sf(pts_file) |>
-      sf::st_transform(crs = p0_proj) |>
-      filter(STORMNAME %in% dplyr::pull(p0_storm_info, storm_name)) |>
-      mutate(
-        DTG = as.POSIXct(as.character(DTG), format = "%Y%m%d%H", tz = "UTC"),
-        storm_type_full = dplyr::case_when(
-          STORMTYPE == "TS" ~ "Tropical storm",
-          STORMTYPE == "HU" ~ "Hurricane",
-          STORMTYPE == "LO" ~ "Low pressure system",
-          TRUE ~ NA_character_  # Keep unknowns explicit
-        )
-      ) |> 
-      tidyr::fill(storm_type_full, .direction = "down")
-
-    # now bind coordinates
-    bind_cols(
-      sf_data,
-      sf::st_coordinates(sf_data) |> tibble::as_tibble() |> 
-        rename(X = X, Y = Y)
-    )
-  }
-),
+  tar_target(
+    p1_storm_track_pts_sf,
+    {
+      pts_file <- p1_storm_track_files[grepl("_pts\\.shp$", p1_storm_track_files)]
+      
+      sf_data <- sf::read_sf(pts_file) |>
+        sf::st_transform(crs = p0_proj) |>
+        filter(STORMNAME %in% dplyr::pull(p0_storm_info, storm_name)) |>
+        mutate(
+          DTG = as.POSIXct(as.character(DTG), format = "%Y%m%d%H", tz = "UTC"),
+          storm_type_full = dplyr::case_when(
+            STORMTYPE == "TS" ~ "Tropical storm",
+            STORMTYPE == "HU" ~ "Hurricane",
+            STORMTYPE == "LO" ~ "Low pressure system",
+            TRUE ~ NA_character_  # Keep unknowns explicit
+          )
+        ) |> 
+        tidyr::fill(storm_type_full, .direction = "down")
+  
+      # now bind coordinates
+      bind_cols(
+        sf_data,
+        sf::st_coordinates(sf_data) |> tibble::as_tibble() |> 
+          rename(X = X, Y = Y)
+      )
+    }
+  ),
 
 # State data --------------------------------------------------------------
   # Download state borders and crop to bbox
@@ -105,7 +105,18 @@ tar_target(
           st_transform(p0_proj)
       )
   ),
-# Download major cities
+  # Convert bbox to a list with xlim and ylim vector
+  tar_target(
+    p1_bbox_coords,
+    {
+      bbox <- sf::st_bbox(p1_conus_bbox_crop_sf)
+      list(
+        xlim = c(bbox["xmin"], bbox["xmax"]),
+        ylim = c(bbox["ymin"], bbox["ymax"])
+      )
+      }
+    ),
+  # Download major cities
   tar_target(
     p1_major_cities_sf,
     {
@@ -175,8 +186,8 @@ tar_target(
       outfile_path = "1_fetch/out/gage_uv_data.parquet",
       sites_list = p1_site_id_chunks,
       pcodes = p0_pcodes,
-      startDate = p0_date_start,
-      endDate = p0_date_end
+      startDate = p0_nwis_start,
+      endDate = p0_nwis_end
     ),
     format = "file"
   ),

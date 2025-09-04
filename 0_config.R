@@ -4,14 +4,18 @@ p0_targets <- list(
     "https://water.noaa.gov/resources/downloads/reports/nwps_all_gauges_report.csv"
     ),
   # Must be defined using NAD83 ("EPSG:4269") coordinates in decimal degrees
+  # Note: when bbox area changes, downstread `plot_shift_x`, `plot_shift_y`,
+  # `plot_width`, `plot_height` will likely need to be adjusted in 
+  # `p0_viz_config_df` below
   tar_target(
     p0_bbox_sf,
     sf::st_bbox(c(xmin = -98.21, xmax = -69.97, ymin = 23, ymax = 44.6))
     ),
   # Select appropriate projection for the area of interest within the bounding box
   tar_target(
+    # Southeastern U.S. focus projection 
     p0_proj,
-    'EPSG:3086'
+    "+proj=aea +lat_0=23 +lon_0=-84 +lat_1=30 +lat_2=37 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +type=crs"
     ),
   tar_target(
     p0_date_start,
@@ -48,6 +52,16 @@ p0_targets <- list(
     p0_precip_end,
     paste0(p0_date_end, "T23")
     ),
+  # Set streamflow start and end time**
+  # Note: we are defining these in UTC time to match the precip data
+  tar_target(
+    p0_nwis_start,
+    paste0(p0_date_start, "T00:00Z")
+  ),
+  tar_target(
+    p0_nwis_end,
+    paste0(p0_date_end, "T23:00Z")
+  ),
   # Desired timezone for map display
   # For refernce: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
   # Note: all data processing/fetching is done in UTC timezone, timezone edits for  
@@ -129,11 +143,18 @@ p0_targets <- list(
       ocean_col = "#f8fcfc",
       progress_bar_bg_col = 'gray80',
       progress_bar_col = "gray45",
+      x_mark = "black",
       load_font = 'Source Sans Pro',
       font_size_title = 16,
       font_size = 14,
       leg_font_size = 12,
-      plot_margin = 0.025
+      # Note: these vals are relative to the 0-1 canvas limits & 
+      # adjust these parameters when bbox area is adjusted
+      plot_margin = 0.025,
+      plot_shift_x = -0.18,
+      plot_shift_y = -0.212,
+      plot_width = 1.39,
+      plot_height = 1.6
     )
   )
 )

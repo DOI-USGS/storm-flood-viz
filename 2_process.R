@@ -3,7 +3,7 @@ source("2_process/src/process_states.R")
 source("2_process/src/process_hourly_max_uv.R")
 p2_targets <- list(
 
-  # process flood data -----------------------------------------------------
+  # Process flood data -----------------------------------------------------
   # Load in uv data df
   tar_target(
     p2_uv_data_df,
@@ -56,19 +56,56 @@ p2_targets <- list(
   tar_target(
     p2_flow_height_complete_df,
     {
+      min_datetime <- min(p2_uv_data_percentiles_df[["dateTime"]])
+      max_datetime <- max(p2_uv_data_percentiles_df[["dateTime"]])
+      
       out <- p2_uv_data_percentiles_df |>
-        left_join(p1_usgs_flood_stage_gages, by = "site_no") |>
-        left_join(p2_peak_data_max_df, by = c("site_no", "agency_cd")) |>
-        filter(lubridate::minute(dateTime) == 0, lubridate::second(dateTime) == 0) |> # Keep full hours only, since animation timestep is 1 hour
+        mutate(
+          date = lubridate::date(dateTime),
+          hour = lubridate::hour(dateTime),
+          dateTime = lubridate::floor_date(dateTime, "hour"),
+          .after = "dateTime"
+        ) |> 
+        group_by(site_no, date, hour) |> 
+        slice_max(X_00065_00000, n = 1, with_ties = FALSE) |> 
+        group_by(site_no) |> 
+        complete(
+          dateTime = seq(
+            floor_date(min_datetime, "hour"),
+            floor_date(max_datetime, "hour"),
+            by = "1 hour"
+          )
+        ) |> 
+        fill(agency_cd, .direction = "downup") |>
+        ungroup() |> 
+        # Add in stage data
+        left_join(p1_usgs_flood_stage_gages, by = "site_no") |>  
+        # Add in peaks data
+        left_join(p2_peak_data_max_df, by = c("site_no", "agency_cd")) |> 
         select(
           site_no, dateTime, X_00060_00000, X_00065_00000,
           percentile, action.stage, flood.stage, moderate.flood.stage, major.flood.stage,
           peak_va, peak_cd, peak_dateTime, geometry
-        ) |>
-        distinct()
+        )
+
+      # Flag only rows that are part of 4+ consecutive NA runs for X_00065_00000
+      out <- out |> 
+        arrange(site_no, dateTime) |> 
+        group_by(site_no) |> 
+        mutate(
+          na_flag = is.na(X_00065_00000),
+          has_data_elsewhere = any(!na_flag),
+          # unique identifier that increments every time a variable changes
+          run_id  = dplyr::consecutive_id(na_flag)      
+        ) |> 
+        group_by(site_no, run_id) |> 
+        mutate(run_length = dplyr::n()) |> 
+        ungroup() |> 
+        mutate(is_decommissioned = has_data_elsewhere & na_flag & run_length >= 4) |> 
+        select(-na_flag, -run_id, -run_length, -has_data_elsewhere)
     }
   ),
-  # process precipitation data ----------------------------------------------
+  # Process precipitation data ----------------------------------------------
   tar_target(
     p2_process_precip_rast,
     get_precip_df(

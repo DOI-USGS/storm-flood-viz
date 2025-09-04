@@ -32,6 +32,9 @@
 #' @param points_range, numeric values for sizing points in `scale_size_continuous()`
 #' @param target_rdg_icon, Character path for target icon for rapid deployment gages points.
 #' @param timezone_long, Character long name for timezone to be added to map
+#' @param bbox_coords A list with named numeric vectors `xlim` and `ylim`,
+#' representing the projected bounding box coordinates (xmin/xmax and ymin/ymax)
+#'  to be used in `coord_sf()` for consistent map extent across frames
 
 #' @return Character file path to PNG frame.
 hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
@@ -40,7 +43,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
                                          flood_stage_cols_red,
                                          precip_cols, config_vars, peak_height,
                                          frame_spike_dir, frame_point_dir,
-                                         logo_path, state_outer_lines,
+                                         logo_path, bbox_coords, state_outer_lines,
                                          hurricane_symbol_path, global_max_duration,
                                          landfall_dtg, progress_fraction,
                                          flood_stage_point_leg_path,
@@ -62,7 +65,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
   time_to_landfall <- difftime(landfall_dtg, dtg, units = "hours")
 
   # only show label until 2 hours after landfall
-  show_landfall_label <- time_to_landfall > -2 & time_to_landfall <= 72
+  show_landfall_label <- time_to_landfall > -2 
   landfall_label <- if (show_landfall_label && time_to_landfall > 0) {
     paste0(round(as.numeric(time_to_landfall), 1), " hours to landfall")
   } else {
@@ -211,8 +214,8 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
   p <- p + ggnewscale::new_scale_fill() +
     geom_sf(
       data = flow_now |>
-        filter(is_flooded == "FALSE") |>
-        mutate(flood_status = factor(flood_status, levels = names(flood_stage_cols_red))) |>
+        filter(is_flooded == "FALSE") |> 
+        mutate(flood_status = factor(flood_status, levels = names(flood_stage_cols_red))) |> 
         filter(!is.na(flood_status)),
       aes(geometry = geometry, fill = flood_status),
       shape = 21, size = 1.25,
@@ -231,20 +234,33 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       data = major_cities, aes(label = NAME),
       color = config_vars$major_cities_text_col,
       size = 3, nudge_y = 50000, family = font_legend
-    )
-
+    ) + 
+  # decomissioned gages
+    geom_sf(data = flow_now |> filter(is_decommissioned), 
+            aes(geometry = geometry), 
+            shape = 4,     
+            color = config_vars$x_mark, 
+            size = 1.25, 
+            alpha = 0.75,
+            stroke = 1) 
+  
   # If flood_spikes TRUE, make spikes
   if (flood_spikes) {
     # Peak style lines for flooded sites
-    flow_now_coords <- flow_now |>
-      filter(is_flooded) |>
-      arrange(desc(duration_above_flood_hr)) |>
+    flow_now_coords <- flow_now |> 
+      filter(is_flooded) |> 
+      arrange(             
+        sev_rank,          # Not flooded (0), Flood (1), Moderate (2), Major (3),  Major on top
+        desc(above_amt),   # more above stage sits on top within severity
+        desc(duration_above_flood_hr),
+        desc(dateTime)
+      ) |> 
       mutate(
-        x = sf::st_coordinates(geometry)[, 1],
-        y = sf::st_coordinates(geometry)[, 2],
-        y_base = y + y_baseheight,
-        xend = x,
-        yend = y_base + (duration_above_flood_hr / global_max_duration) * peak_height,
+        x     = sf::st_coordinates(geometry)[, 1],
+        y     = sf::st_coordinates(geometry)[, 2],
+        y_base= y + y_baseheight,
+        xend  = x,
+        yend  = y_base + (duration_above_flood_hr / global_max_duration) * peak_height
       )
 
     p <- p +
@@ -310,13 +326,16 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
     # otherwise, do sized points
   } else {
     # Prepare point data
-    flow_now_points <- flow_now |>
-      filter(is_flooded) |>
-      arrange(desc(duration_above_flood_hr)) |>
-      mutate(
-        #  amplify the perceptual effect using a transformation:
-        index = (duration_above_flood_hr / global_max_duration)^3
-      )
+    flow_now_points <- flow_now |> 
+      filter(is_flooded) |> 
+      arrange(
+        sev_rank,
+        desc(above_amt),
+        desc(duration_above_flood_hr),
+        desc(dateTime)
+      ) |> 
+      mutate(index = (duration_above_flood_hr / global_max_duration)^3)
+    
 
     p <- p +
       geom_sf(
@@ -382,8 +401,9 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
   # Final plot theme and save
   p <- p +
     coord_sf(
-      xlim = range(precip_now$x, na.rm = TRUE),
-      ylim = range(precip_now$y, na.rm = TRUE), expand = FALSE
+      xlim = bbox_coords$xlim,
+      ylim = bbox_coords$ylim,
+      expand = FALSE
     ) +
     labs(title = paste0(
       "Hurricane ", stringr::str_to_sentence(unique(storm_now$STORMNAME)), "\n",
@@ -480,7 +500,21 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       size = 0.6
     ) +
     theme_void()
-
+  
+  # decomissioned/ out of service gage legend icon
+  p_decom_leg <- ggplot(
+    data.frame(x = 0, y = 0),
+    aes(x = x, y = y)
+    ) +
+    geom_point(
+      shape = 4, 
+      color = config_vars$x_mark, 
+      size = 2, 
+      alpha = 0.75, 
+      stroke = 1
+    ) +
+    theme_void()
+  
   # Progress bar plot
   progress_bar <- ggplot() +
     geom_rect(aes(xmin = 0, xmax = 1, ymin = 0, ymax = 1),
@@ -515,12 +549,10 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
         legend.position = "none",
         plot.title = element_blank()
       ),
-      # shifting plot for focus on florida/south atlantic region
-      # will need to be adjusted if storm is focused elsewhere
-      x = (1 - config_vars$plot_margin) * -1.7,
-      y = -0.02,
-      height = 1.125,
-      width = (1 - config_vars$plot_margin) + 3.3
+      x = config_vars$plot_shift_x,
+      y = config_vars$plot_shift_y,
+      height = config_vars$plot_height,
+      width = config_vars$plot_width
     ) +
     draw_image(logo,
       x = 0.9 - config_vars$plot_margin * 2,
@@ -612,93 +644,87 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       color = "black",
       lineheight = 1
     ) +
-    draw_label("Each dot        is a",
-      x = config_vars$plot_margin + 0.002,
-      y = 1 - config_vars$plot_margin - 0.746 + 0.015,
-      size = 12,
-      hjust = 0,
-      vjust = 1,
-      fontfamily = font_legend,
-      color = "black",
-      lineheight = 1
-    ) +
     draw_label("USGS streamgage",
-      x = config_vars$plot_margin + 0.145,
-      y = 1 - config_vars$plot_margin - 0.746 + 0.015,
+      x = config_vars$plot_margin + 0.028,
+      y = 1 - config_vars$plot_margin - 0.746 + 0.017,
       size = 12,
       hjust = 0,
       vjust = 1,
       fontfamily = font_legend,
-      fontface = "bold",
       color = "black",
       lineheight = 1
     ) +
     draw_plot(p_dot_legend,
-      x = config_vars$plot_margin + 0.058,
-      y = 0.208 + 0.015,
+      x = config_vars$plot_margin - 0.025,
+      y = 0.208 + 0.017,
       height = 0.03,
       width = 0.1 - config_vars$plot_margin
     )
 
   if (flood_spikes) {
     p <- p +
-      draw_label("A target        is a",
-        x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.775 + 0.015,
-        size = 12,
-        hjust = 0,
-        vjust = 1,
-        fontfamily = font_legend,
-        color = "black",
-        lineheight = 1
-      ) +
       draw_label("Rapid-Deployment gage",
-        x = config_vars$plot_margin + 0.138,
-        y = 1 - config_vars$plot_margin - 0.775 + 0.015,
+        x = config_vars$plot_margin + 0.028,
+        y = 1 - config_vars$plot_margin - 0.775 + 0.019,
         size = 12,
         hjust = 0,
         vjust = 1,
         fontfamily = font_legend,
-        fontface = "bold",
         color = "black",
         lineheight = 1
       ) +
       draw_plot(p_rdg_leg,
-        x = config_vars$plot_margin + 0.05,
-        y = 0.177 + 0.015,
+        x = config_vars$plot_margin - 0.025,
+        y = 0.177 + 0.019,
         height = 0.03,
         width = 0.1 - config_vars$plot_margin
       ) +
+      draw_label("Out-of-service streamgage",
+                 x = config_vars$plot_margin + 0.028,
+                 y = 1 - config_vars$plot_margin - 0.775 - 0.008,
+                 size = 12,
+                 hjust = 0,
+                 vjust = 1,
+                 fontfamily = font_legend,
+                 color = "black",
+                 lineheight = 1
+      ) +
+      draw_plot(p_decom_leg,
+                x = config_vars$plot_margin - 0.025,
+                y = 0.144,
+                height = 0.08,
+                width = 0.1 - config_vars$plot_margin
+      ) +
       draw_label("If it floods, a               appears",
-        x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.806 + 0.015,
-        size = 12,
-        hjust = 0,
-        vjust = 1,
-        fontfamily = font_legend,
-        color = "black",
-        lineheight = 1
+                 x = config_vars$plot_margin + 0.004,
+                 y = 1 - config_vars$plot_margin - 0.812,
+                 size = 12,
+                 hjust = 0,
+                 vjust = 1,
+                 fontfamily = font_legend,
+                 color = "black",
+                 lineheight = 1
       ) +
       draw_label("spike",
-        x = config_vars$plot_margin + 0.116,
-        y = 1 - config_vars$plot_margin - 0.806 + 0.015,
-        size = 12,
-        hjust = 0,
-        vjust = 1,
-        fontfamily = font_legend,
-        fontface = "bold",
-        color = "black",
-        lineheight = 1
+                 x = config_vars$plot_margin + 0.118,
+                 y = 1 - config_vars$plot_margin - 0.812,
+                 size = 12,
+                 hjust = 0,
+                 vjust = 1,
+                 fontfamily = font_legend,
+                 fontface = "bold",
+                 color = "black",
+                 lineheight = 1
       ) +
       draw_plot(p_peak_legend,
         x = config_vars$plot_margin + 0.22,
-        y = 0.15 + 0.015,
+        y = 0.145,
         height = 0.03,
         width = 0.1 - config_vars$plot_margin
       ) +
       draw_label("The                 is how long it's been flooded",
         x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.833 + 0.015,
+        y = 1 - config_vars$plot_margin - 0.84,
         size = 12,
         hjust = 0,
         vjust = 1,
@@ -708,7 +734,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       ) +
       draw_label("height",
         x = config_vars$plot_margin + 0.0415,
-        y = 1 - config_vars$plot_margin - 0.833 + 0.015,
+        y = 1 - config_vars$plot_margin - 0.84,
         size = 12,
         hjust = 0,
         vjust = 1,
@@ -718,14 +744,14 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
         lineheight = 1
       ) +
       draw_image(flood_stage_leg,
-        x = config_vars$plot_margin + 0.33,
-        y = 0.111 + 0.015,
+        x = config_vars$plot_margin + 0.329,
+        y = 0.105,
         width = 0.13,
         height = 0.135
       ) +
-      draw_label("And the              is the severity of the flood",
+      draw_label("The              is the severity of the flood",
         x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.861 + 0.015,
+        y = 1 - config_vars$plot_margin - 0.867,
         size = 12,
         hjust = 0,
         vjust = 1,
@@ -734,8 +760,8 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
         lineheight = 1
       ) +
       draw_label("color",
-        x = config_vars$plot_margin + 0.074,
-        y = 1 - config_vars$plot_margin - 0.861 + 0.015,
+        x = config_vars$plot_margin + 0.042,
+        y = 1 - config_vars$plot_margin - 0.867,
         size = 12,
         hjust = 0,
         vjust = 1,
@@ -746,42 +772,47 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       ) +
       draw_plot(flood_status_bar,
         x = 0.17,
-        y = 0.028 + 0.015,
+        y = 0.026,
         width = 0.2,
         height = 0.055
       )
   } else {
     p <- p +
-      draw_label("A target        is a",
-        x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.776 + 0.015,
-        size = 12,
-        hjust = 0,
-        vjust = 1,
-        fontfamily = font_legend,
-        color = "black",
-        lineheight = 1
-      ) +
       draw_label("Rapid-Deployment gage",
-        x = config_vars$plot_margin + 0.138,
-        y = 1 - config_vars$plot_margin - 0.776 + 0.015,
-        size = 12,
-        hjust = 0,
-        vjust = 1,
-        fontfamily = font_legend,
-        fontface = "bold",
-        color = "black",
-        lineheight = 1
+                 x = config_vars$plot_margin + 0.028,
+                 y = 1 - config_vars$plot_margin - 0.775 + 0.019,
+                 size = 12,
+                 hjust = 0,
+                 vjust = 1,
+                 fontfamily = font_legend,
+                 color = "black",
+                 lineheight = 1
       ) +
       draw_plot(p_rdg_leg,
-        x = config_vars$plot_margin + 0.049,
-        y = 0.17 + 0.021,
-        height = 0.03,
-        width = 0.1 - config_vars$plot_margin
+                x = config_vars$plot_margin - 0.025,
+                y = 0.177 + 0.019,
+                height = 0.03,
+                width = 0.1 - config_vars$plot_margin
       ) +
+      draw_label("Out-of-service streamgage",
+                 x = config_vars$plot_margin + 0.028,
+                 y = 1 - config_vars$plot_margin - 0.775 - 0.008,
+                 size = 12,
+                 hjust = 0,
+                 vjust = 1,
+                 fontfamily = font_legend,
+                 color = "black",
+                 lineheight = 1
+      ) +
+      draw_plot(p_decom_leg,
+                x = config_vars$plot_margin - 0.025,
+                y = 0.144,
+                height = 0.08,
+                width = 0.1 - config_vars$plot_margin
+      )  +
       draw_label("If it floods:",
-        x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.805 + 0.015,
+        x = config_vars$plot_margin + 0.004,
+        y = 1 - config_vars$plot_margin - 0.810,
         size = 12,
         hjust = 0,
         vjust = 1,
@@ -791,7 +822,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       ) +
       draw_label("     The              is the severity of the flood",
         x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.833 + 0.015,
+        y = 1 - config_vars$plot_margin - 0.836,
         size = 12,
         hjust = 0,
         vjust = 1,
@@ -801,7 +832,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       ) +
       draw_label("color",
         x = config_vars$plot_margin + 0.062,
-        y = 1 - config_vars$plot_margin - 0.833 + 0.015,
+        y = 1 - config_vars$plot_margin - 0.836,
         size = 12,
         hjust = 0,
         vjust = 1,
@@ -812,13 +843,13 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       ) +
       draw_plot(flood_status_bar,
         x = 0.189,
-        y = 0.057 + 0.015,
+        y = 0.054,
         width = 0.2,
         height = 0.055
-      ) +
-      draw_label("     And the           is how long it's been flooded",
+      )  +
+      draw_label("      The           is how long it's been flooded",
         x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.934 + 0.015,
+        y = 1 - config_vars$plot_margin - 0.934,
         size = 12,
         hjust = 0,
         vjust = 1,
@@ -827,8 +858,8 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
         lineheight = 1
       ) +
       draw_label("       size",
-        x = config_vars$plot_margin + 0.066,
-        y = 1 - config_vars$plot_margin - 0.934 + 0.015,
+        x = config_vars$plot_margin + 0.036,
+        y = 1 - config_vars$plot_margin - 0.934,
         size = 12,
         hjust = 0,
         vjust = 1,
