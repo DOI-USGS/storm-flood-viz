@@ -1,0 +1,106 @@
+# Per-storm and viz configuration template.
+#
+# Copy this file to config/<storm_name>.yml, fill in values, then update
+# p0_storm_cfg_file in 0_config.R to point at the new file.
+#
+# See config/helene.yml for a fully populated example. Times are UTC.
+
+# Storm metadata
+date_start: "YYYY-MM-DD"
+date_end: "YYYY-MM-DD"
+landfall_time: "YYYY-MM-DD HH:MM:SS"   # UTC
+
+storm_info:
+  storm_name: "STORMNAME"
+  storm_code: "alXXYYYY"
+  storm_buffer: 250000
+  shape_type: "buffered_storm_track"
+  storm_best_track_url: "https://www.nhc.noaa.gov/gis/best_track/"
+  stn_event: ~
+
+# Spatial
+# bbox in NAD83 (EPSG:4269) decimal degrees.
+bbox:
+  xmin: ~
+  xmax: ~
+  ymin: ~
+  ymax: ~
+
+proj: "+proj=..."
+
+# Display timezone
+timezone: "America/New_York"
+timezone_abv: "ET"
+
+# Viz toggles
+precip_grayscale: "FALSE"
+flood_spike: "TRUE"
+
+# Color palettes
+pal_fs_blue:
+  "Not flooded": "#dcdcdc"
+  "Flood": "#4ecad7"
+  "Moderate": "#17718E"
+  "Major": "#003e6a"
+
+pal_fs_red:
+  "Not flooded": "#dcdcdc"
+  "Flood": "#e5a000"
+  "Moderate": "#F7513B"
+  "Major": "#C917E8"
+
+pal_percentile:
+  - "#8c2d04"
+  - "#cc9e02"
+  - "#fee391"
+  - "#C0C0C0"
+  - "#80cdc1"
+  - "#35978f"
+  - "#045a8d"
+
+pal_precip_blue:
+  - "#c7f0f6"
+  - "#92dce5"
+  - "#5fc8d1"
+  - "#38b1bc"
+  - "#259db0"
+  - "#1b88a1"
+  - "#16738c"
+
+pal_precip_grayscale:
+  - "#E6E6E6"
+  - "#CBCBCB"
+  - "#B6B6B6"
+  - "#A6A6A6"
+  - "#979797"
+  - "#858585"
+  - "#6D6D6D"
+
+# Plot config
+# plot_shift / plot_width|height are relative to 0-1 canvas; re-tune
+# whenever bbox area changes.
+viz_config:
+  width: 8
+  height: 8
+  dpi: 300
+  state_outline_col: "white"
+  major_cities_col: "gray60"
+  major_cities_text_col: "gray50"
+  streamgage_col: "gray30"
+  storm_path_col: "black"
+  state_inner_borders_col: "gray85"
+  state_outer_lines_col: "gray80"
+  bg_col: "white"
+  ocean_col: "#f8fcfc"
+  progress_bar_bg_col: "gray80"
+  progress_bar_col: "gray45"
+  x_mark: "black"
+  load_font: "Source Sans Pro"
+  font_size_title: 16
+  font_size: 14
+  leg_font_size: 12
+  plot_margin: 0.025
+  plot_shift_x: -0.18
+  plot_shift_y: -0.212
+  plot_width: 1.39
+  plot_height: 1.6
