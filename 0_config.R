@@ -1,160 +1,74 @@
+# Phase 0: pipeline plumbing.
+#
+# Per-storm and viz parameters live in config/<storm>.yml.
+# To swap storms, change the path in `p0_storm_cfg_file` below.
+#
+# Each per-storm/viz value is exposed as its own leaf target so downstream
+# targets only re-run when their specific input changes.
+
+#' Load and type-coerce a per-storm YAML config.
+#'
+#' YAML scalars/maps don't preserve R types like POSIXct, sf bbox, or tibble,
+#' so this loader reconstructs them. Returns a named list with the same shape
+#' the per-storm/viz tar_targets below expect.
+#'
+#' @param path Path to the storm YAML file.
+#' @return A named list ready for downstream `p0_storm_cfg$<field>` access.
+load_storm_config <- function(path) {
+  cfg <- yaml::read_yaml(path)
+
+  cfg$landfall_time <- as.POSIXct(cfg$landfall_time, tz = "UTC")
+
+  cfg$bbox <- sf::st_bbox(c(xmin = cfg$bbox$xmin, xmax = cfg$bbox$xmax, ymin = cfg$bbox$ymin, ymax = cfg$bbox$ymax))
+
+  cfg$storm_info <- tibble::as_tibble(cfg$storm_info)
+  cfg$viz_config <- tibble::as_tibble(cfg$viz_config)
+
+  # Named-map palettes -> named character vector
+  cfg$pal_fs_blue <- unlist(cfg$pal_fs_blue)
+  cfg$pal_fs_red <- unlist(cfg$pal_fs_red)
+  # Sequence palettes -> unnamed character vector
+  cfg$pal_percentile <- unlist(cfg$pal_percentile)
+  cfg$pal_precip_blue <- unlist(cfg$pal_precip_blue)
+  cfg$pal_precip_grayscale <- unlist(cfg$pal_precip_grayscale)
+
+  cfg
+}
+
 p0_targets <- list(
-  tar_target(
-    p0_flood_stage_url,
-    "https://water.noaa.gov/resources/downloads/reports/nwps_all_gauges_report.csv"
-    ),
-  # Must be defined using NAD83 ("EPSG:4269") coordinates in decimal degrees
-  # Note: when bbox area changes, downstread `plot_shift_x`, `plot_shift_y`,
-  # `plot_width`, `plot_height` will likely need to be adjusted in 
-  # `p0_viz_config_df` below
-  tar_target(
-    p0_bbox_sf,
-    sf::st_bbox(c(xmin = -98.21, xmax = -69.97, ymin = 23, ymax = 44.6))
-    ),
-  # Select appropriate projection for the area of interest within the bounding box
-  tar_target(
-    # Southeastern U.S. focus projection 
-    p0_proj,
-    "+proj=aea +lat_0=23 +lon_0=-84 +lat_1=30 +lat_2=37 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +type=crs"
-    ),
-  tar_target(
-    p0_date_start,
-    "2024-09-24"
-  ),
-  tar_target(
-    p0_date_end,
-    "2024-09-29"
-  ),
-  tar_target(
-    p0_storm_info,
-    tibble(storm_name = "HELENE",
-           storm_code = "al092024",
-           storm_buffer = 250000,
-           shape_type = "buffered_storm_track",
-           storm_best_track_url = "https://www.nhc.noaa.gov/gis/best_track/",
-           # Can find code by looking at REST URLs here: https://stn.wim.usgs.gov/STNDataPortal/#
-           stn_event = 346)
-    ),
-  tar_target(
-    p0_pcodes,
-    c("00060", "00065")
-  ),
-  # Set precipitation bbox and dates
-  tar_target(p0_precip_bbox,
-             unname(as.list(p0_bbox_sf))),
-  # Set precipitation start and end time
-  # Note: these must be defined in UTC time
-  tar_target(
-    p0_precip_start,
-    paste0(p0_date_start, "T00")
-    ),
-  tar_target(
-    p0_precip_end,
-    paste0(p0_date_end, "T23")
-    ),
-  # Set streamflow start and end time**
-  # Note: we are defining these in UTC time to match the precip data
-  tar_target(
-    p0_nwis_start,
-    paste0(p0_date_start, "T00:00Z")
-  ),
-  tar_target(
-    p0_nwis_end,
-    paste0(p0_date_end, "T23:00Z")
-  ),
-  # Desired timezone for map display
-  # For refernce: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-  # Note: all data processing/fetching is done in UTC timezone, timezone edits for  
-  # local desired timezone are only done in final mapping step `mapping_utils.R`
-  tar_target(p0_timezone,
-             "America/New_York"
-             ),
-  tar_target(p0_timezone_abv,
-             "ET"),
-  # Set time for storm landfall to add countdown to landfall
-  # For Helene, this was noted from https://en.wikipedia.org/wiki/Hurricane_Helene 
-  tar_target(
-    p0_landfall_time,
-    as.POSIXct("2024-09-27 03:00:00", tz = "UTC")
-  ),
-  tar_target(
-    # Create a tibble to define color palette for flood stage
-    p0_viz_fs_config_pal_blue,
-    c(
-      "Not flooded" = "#dcdcdc",
-      "Flood" = "#4ecad7",
-      "Moderate" = "#17718E",
-      "Major" = "#003e6a"
-    )
-  ),
-  tar_target(
-    # Create a tibble to define color palette for flood stage
-    p0_viz_fs_config_pal_red,
-    c(
-      "Not flooded" = "#dcdcdc",
-      "Flood" = "#e5a000",
-      "Moderate" = "#F7513B",
-      "Major" = "#C917E8"
-    )
-  ), 
-  tar_target(
-    # Create a tibble to define color palette for percentile
-    p0_viz_percentile_config_pal,
-    c("#8c2d04", "#cc9e02", "#fee391", 
-      "#C0C0C0", "#80cdc1", "#35978f", "#045a8d")
-    ),
-  tar_target(
-    p0_viz_precip_config_pal_blue,
-    c("#c7f0f6", "#92dce5", "#5fc8d1", "#38b1bc", "#259db0", "#1b88a1", "#16738c")
-    ),
-  tar_target(
-    p0_viz_precip_config_pal_grayscale,
-    c("#E6E6E6", "#CBCBCB", "#B6B6B6", "#A6A6A6", "#979797", "#858585", "#6D6D6D")
-    ),
-  # Set up TRUE/FALSE statement for variables wanted on on or off for viz
-  # FALSE = colorized precipitation
-  # TRUE = grayscale precipitation
-  tar_target(
-    p0_precip_grayscale_var,
-    "FALSE"
-  ),
-  # FALSE = sized flooded points
-  # TRUE = sized flooded spike
-  tar_target(
-    p0_flood_spike_var,
-    "TRUE"
-  ),
-  tar_target(
-    # Create a tibble to define fig width and height, conus outline colors,
-    # background color, font name, and font size 
-    p0_viz_config_df,
-    tibble(
-      width = 8,
-      height = 8,
-      dpi = 300, 
-      state_outline_col = "white",
-      major_cities_col = 'gray60',
-      major_cities_text_col = 'gray50',
-      streamgage_col = "gray30",
-      storm_path_col = "black",
-      state_inner_borders_col = "gray85",
-      state_outer_lines_col = "gray80",
-      bg_col = "white",
-      ocean_col = "#f8fcfc",
-      progress_bar_bg_col = 'gray80',
-      progress_bar_col = "gray45",
-      x_mark = "black",
-      load_font = 'Source Sans Pro',
-      font_size_title = 16,
-      font_size = 14,
-      leg_font_size = 12,
-      # Note: these vals are relative to the 0-1 canvas limits & 
-      # adjust these parameters when bbox area is adjusted
-      plot_margin = 0.025,
-      plot_shift_x = -0.18,
-      plot_shift_y = -0.212,
-      plot_width = 1.39,
-      plot_height = 1.6
-    )
-  )
+
+  # Storm config dispatch
+  tar_target(p0_storm_cfg_file, "config/helene.yml", format = "file"),
+  tar_target(p0_storm_cfg, load_storm_config(p0_storm_cfg_file)),
+
+  # Pipeline-constant data sources
+  tar_target(p0_flood_stage_url, "https://water.noaa.gov/resources/downloads/reports/nwps_all_gauges_report.csv"),
+  tar_target(p0_pcodes, c("00060", "00065")),
+
+  # Per-storm leaves
+  tar_target(p0_bbox_sf, p0_storm_cfg$bbox),
+  tar_target(p0_proj, p0_storm_cfg$proj),
+  tar_target(p0_date_start, p0_storm_cfg$date_start),
+  tar_target(p0_date_end, p0_storm_cfg$date_end),
+  tar_target(p0_storm_info, p0_storm_cfg$storm_info),
+  tar_target(p0_landfall_time, p0_storm_cfg$landfall_time),
+  tar_target(p0_timezone, p0_storm_cfg$timezone),
+  tar_target(p0_timezone_abv, p0_storm_cfg$timezone_abv),
+
+  # Viz leaves
+  tar_target(p0_viz_fs_config_pal_blue, p0_storm_cfg$pal_fs_blue),
+  tar_target(p0_viz_fs_config_pal_red, p0_storm_cfg$pal_fs_red),
+  tar_target(p0_viz_percentile_config_pal, p0_storm_cfg$pal_percentile),
+  tar_target(p0_viz_precip_config_pal_blue, p0_storm_cfg$pal_precip_blue),
+  tar_target(p0_viz_precip_config_pal_grayscale, p0_storm_cfg$pal_precip_grayscale),
+  tar_target(p0_precip_grayscale_var, p0_storm_cfg$precip_grayscale),
+  tar_target(p0_flood_spike_var, p0_storm_cfg$flood_spike),
+  tar_target(p0_viz_config_df, p0_storm_cfg$viz_config),
+
+  # Derived from per-storm values (precip/NWIS times in UTC to match precip)
+  tar_target(p0_precip_bbox, unname(as.list(p0_bbox_sf))),
+  tar_target(p0_precip_start, paste0(p0_date_start, "T00")),
+  tar_target(p0_precip_end, paste0(p0_date_end, "T23")),
+  tar_target(p0_nwis_start, paste0(p0_date_start, "T00:00Z")),
+  tar_target(p0_nwis_end, paste0(p0_date_end, "T23:00Z"))
 )

@@ -19,10 +19,13 @@ Do not:
 - chunk up refactor steps into small, tangible PRs for review 
 - provide small tests to check code changesd with and ensure consistent outputs 
 - use R primarily, with Python as needed 
+- Each refactor priority gets its own branch off main and its own task file in TASKS/.
+- Use compact formatting, do not use extra spacing. 
 
 ## refactor priorities
 1. consolidate viz and storm configs into config files for each change
-1. Speed up the percentiles branch in 2_process.R:19-33 — currently the dominant runtime cost (~30 min), via parallelism, batch API calls, or read_waterdata_stats()
+1. Speed up the percentiles calculation. We want a variable percentile that includes gages of at least a 20 year period of record available.
+1. Separate fetch, process, and visualize phases in a clear strcuture, so that when the visual is regenerated for new storms it is easy to update and customize to the event.
 1. Decompose 3_visualize/src/mapping_utils.R (956 lines, single function) into focused builders.
 1. Generalize p1_major_cities_sf (1_fetch.R:120-143) so it isn't hard-coded to SE US cities
 
