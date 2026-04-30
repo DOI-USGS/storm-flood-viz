@@ -8,6 +8,7 @@ source("1_fetch/src/clip_flood_stage_gages.R")
 source("1_fetch/src/fetch_uv_peaks_data.R")
 source("1_fetch/src/fetch_rapid_deployment_data.R")
 source("1_fetch/src/fetch_site_stats.R")
+source("1_fetch/src/get_major_cities.R")
 
 p1_targets <- list(
 # Fetch precipitation data  -----------------------------------------------
@@ -119,27 +120,16 @@ p1_targets <- list(
   # Download major cities
   tar_target(
     p1_major_cities_sf,
-    {
-      city_lookup <- tibble::tibble(
-        name = c("Miami", "Atlanta", "Raleigh", "Philadelphia", "New York",
-                 "New Orleans", "Memphis", "Jackson", "Houston",
-                 "Richmond", "Mobile", "Columbia"),
-        state_abbr = c("FL", "GA", "NC", "PA", "NY", "LA", "TN", "MS", "TX",
-                       "VA", "AL", "SC")
-      )
-
-      state_fips <- tigris::fips_codes |>
-        dplyr::distinct(state_code, state) |>
-        dplyr::rename(state_abbr = state)
-
-      city_join <- dplyr::left_join(city_lookup, state_fips, by = "state_abbr")
-
-      tigris::places(cb = TRUE) |>
-        dplyr::inner_join(city_join, by = c("NAME" = "name", "STATEFP" = "state_code")) |>
-        dplyr::select(NAME, geometry) |>
-        sf::st_transform(p0_proj) |>
-        sf::st_centroid()
-    }
+    get_major_cities(
+      bbox_sf = p1_conus_bbox_crop_sf,
+      storm_track_sf = p1_storm_track_pts_sf,
+      proj = p0_proj,
+      n = p0_cities_n,
+      track_buffer_dist = p0_cities_track_buffer,
+      min_dist = p0_cities_min_dist,
+      storm_types = p0_cities_storm_types,
+      override = p0_cities_override
+    )
   ),
 
 # Fetch rapid deployment gages  -------------------------------------------

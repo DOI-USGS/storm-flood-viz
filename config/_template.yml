@@ -32,6 +32,16 @@ proj: "+proj=..."
 timezone: "America/New_York"
 timezone_abv: "ET"
 
+# Major cities: auto-selects top n by population within the storm buffer.
+# cities_override forces additional cities into the label layer.
+cities_n: 12
+cities_track_buffer: 500000  # metres from storm track to search for cities
+cities_min_dist: 100000      # metres; minimum spacing between any two labels
+cities_storm_types:          # STORMTYPE codes used to build the track buffer
+  - "HU"
+  - "TS"
+cities_override: ~           # null = fully automatic; add "City ST" entries to force-include
+
 # Viz toggles
 precip_grayscale: "FALSE"
 flood_spike: "TRUE"

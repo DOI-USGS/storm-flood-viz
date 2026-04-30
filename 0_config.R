@@ -32,6 +32,12 @@ load_storm_config <- function(path) {
   cfg$pal_precip_blue <- unlist(cfg$pal_precip_blue)
   cfg$pal_precip_grayscale <- unlist(cfg$pal_precip_grayscale)
 
+  cfg$cities_n <- cfg$cities_n %||% 12L
+  cfg$cities_track_buffer <- cfg$cities_track_buffer %||% 500000
+  cfg$cities_min_dist <- cfg$cities_min_dist %||% 100000
+  cfg$cities_storm_types <- if (!is.null(cfg$cities_storm_types)) unlist(cfg$cities_storm_types) else c("HU", "TS")
+  cfg$cities_override <- if (!is.null(cfg$cities_override)) unlist(cfg$cities_override) else NULL
+
   cfg
 }
 
@@ -64,6 +70,11 @@ p0_targets <- list(
   tar_target(p0_precip_grayscale_var, p0_storm_cfg$precip_grayscale),
   tar_target(p0_flood_spike_var, p0_storm_cfg$flood_spike),
   tar_target(p0_viz_config_df, p0_storm_cfg$viz_config),
+  tar_target(p0_cities_n, p0_storm_cfg$cities_n),
+  tar_target(p0_cities_track_buffer, p0_storm_cfg$cities_track_buffer),
+  tar_target(p0_cities_min_dist, p0_storm_cfg$cities_min_dist),
+  tar_target(p0_cities_storm_types, p0_storm_cfg$cities_storm_types),
+  tar_target(p0_cities_override, p0_storm_cfg$cities_override),
 
   # Derived from per-storm values (precip/NWIS times in UTC to match precip)
   tar_target(p0_precip_bbox, unname(as.list(p0_bbox_sf))),
