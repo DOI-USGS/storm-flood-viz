@@ -142,50 +142,39 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
     ) +
     scale_y_discrete(expand = expansion(add = 0.2)) +
     coord_cartesian(clip = "off") +
-    theme_void(base_family = config_vars$font_size) +
+    theme_void(base_family = config_vars$load_font) +
     theme(text = element_text(size = config_vars$font_size))
 
+  # ggplot2 3.5+ guide API: appearance goes inside theme() within the guide
+  precip_guide <- guide_coloursteps(
+    theme = theme(
+      legend.direction      = "horizontal",
+      legend.title.position = "left",
+      legend.key.width      = unit(3, "cm"),
+      legend.key.height     = unit(0.4, "cm"),
+      legend.text.position  = "bottom",
+      legend.text  = element_text(size = 0, color = "transparent"),
+      legend.title = element_text(family = font_legend, hjust = 0, vjust = 0.5)
+    )
+  )
+
   if (precip_grayscale) {
-    # Use grayscale palette
     precip_fill_scale <- scale_fill_stepsn(
-      colors = precip_grayscale_cols,
-      breaks = get_precip_breaks(global_max_precip),
-      limits = c(1, global_max_precip),
-      name = NULL,
+      colors   = precip_grayscale_cols,
+      breaks   = get_precip_breaks(global_max_precip),
+      limits   = c(1, global_max_precip),
+      name     = NULL,
       na.value = scales::alpha("white", 0),
-      guide = guide_coloursteps(
-        title.theme = element_text(family = font_legend, hjust = 0),
-        title.position = "left",
-        title.hjust = 0,
-        title.vjust = 0.5,
-        direction = "horizontal",
-        barwidth = unit(3, "cm"),
-        barheight = unit(0.4, "cm"),
-        label.position = "bottom",
-        label.theme = element_blank()
-      )
+      guide    = precip_guide
     )
   } else {
-    # Use colorized palette
     precip_fill_scale <- scale_fill_stepsn(
-      colors = scales::alpha(
-        precip_cols, 0.7
-      ),
-      breaks = get_precip_breaks(global_max_precip),
-      limits = c(1, global_max_precip),
-      name = NULL,
+      colors   = scales::alpha(precip_cols, 0.7),
+      breaks   = get_precip_breaks(global_max_precip),
+      limits   = c(1, global_max_precip),
+      name     = NULL,
       na.value = scales::alpha("white", 0),
-      guide = guide_coloursteps(
-        title.theme = element_text(family = font_legend, hjust = 0),
-        title.position = "left",
-        title.hjust = 0,
-        title.vjust = 0.5,
-        direction = "horizontal",
-        barwidth = unit(3, "cm"),
-        barheight = unit(0.4, "cm"),
-        label.position = "bottom",
-        label.theme = element_blank()
-      )
+      guide    = precip_guide
     )
   }
 
@@ -253,7 +242,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
   spike_transform <- function(df) {
     df |>
       dplyr::mutate(
-        pct          = pct_midpoint[percentile],
+        pct          = pct_midpoint[as.character(percentile)],
         pct_rescaled = ifelse(is.na(pct) | pct < 75, 0, (pct - 75) / 25 * 100),
         xy           = sf::st_coordinates(geometry),
         x     = xy[, 1],
@@ -486,7 +475,14 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
     coord_fixed() +
     theme_void()
 
-  legend_precip <- get_legend_non0(p_precip_legend)
+  # Build a standalone plot for precip legend extraction so that multiple
+  # fill scales from ggnewscale don't interfere with get_legend_non0.
+  legend_precip <- get_legend_non0(
+    ggplot() +
+      geom_raster(data = precip_now, aes(x = x, y = y, fill = precip_in)) +
+      precip_fill_scale +
+      theme(legend.position = "right")
+  )
 
   logo <- magick::image_read(logo_path) |>
     magick::image_resize("x100") |>
@@ -770,8 +766,8 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
         lineheight = 1
       ) +
       draw_image(flood_stage_leg,
-        x = config_vars$plot_margin + 0.329,
-        y = 0.105,
+        x = config_vars$plot_margin + 0.332,
+        y = 0.109,
         width = 0.13,
         height = 0.135
       ) +
