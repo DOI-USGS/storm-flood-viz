@@ -749,32 +749,32 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
         height = 0.03,
         width = 0.1 - config_vars$plot_margin
       ) +
-      draw_label("The                 is how long it's been flooded",
-        x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.84,
-        size = 12,
-        hjust = 0,
-        vjust = 1,
-        fontfamily = font_legend,
-        color = "black",
-        lineheight = 1
+      draw_label("The                 is correlated to flow percentiles",
+                 x = config_vars$plot_margin + 0.002,
+                 y = 1 - config_vars$plot_margin - 0.84,
+                 size = 12,
+                 hjust = 0,
+                 vjust = 1,
+                 fontfamily = font_legend,
+                 color = "black",
+                 lineheight = 1
       ) +
       draw_label("height",
-        x = config_vars$plot_margin + 0.0415,
-        y = 1 - config_vars$plot_margin - 0.84,
-        size = 12,
-        hjust = 0,
-        vjust = 1,
-        fontfamily = font_legend,
-        fontface = "bold",
-        color = "black",
-        lineheight = 1
+                 x = config_vars$plot_margin + 0.0415,
+                 y = 1 - config_vars$plot_margin - 0.84,
+                 size = 12,
+                 hjust = 0,
+                 vjust = 1,
+                 fontfamily = font_legend,
+                 fontface = "bold",
+                 color = "black",
+                 lineheight = 1
       ) +
       draw_image(flood_stage_leg,
-        x = config_vars$plot_margin + 0.332,
-        y = 0.109,
-        width = 0.13,
-        height = 0.135
+                 x = config_vars$plot_margin + 0.36,
+                 y = 0.11,
+                 width = 0.12,
+                 height = 0.12
       ) +
       draw_label("The              is the severity of the flood",
         x = config_vars$plot_margin + 0.002,
