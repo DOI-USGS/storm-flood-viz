@@ -9,27 +9,31 @@ p2_targets <- list(
     p2_uv_data_df,
     arrow::read_parquet(p1_uv_data_pqt)
   ),
-  # Make list of sites to run through the percentiles calculations
-  tar_target(
-    p2_uv_sites,
-    unique(p2_uv_data_df$site_no)
-  ),
-  # Branch over site ids to generate percentiles and place in single df
-  # of uv data
+  # Join USGS day-of-year percentile thresholds to uv data and derive a
+  # category string. Sites absent from p1_site_stats_pqt (< 20 yr POR)
+  # receive percentile = NA and are excluded from percentile viz layers.
   tar_target(
     p2_uv_data_percentiles_df,
     {
-      # Make this target dependent upon the hyswap python file
-      p1_hyswap_py_file
+      thresholds <- arrow::read_parquet(p1_site_stats_pqt)
 
-      # Print message about time to run
-      if (p2_uv_sites == unique(p2_uv_data_df$site_no)[1]) {
-        print("This branching step may take a while (~30 minutes)")
-      }
-
-      calculate_uv_percentiles_from_dv(p2_uv_sites, p2_uv_data_df, pcode = "00060")
-    },
-    pattern = map(p2_uv_sites)
+      p2_uv_data_df |>
+        dplyr::mutate(time_of_year = format(dateTime, "%m-%d")) |>
+        dplyr::left_join(thresholds, by = c("site_no", "time_of_year")) |>
+        dplyr::mutate(
+          percentile = dplyr::case_when(
+            is.na(X_00060_00000) | is.na(p05) ~ NA_character_,
+            X_00060_00000 >= p95              ~ "high",
+            X_00060_00000 >= p90              ~ "90-95",
+            X_00060_00000 >= p75              ~ "75-90",
+            X_00060_00000 >= p25              ~ "25-75",
+            X_00060_00000 >= p10              ~ "10-25",
+            X_00060_00000 >= p05              ~ "5-10",
+            TRUE                              ~ "low"
+          )
+        ) |>
+        dplyr::select(-time_of_year, -dplyr::any_of(c("p05","p10","p25","p50","p75","p90","p95")))
+    }
   ),
   # Read in peak data and grab max peak value per site, with ties
   # broken using the latest date in the dataset - makes more sense to compare
@@ -78,14 +82,23 @@ p2_targets <- list(
         ) |> 
         fill(agency_cd, .direction = "downup") |>
         ungroup() |> 
-        # Add in stage data
-        left_join(p1_usgs_flood_stage_gages, by = "site_no") |>  
-        # Add in peaks data
-        left_join(p2_peak_data_max_df, by = c("site_no", "agency_cd")) |> 
+        # Add flood stage thresholds (drop geometry — we attach it from all-gage sf below)
+        left_join(sf::st_drop_geometry(p1_usgs_flood_stage_gages), by = "site_no") |>
+        # Add peaks data
+        left_join(p2_peak_data_max_df, by = c("site_no", "agency_cd")) |>
+        # Attach geometry for all bbox stream gages (not just flood-stage sites)
+        left_join(
+          tibble::tibble(
+            site_no  = p1_bbox_stream_sites_sf$site_no,
+            geometry = sf::st_geometry(p1_bbox_stream_sites_sf)
+          ),
+          by = "site_no"
+        ) |>
+        sf::st_as_sf(sf_column_name = "geometry") |>
         select(
           site_no, dateTime, X_00060_00000, X_00065_00000,
           percentile, action.stage, flood.stage, moderate.flood.stage, major.flood.stage,
-          peak_va, peak_cd, peak_dateTime, geometry
+          peak_va, peak_cd, peak_dt, geometry
         )
 
       # Flag only rows that are part of 4+ consecutive NA runs for X_00065_00000
