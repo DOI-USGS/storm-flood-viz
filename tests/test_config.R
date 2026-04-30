@@ -26,7 +26,7 @@ stopifnot(cfg$storm_info$stn_event == 346)
 
 # Spatial
 stopifnot(inherits(cfg$bbox, "bbox"))
-stopifnot(identical(unname(cfg$bbox), c(-98.21, 23, -69.97, 44.6)))
+stopifnot(identical(as.numeric(cfg$bbox), c(-98.21, 23, -69.97, 44.6)))
 stopifnot(grepl("^\\+proj=aea", cfg$proj))
 
 # Display tz + viz toggles (kept as strings to match existing pipeline code)
@@ -53,8 +53,9 @@ stopifnot(cfg$viz_config$load_font == "Source Sans Pro")
 stopifnot(cfg$viz_config$plot_shift_x == -0.18)
 stopifnot(cfg$viz_config$plot_height == 1.6)
 
-# Template loads and has the same top-level shape
-tpl <- load_storm_config("config/_template.yml")
-stopifnot(setequal(names(cfg), names(tpl)))
+# Template has the same top-level keys as a real config (raw YAML; template
+# intentionally has null placeholders that skip type coercion)
+tpl_raw <- yaml::read_yaml("config/_template.yml")
+stopifnot(setequal(names(cfg), names(tpl_raw)))
 
 cat("OK — config refactor produces expected values\n")
