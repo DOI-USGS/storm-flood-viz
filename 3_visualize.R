@@ -3,34 +3,29 @@ source('3_visualize/src/mapping_utils.R')
 source('3_visualize/src/title_end_frame.R')
 
 p3_targets <- list(
-  # Define the precip timestemps
-  tar_target(
-    p3_all_precip_timestamps,
-    sort(unique(p2_process_precip_rast$dateTime))
-  ),
   # Subset hurricane track by timestep
   tar_target(
     p3_storm_by_time,
     {
-      filter(p1_storm_track_pts_sf, DTG <= p3_all_precip_timestamps)
+      filter(p1_storm_track_pts_sf, DTG <= p2_all_precip_timestamps)
     },
-    pattern = map(p3_all_precip_timestamps),
+    pattern = map(p2_all_precip_timestamps),
     iteration = "list"
   ),
   # Subset precipitation raster by timestep
   tar_target(
     p3_precip_by_time,
-    filter(p2_process_precip_rast, dateTime <= p3_all_precip_timestamps),
-    pattern = map(p3_all_precip_timestamps),
+    filter(p2_process_precip_rast, dateTime <= p2_all_precip_timestamps),
+    pattern = map(p2_all_precip_timestamps),
     iteration = "list"
   ),
   # Subset rapid deployment gage sf by timestep
   tar_target(
     p3_rdg_by_time,
     {
-      filter(p1_rapid_dep_gages, dateTime <= p3_all_precip_timestamps)
+      filter(p1_rapid_dep_gages, dateTime <= p2_all_precip_timestamps)
     },
-    pattern = map(p3_all_precip_timestamps),
+    pattern = map(p2_all_precip_timestamps),
     iteration = "list"
   ),
   # Global max precip to add to precip legend limit
@@ -41,7 +36,7 @@ p3_targets <- list(
   # Global max flood stages to flood stage dynamic barplot x-limit
   tar_target(
     p3_global_max_flooded,
-    max(vapply(p3_flow_by_time,
+    max(vapply(p2_flow_by_time,
                function(tbl) {
                  sum(tbl$flood_status %in% c("Flood","Moderate", "Major"), na.rm = TRUE)
                },
@@ -49,48 +44,12 @@ p3_targets <- list(
                )
         )
     ), 
-  tar_target(
-    p3_flow_by_time,
-    {
-      p2_flow_height_complete_df |> 
-        filter(dateTime <= p3_all_precip_timestamps) |> 
-        group_by(site_no) |> 
-        arrange(site_no, dateTime) |> 
-        mutate(
-          above_flood = ifelse(is.na(X_00065_00000), FALSE, X_00065_00000 >= flood.stage),
-          duration_above_flood_hr = ifelse(above_flood, cumsum(above_flood), NA)
-        ) |> 
-        ungroup() |> 
-        filter(dateTime == p3_all_precip_timestamps) |> 
-        mutate(
-          flood_status = case_when(
-            !is.na(major.flood.stage)    & X_00065_00000 >= major.flood.stage    ~ "Major",
-            !is.na(moderate.flood.stage) & X_00065_00000 >= moderate.flood.stage ~ "Moderate",
-            !is.na(flood.stage)          & X_00065_00000 >= flood.stage          ~ "Flood",
-            TRUE ~ "Not flooded"
-          ),
-          flood_status = factor(flood_status, levels = c("Not flooded","Flood","Moderate","Major")),
-          is_flooded   = above_flood,
-          # rank for draw order: lower draws first (so it goes behind)
-          sev_rank = c("Not flooded"=0L,"Flood"=1L,"Moderate"=2L,"Major"=3L)[as.character(flood_status)],
-          # how far above the reached stage (helps break ties within a severity)
-          above_amt = dplyr::case_when(
-            flood_status == "Major"    ~ X_00065_00000 - major.flood.stage,
-            flood_status == "Moderate" ~ X_00065_00000 - moderate.flood.stage,
-            flood_status == "Flood"    ~ X_00065_00000 - flood.stage,
-            TRUE ~ NA_real_
-          )
-        )
-    },
-    pattern = map(p3_all_precip_timestamps),
-    iteration = "list"
-  ),
   # Caclulate global max duration above flood stage across all timesteps
   # to apply to map flood peaks 
   tar_target(
     p3_global_max_flood_duration,
     {
-      p3_flow_by_time |>
+      p2_flow_by_time |>
         purrr::map_dbl(~ max(.x$duration_above_flood_hr, na.rm = TRUE)) |>
         max(na.rm = TRUE)
     }
@@ -98,35 +57,35 @@ p3_targets <- list(
   # progress bar targets
   tar_target(
     p3_min_timestamp,
-    p3_all_precip_timestamps[[1]]
+    p2_all_precip_timestamps[[1]]
   ),
   tar_target(
     p3_precip_duration,
-    as.double(p3_all_precip_timestamps[[length(p3_all_precip_timestamps)]] -
+    as.double(p2_all_precip_timestamps[[length(p2_all_precip_timestamps)]] -
                 p3_min_timestamp, 
               units = "hours")
   ),
   tar_target(
     p3_progress_fract,
     {
-      hours_since_start <- as.double(p3_all_precip_timestamps - 
+      hours_since_start <- as.double(p2_all_precip_timestamps - 
                                        p3_min_timestamp, 
                                      units = "hours")
       progress_fraction <- hours_since_start / p3_precip_duration
       progress_fraction
     },
-    pattern = map(p3_all_precip_timestamps),
+    pattern = map(p2_all_precip_timestamps),
     iteration = "list"
   ),
   # Build flood stage animation
   tar_target(
     p3_flood_stage_frames,
     hurricane_flood_stage_frames(
-      dtg = p3_all_precip_timestamps,
+      dtg = p2_all_precip_timestamps,
       precip_now = p3_precip_by_time,
       global_max_precip = p3_global_max_precip_in,
       global_max_flood_stages = p3_global_max_flooded,
-      flow_now = p3_flow_by_time,
+      flow_now = p2_flow_by_time,
       storm_now = p3_storm_by_time,
       rdg_now = p3_rdg_by_time,
       storm_info = p0_storm_info,
@@ -160,7 +119,7 @@ p3_targets <- list(
       frame_point_dir = sprintf("3_visualize/out/flood_stage_%s_point_frames",
                                 tolower(p0_storm_info$storm_name))
     ),
-    pattern = map(p3_all_precip_timestamps, p3_precip_by_time, p3_flow_by_time,
+    pattern = map(p2_all_precip_timestamps, p3_precip_by_time, p2_flow_by_time,
                   p3_storm_by_time, p3_progress_fract, p3_rdg_by_time),
     format = "file"
   ),
