@@ -102,7 +102,7 @@ viz_config:
   progress_bar_bg_col: "gray80"
   progress_bar_col: "gray45"
   x_mark: "black"
-  load_font: "Source Sans Pro"
+  load_font: "Source Sans 3"
   font_size_title: 16
   font_size: 14
   leg_font_size: 12
