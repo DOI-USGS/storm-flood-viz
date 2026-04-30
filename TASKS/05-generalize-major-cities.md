@@ -1,6 +1,6 @@
 # Task 05 — Generalize `p1_major_cities_sf` beyond hard-coded SE US cities
 
-Branch: `refactor/05-generalize-major-cities`
+Branch: `refactor-edits`
 
 ## Goal
 Replace the hard-coded 12-city list in `1_fetch.R` with a generalizable approach
@@ -95,5 +95,5 @@ allowing denser labeling in the impact corridor.
 - Adjust `cities_track_buffer` (e.g. 300000 vs 700000) → narrower/wider city
   selection corridor around the track.
 - Adjust `cities_min_dist` (e.g. 30000 vs 200000) → denser or sparser labels.
-- Confirm Helene gif still renders with cities on the map; visually compare
+- Confirm Helene MP4 still renders with cities on the map; visually compare
   label positions to pre-refactor.
