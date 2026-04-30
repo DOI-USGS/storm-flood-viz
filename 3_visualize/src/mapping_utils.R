@@ -239,21 +239,47 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
     "high"  = 97.5
   )
 
-  spike_transform <- function(df) {
+  # Gray spikes: height from discharge / historical peak (grows continuously over time);
+  # falls back to percentile-based height if discharge or peak_va is unavailable.
+  discharge_spike_transform <- function(df) {
     df |>
       dplyr::mutate(
-        pct          = pct_midpoint[as.character(percentile)],
-        pct_rescaled = ifelse(is.na(pct) | pct < 75, 0, (pct - 75) / 25 * 100),
-        xy           = sf::st_coordinates(geometry),
-        x     = xy[, 1],
-        y     = xy[, 2],
+        pct      = pct_midpoint[as.character(percentile)],
+        pct_frac = ifelse(is.na(pct) | pct < 75, 0, (pct - 75) / 25),
+        discharge_frac = ifelse(
+          !is.na(X_00060_00000) & !is.na(peak_va) & peak_va > 0,
+          pmin(X_00060_00000 / peak_va, 1),
+          NA_real_
+        ),
+        height_frac = dplyr::coalesce(discharge_frac, pct_frac),
+        xy     = sf::st_coordinates(geometry),
+        x      = xy[, 1],
+        y      = xy[, 2],
         y_base = y + y_baseheight,
-        xend  = x,
-        yend  = y_base + (pct_rescaled / 100) * peak_height
+        xend   = x,
+        yend   = y_base + height_frac * peak_height
       )
   }
 
-  # If flood_spikes TRUE, make percentile-height spikes
+  # Colored spikes: height from duration above flood stage (grows over time)
+  duration_spike_transform <- function(df) {
+    df |>
+      dplyr::mutate(
+        dur_rescaled = ifelse(
+          is.na(duration_above_flood_hr) | global_max_duration == 0,
+          0,
+          pmin(duration_above_flood_hr / global_max_duration, 1)
+        ),
+        xy     = sf::st_coordinates(geometry),
+        x      = xy[, 1],
+        y      = xy[, 2],
+        y_base = y + y_baseheight,
+        xend   = x,
+        yend   = y_base + dur_rescaled * peak_height
+      )
+  }
+
+  # If flood_spikes TRUE, make spikes
   if (flood_spikes) {
     # Gray spikes: high-percentile gages with no NOAA flood stage thresholds
     flow_spikes_gray <- flow_now |>
@@ -262,16 +288,16 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
         percentile %in% c("75-90", "90-95", "high"),
         is.na(flood.stage) & is.na(moderate.flood.stage) & is.na(major.flood.stage)
       ) |>
-      spike_transform()
+      discharge_spike_transform()
 
-    # Colored spikes: currently-flooded gages that have a flood stage reference
+    # Colored spikes: currently-flooded gages; height grows with flood duration
     flow_spikes_col <- flow_now |>
       dplyr::filter(
         is_flooded,
         !is.na(flood.stage) | !is.na(moderate.flood.stage) | !is.na(major.flood.stage)
       ) |>
       dplyr::arrange(sev_rank, desc(above_amt), desc(dateTime)) |>
-      spike_transform()
+      duration_spike_transform()
 
     if (nrow(flow_spikes_gray) > 0) {
       p <- p +
