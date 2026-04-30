@@ -198,5 +198,27 @@ p2_targets <- list(
         purrr::map_dbl(~ max(.x$duration_above_flood_hr, na.rm = TRUE)) |>
         max(na.rm = TRUE)
     }
+  ),
+  # Progress bar math
+  tar_target(
+    p2_min_timestamp,
+    p2_all_precip_timestamps[[1]]
+  ),
+  tar_target(
+    p2_precip_duration,
+    as.double(
+      p2_all_precip_timestamps[[length(p2_all_precip_timestamps)]] - p2_min_timestamp,
+      units = "hours"
+    )
+  ),
+  tar_target(
+    p2_progress_fract,
+    {
+      hours_since_start <- as.double(p2_all_precip_timestamps - p2_min_timestamp,
+                                     units = "hours")
+      hours_since_start / p2_precip_duration
+    },
+    pattern = map(p2_all_precip_timestamps),
+    iteration = "list"
   )
 )

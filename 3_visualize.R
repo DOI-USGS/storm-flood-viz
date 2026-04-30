@@ -33,29 +33,6 @@ p3_targets <- list(
     p3_global_max_precip_in,
     round(max(p2_process_precip_rast$precip_in, na.rm = TRUE))
   ),
-  # progress bar targets
-  tar_target(
-    p3_min_timestamp,
-    p2_all_precip_timestamps[[1]]
-  ),
-  tar_target(
-    p3_precip_duration,
-    as.double(p2_all_precip_timestamps[[length(p2_all_precip_timestamps)]] -
-                p3_min_timestamp, 
-              units = "hours")
-  ),
-  tar_target(
-    p3_progress_fract,
-    {
-      hours_since_start <- as.double(p2_all_precip_timestamps - 
-                                       p3_min_timestamp, 
-                                     units = "hours")
-      progress_fraction <- hours_since_start / p3_precip_duration
-      progress_fraction
-    },
-    pattern = map(p2_all_precip_timestamps),
-    iteration = "list"
-  ),
   # Build flood stage animation
   tar_target(
     p3_flood_stage_frames,
@@ -68,7 +45,7 @@ p3_targets <- list(
       storm_now = p3_storm_by_time,
       rdg_now = p3_rdg_by_time,
       storm_info = p0_storm_info,
-      progress_fraction = p3_progress_fract,
+      progress_fraction = p2_progress_fract,
       bbox_coords = p1_bbox_coords,
       state_borders = p1_conus_bbox_crop_sf,
       state_inner_borders = p2_state_inner_lines,
@@ -99,7 +76,7 @@ p3_targets <- list(
                                 tolower(p0_storm_info$storm_name))
     ),
     pattern = map(p2_all_precip_timestamps, p3_precip_by_time, p2_flow_by_time,
-                  p3_storm_by_time, p3_progress_fract, p3_rdg_by_time),
+                  p3_storm_by_time, p2_progress_fract, p3_rdg_by_time),
     format = "file"
   ),
   tar_target(
