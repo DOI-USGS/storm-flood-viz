@@ -8,7 +8,7 @@
 # Storm metadata
 date_start: "YYYY-MM-DD"
 date_end: "YYYY-MM-DD"
-landfall_time: "YYYY-MM-DD HH:MM:SS"   # UTC
+landfall_time: ~   # UTC, format "YYYY-MM-DD HH:MM:SS"
 
 storm_info:
   storm_name: "STORMNAME"
