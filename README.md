@@ -24,45 +24,63 @@ This repository creates a series of hurricane/storm track related maps using NOA
 
 # Running the pipeline
 
-This repository uses a pipeline with the [`targets` library](https://github.com/ropensci/targets) for R. To run the pipeline, install `targets` and run `targets::tar_make()` in the console. You may find that you get errors at first if you do not have all of the necessary packages, e.g. `Error : could not find packages terra, ggimage in library paths`. Install the packages that are needed (using `install.packages("[packageName]")` and try `targets::tar_make()`again. Repeat as needed. You will need the following packages installed:`tidyverse`, `sf`, `reticulate`, `janitor`, `sbtools`, `tigris`, `sysfonts`, `showtext`, `readr`, `cowplot`, `rmapshaper`, `terra`, `raster`, `tidyterra`, `rvest`, `httr`, `fs`, `glue`, `dataRetrieval`, `ggimage`, `ggtext`.
+This repository uses a pipeline with the [`targets` library](https://github.com/ropensci/targets) for R. To run the pipeline, install `targets` and run `targets::tar_make()` in the console. You may find that you get errors at first if you do not have all of the necessary packages, e.g. `Error : could not find packages terra, ggimage in library paths`. Install the packages that are needed (using `install.packages("[packageName]")`) and try `targets::tar_make()` again. Repeat as needed. You will need the following packages installed: `tidyverse`, `sf`, `reticulate`, `janitor`, `sbtools`, `tigris`, `ragg`, `systemfonts`, `textshaping`, `readr`, `cowplot`, `rmapshaper`, `terra`, `raster`, `tidyterra`, `rvest`, `httr`, `fs`, `glue`, `dataRetrieval`, `ggimage`, `ggtext`, `arrow`, `ggforce`, `httr2`.
 
-The pipeline will fetch and visualize flood stage and storm track data for provided dates and bounding box. All animation frames will then be loaded in `3_visualize/out/food_stage_frames` and the frames will be compiled to build the final animation in `3_visualize/out`
+This code has been organized into a data pipeline using the [targets](https://books.ropensci.org/targets/) package. Targets is a pipeline building tool that automatically tracks the status (i.e., up-to-date vs. out-of-date) and builds intermediate objects only as needed. To run the entire pipeline, you can run the command [`targets::tar_make()`](https://docs.ropensci.org/targets/reference/tar_make.html). For more information on targets, the package author has written [a walkthrough to get started](https://books.ropensci.org/targets/walkthrough.html) and there is an [Introduction to targets](https://carpentries-incubator.github.io/targets-workshop/) training that may also be useful.
 
-## Running the code
-
-This code has been organized into a data pipeline using the [targets](https://books.ropensci.org/targets/) package. Targets is a pipeline building tool that automatically tracks the status (i.e., up-to-date vs. out-of-date) and builds intermediate objects only as needed. To run the entire pipeline, you can run the command [`targets::tar_make()`](https://docs.ropensci.org/targets/reference/tar_make.html), after the steps (above) have been completed. For more information on targets, the package author has written [a walkthrough to get started](https://books.ropensci.org/targets/walkthrough.html) and there is an [Introduction to targets](https://carpentries-incubator.github.io/targets-workshop/) training that is currently in development but still may be useful in its current state.
+The pipeline will fetch and visualize flood stage and storm track data for the provided dates and bounding box. All animation frames are written to `3_visualize/out/flood_stage_[storm]_spike_frames/` or `flood_stage_[storm]_point_frames/` and compiled into a final GIF in `3_visualize/out/`.
 
 ## Code runtime
 
-The entire pipeline run-time varies based on `p0_date_start` and `p0_date_end`, as well as size of `p0_bbox_sf`. For the default loaded Hurricane Helene, the total run-time is \~5 hours on a high-end laptop (e.g. Apple M1 Max)
+The entire pipeline run-time varies based on `p0_date_start` and `p0_date_end`, as well as the size of `p0_bbox_sf`. For the default Hurricane Helene configuration, the total run-time is \~5 hours on a high-end laptop (e.g. Apple M1 Max).
+
+### Font setup
+
+Map frames are rendered using [`ragg`](https://ragg.r-lib.org/) as the graphics device, which resolves fonts through [`systemfonts`](https://systemfonts.r-lib.org/) from your system's installed font files.The pipeline uses **Source Sans 3** (configured via `load_font` in `config/helene.yml`). To set it up:
+
+1.  Download the Source Sans 3 static `.ttf` files from [Google Fonts](https://fonts.google.com/specimen/Source+Sans+3) (click "Download family", then use the files in the `static/` folder).
+2.  Install the fonts on your system (double-click each `.ttf` on macOS/Windows, or place them in `~/.local/share/fonts/` on Linux and run `fc-cache -f`).
+3.  In RStudio ≥ 1.4, go to **Tools \> Global Options \> General \> Graphics** and set the **Backend** to **AGG** so the IDE preview also uses ragg.
+
+If you change `load_font` to a different font family, install that font on your system using the same steps above.
+
+## Configuring a new storm
+
+Storm-specific settings are defined in per-storm YAML files under `config/`. To add a new storm, copy `config/_template.yml`, fill in the values, and update `p0_storm_cfg_file` in `0_config.R` to point at the new file. The template documents all available fields.
 
 ## Manually adjust components
 
-This pipeline is intentionally structured to be manually adjusted for new storms/hurricanes that occur. Much of the components needed to be adjusted will be done in `0_config.R`. Namely, these targets:
+This pipeline is intentionally structured to be manually adjusted for new storms/hurricanes. Key fields in the storm config YAML (and corresponding targets in `0_config.R`) include:
 
--   `p0_bbox_sf`
+-   `bbox` / `p0_bbox_sf`
 
     -   Define the geographic bounding box of interest using NAD83 (`"EPSG:4269"`) coordinates in decimal degrees. This area sets the spatial extent for precipitation, streamgage, and storm track data. Example: `sf::st_bbox(c(xmin = -98.21, xmax = -69.97, ymin = 23, ymax = 44.6))`
 
--   `p0_proj`
+-   `proj` / `p0_proj`
 
-    -   Set the projection string (e.g. EPSG code) appropriate for mapping the region. For large areas across the southeastern U.S., `EPSG:3086` (NAD83 / Conus Albers) is a good choice.
+    -   Set the projection string appropriate for mapping the region. For large areas across the southeastern U.S., an Albers Equal Area projection centered on the region of interest is a good choice.
 
--   `p0_date_start`
+-   `date_start` / `date_end` — `p0_date_start`, `p0_date_end`
 
-    -   Start date of the animation period, in `"YYYY-MM-DD"` format. Choose a date a day or two before the storm's arrival to capture early rainfall and streamflow conditions.
+    -   Start and end dates of the animation period, in `"YYYY-MM-DD"` format. Choose a start date a day or two before the storm's arrival to capture early conditions; extend the end date past landfall to show ongoing flood impacts.
 
--   `p0_date_end`
+-   `storm_info` / `p0_storm_info`
 
-    -   End date of the animation period. Should extend past landfall to show ongoing impacts such as flooding or continued precipitation.
-
--   `p0_storm_info`
-
-    -   A `tibble()` describing the storm being visualized. Must include:
+    -   A named block describing the storm. Must include:
 
         -   `storm_name`: name of the storm (all caps, e.g., `"HELENE"`)
 
-        -   `storm_code`: storm identifier used by NOAA (e.g., `"al092024"`)
+        -   `storm_code`: storm identifier used by NOAA (e.g., `"al092024"`).
+
+            -   The code follows the pattern `[basin][number][year]`, matching the best track zip filename (e.g., `al092024_best_track.zip`):
+
+                | Part   | Meaning                                         | Example         |
+                |--------|-------------------------------------------------|-----------------|
+                | `al`   | Basin (`al` = Atlantic, `ep` = Eastern Pacific) | `al`            |
+                | `09`   | Storm number that season                        | 9th named storm |
+                | `2024` | Year                                            | 2024            |
+
+                To find or validate a storm code, go to the [NHC data archive](https://www.nhc.noaa.gov/data/) → **Tropical Cyclone Reports** → **Atlantic, Caribbean, and Gulf** → select the year. The PDF report and SHP download links both use this same code.
 
         -   `storm_buffer`: distance (in meters) to buffer around the storm track for spatial filtering
 
@@ -70,139 +88,126 @@ This pipeline is intentionally structured to be manually adjusted for new storms
 
         -   `storm_best_track_url`: source of storm track shapefiles (e.g., from [NHC GIS archive](https://www.nhc.noaa.gov/gis/best_track/))
 
-        -   `stn_event`: code number associated with short-term network (STN) rapid deployment gage (e.g. 346 code for Hurricane Helene - values available at [STN Data Portal](https://stn.wim.usgs.gov/STNDataPortal/#))
+        -   `stn_event`: STN event ID for the rapid deployment gage network (browse all event IDs at the [STN Events API](https://stn.wim.usgs.gov/STNServices/Events.json))
 
 -   **`p0_pcodes`**
 
     -   Vector of USGS parameter codes (e.g., `00060` for discharge and `00065` for gage height) used to filter streamgage data.
 
--   **`p0_precip_bbox`**
+-   `p0_precip_start` / `p0_precip_end`
 
-    -   A list version of the bounding box (same as `p0_bbox_sf`), used to subset gridded precipitation data. Automatically derived using `unname(as.list(p0_bbox_sf))`.
+    -   Start and end timestamps (in `"YYYY-MM-DDTHH"` format) for retrieving gridded NOAA Stage 4 precipitation data. Must align with the desired animation timeframe.
 
--   `p0_precip_start / p0_precip_end`
+-   `p0_nwis_start` / `p0_nwis_end`
 
-    -   Start and end timestamps (in `"YYYY-MM-DDTHH"` format) for retrieving gridded precipitation data. Must align with the desired animation timeframe.
-    
-- `p0_nwis_start / p0_nwis_end` 
+    -   Start and end timestamps (in `"YYYY-MM-DDTHH:MMZ"` format, UTC) for pulling instantaneous streamgage values from the USGS Water Data API.
 
-    - Start and end timestamps (in `"YYYY-MM-DDTHH:MMZ"` format) for pulling instantaneous values for gage height from `dataRetrieval::readNWISuv()`. We define these in UTC time to match the precip data pull. 
+-   `timezone` / `p0_timezone`
 
--   `p0_timezone`
+    -   Display timezone for map labels (e.g., `"America/New_York"`). All pipeline processing is done in UTC; this value is applied only in the final visualization step.
 
-    -   Sets the local timezone for labeling times in final visualizations -- All processing is done in UTC, but this value (e.g., `"America/New_York"`) ensures that labels, countdowns, and annotations reflect the expected local time.
+-   `landfall_time` / `p0_landfall_time`
 
--   `p0_timezone_abv`
+    -   A UTC timestamp indicating the expected time of landfall. Used to display a countdown label on frames leading up to landfall.
 
-    -   Abbreviation used for the local timezone, for display in map title (e.g., `"ET"` for Eastern Time).
+-   `pal_fs_blue` / `pal_fs_red` — `p0_viz_fs_config_pal_blue`, `p0_viz_fs_config_pal_red`
 
--   `p0_landfall_time`
+    -   Named color palettes for flood stage categories (`"Not flooded"`, `"Flood"`, `"Moderate"`, `"Major"`). The red palette follows NOAA National Water Prediction Service (NWPS) colors; the blue palette is used when `precip_grayscale` is `TRUE`.
 
-    -   A `POSIXct` timestamp in UTC indicating the expected time of landfall. This is used to trigger a countdown label on frames leading up to landfall. Can be determined from NHC forecasts or storm summary pages.
+-   `pal_percentile` / `p0_viz_percentile_config_pal`
 
--   `p0_viz_fs_config_pal_blue`
+    -   Seven-color scale for streamflow percentile categories, ordered from very low (`< 5th`) to very high (`≥ 95th`), with a neutral color for the normal range (`25th–75th`). Used to color-encode historical flow context for all gages in the bounding box.
 
-    -   Color palette (blue theme) for flood stage categories used in the map and legend. A named vector mapping categorical flood severity (e.g., `"Moderate"`) to color codes (e.g., `"#17718E"`).
+-   `pal_precip_blue` / `pal_precip_grayscale` — `p0_viz_precip_config_pal_blue`, `p0_viz_precip_config_pal_grayscale`
 
--   `p0_viz_fs_config_pal_red`
+    -   Color palettes for representing cumulative precipitation on the map, in blue (default) or grayscale (when `precip_grayscale` is `TRUE`).
 
-    -   Alternative flood stage color palette (red theme) for use in more attention-grabbing contexts, following NOAA National Water Prediction Service (NWPS) colors. Also a named vector with categories like `"Flood"` and `"Major"` tied to color hex codes.
+-   `precip_grayscale` / `p0_precip_grayscale_var`
 
--   `p0_viz_percentile_config_pal`
+    -   Toggle to use grayscale precipitation styling. Set to `"TRUE"` or `"FALSE"`.
 
-    -   Color scale for streamflow percentiles, typically used in non-storm visualizations or background context. Ordered from very dry to very wet, including a neutral color (`"#C0C0C0"`) for normal conditions.
+-   `flood_spike` / `p0_flood_spike_var`
 
--   `p0_viz_precip_config_pal_blue`
+    -   Toggle for how streamgage flow is visualized on the map:
 
-    -   Blue-toned color palette for representing total precipitation in maps.
+        -   `"TRUE"`: Vertical spikes whose height encodes streamflow percentile (≥ 75th percentile triggers a spike). Gray spikes are shown for gages without NOAA flood stage thresholds; colored spikes for currently-flooded gages. Flooded gage points are drawn on top.
 
--   `p0_viz_precip_config_pal_grayscale`
+        -   `"FALSE"`: Sized circles for flooded gages, where point size encodes streamflow percentile rank.
 
-    -   Grayscale palette for precipitation, used when visual context or accessibility requires less saturation.
+-   `viz_config` / `p0_viz_config_df`
 
--   `p0_precip_grayscale_var`
-
-    -   Toggle to use grayscale precipitation styling. Accepts `"TRUE"` or `"FALSE"` as a string. When `"TRUE"`, grayscale colors are applied to precip layers.
-
--   `p0_flood_spike_var`
-
-    -   Toggle for how flood points are drawn:
-
-        -   `"FALSE"`: Use sized circles scaled by duration above flood stage.
-
-        -   `"TRUE"`: Use triangular "spike" scaled by time above flood stage.
-
--   `p0_viz_config_df`
-
-    -   A `tibble()` containing all styling and layout variables for the plot, including:
+    -   A block of styling and layout variables for the plot, including:
 
         -   Output figure dimensions (`width`, `height`, `dpi`)
 
-        -   Color for state outlines, background, ocean, streamgages, and storm paths
+        -   Colors for state outlines, background, ocean, streamgages, and storm path
 
-        -   Font family and text sizes for titles, legends, and margins (`load_font`, `font_size_title`, etc.)
+        -   Font family and text sizes (`load_font`, `font_size_title`, `font_size`, `leg_font_size`)
 
-        -   Plot margins as a proportion of the frame (e.g., `plot_margin = 0.025`)
+        -   Plot margins and canvas offsets (`plot_margin`, `plot_shift_x`, `plot_shift_y`, `plot_width`, `plot_height`)
 
-        -   Plot x and y movement, as well as plot height and width values (e.g., `plot_shift_x`, `plot_shift_y`, `plot_width`, `plot_height`)
-
--   In cases where the storm occurs in regions such as Puerto Rico, Alaska, Hawaii, etc, users will need to adjust `p1_conus_bbox_crop_sf` which downloads [tigris](https://github.com/walkerke/tigris) state borders and crops to bbox. Additionally, based on storm region and bbox, users will likely need to edit `p1_major_cities_sf` to manually assign city/state labels in the tibble to help orient viewers.
+-   In cases where the storm occurs in regions such as Puerto Rico, Alaska, or Hawaii, users will need to adjust `p1_conus_bbox_crop_sf`, which downloads [tigris](https://github.com/walkerke/tigris) state borders and crops to the bbox. Based on storm region and bbox, users will likely also need to edit `p1_major_cities_sf` to assign appropriate city/state labels to help orient viewers.
 
 ## Repository organization
 
--   `0_config/` directory containing files related to configuration.
+-   `config/` directory containing per-storm configuration YAML files.
+    -   `_template.yml` template for configuring a new storm — copy and fill in values.
+    -   `helene.yml` configuration for Hurricane Helene (2024).
 -   `1_fetch/` directory containing files related to fetching data.
     -   `src/` directory containing source code to define functions.
-        -   `clip_flood_stage_gages.R` R script that filters flood-stage gages to bbox
-        -   `fetch_rapid_deployment_data.R` R script that fetches Rapid-Deployment Gage sites from STN as `sf`
-        -   `fetch_uv_peaks_data.R` R script defining downloads of NWIS instantaneous data and peaks; write parquet.
+        -   `clip_flood_stage_gages.R` R script that filters NOAA flood stage gages to the event bbox.
+        -   `fetch_rapid_deployment_data.R` R script that fetches Rapid-Deployment Gage sites from STN as an `sf` object.
+        -   `fetch_site_stats.R` R script that fetches day-of-year streamflow percentile thresholds from the USGS statistics API for all active gages in the bbox; filters to sites with ≥ 30 years of record; writes parquet.
+        -   `fetch_uv_peaks_data.R` R script defining downloads of USGS instantaneous (UV) data and historical peak flows via the USGS OGC Water Data API; writes parquet.
         -   `get_precip.py` Python script to pull NOAA Stage 4 precipitation and export GeoTIFF rasters.
-        -   `generate_hyswap_percentiles.py` Python script that computes percentiles from historical daily data; tag instantaneous data.
-        -   `storm_shape_functions.R` R script defining percentiles from historical daily data; tag instantaneous data.
+        -   `storm_shape_functions.R` R script defining functions to download and process NOAA NHC storm track shapefiles.
     -   `out/` directory containing output files (once code is run).
-        -   `gage_peak_data.parquet` parquet file of NWIS peaks
-        -   `gage_uv_data.parquet` parquet file of instantaneous NWIS data
+        -   `gage_peak_data.parquet` parquet file of NWIS historical peak flows.
+        -   `gage_uv_data.parquet` parquet file of instantaneous USGS streamgage data.
+        -   `site_stats.parquet` parquet file of day-of-year percentile thresholds (p05–p95) for all bbox gages with ≥ 30 years of record.
+        -   `flood_stage_gages.csv` NOAA flood stage threshold data downloaded for the event bbox.
+        -   `[storm_code]/` shapefiles associated with hurricane path, points, radii, and wind swath.
         -   `[p0_precip_start]_to_[p0_precip_end].tif` precipitation raster files for given date and hours.
-        -   `storm_shape_[p0_storm_info$storm_code]` shapefiles associated with hurricane path/points/radii/windswath.
 -   `2_process/` directory containing files related to processing data.
     -   `src/` directory containing source code to define functions.
-        -   `process_hourly_max_uv.R` R script to extract hourly maximum gage height and discharge from instantaneous values; join parameters; add optional percentiles.
-        -   `process_precip.R` R script to read Stage 4 precipitation rasters, reproject/crop to the bounding box area, reshape to long format, and compute hourly/total/cumulative precipitation.
+        -   `process_hourly_max_uv.R` R script to extract hourly maximum gage height and discharge from instantaneous values.
+        -   `process_precip.R` R script to read Stage 4 precipitation rasters, reproject/crop to the bounding box, reshape to long format, and compute cumulative precipitation.
         -   `process_states.R` R script to build state boundary layers; derive inner shared borders and the outer outline as `sf` geometries.
 -   `3_visualize/` directory containing files related to visualizing data.
     -   `src/` directory containing source code to define functions.
-        -   `mapping_utils.R` R script that contains mapping function to create frames of hurricane animation in either spike or point format
-        -   `title_end_frame.R` R script that defines title frame and end frame of the animation
-    -   `out/` directory containing output files of pie and bar charts (once code is run).
-        -   `[p0_storm_info$storm_name]_flood_stage_spike_animation.gif` animation of flood stage spikes
-        -   `[p0_storm_info$storm_name]_flood_stage_point_animation.gif` animation of flood stage points
-        -   `flood_stage_[p0_storm_info$storm_name]_spike_frames`
-            -   `frame_[datehour].png` PNG files of hurricane spike map over time
-            -   `frame_00000000000.png` PNG of spike title frame
-            -   `frame_99999999999.png` PNG of spike final frame
-        -   `flood_stage_[p0_storm_info$storm_name]_point_frames`
-        -   `frame_[datehour].png` PNG files of hurricane point map over time
-        -   `frame_00000000000.png` PNG of point title frame
-        -   `frame_99999999999.png` PNG of point final frame
+        -   `mapping_utils.R` R script containing the main frame-rendering function (`hurricane_flood_stage_frames()`), which produces one PNG per timestep in either spike or point mode.
+        -   `title_end_frame.R` R script that defines the title frame and end frame of the animation.
+    -   `out/` directory containing animation frames and GIFs (once code is run).
+        -   `[storm_name]_flood_stage_spike_animation.gif` compiled spike animation.
+        -   `[storm_name]_flood_stage_point_animation.gif` compiled point animation.
+        -   `flood_stage_[storm_name]_spike_frames/`
+            -   `frame_[datehour].png` PNG frames of the spike map over time.
+            -   `frame_00000000000.png` title frame.
+            -   `frame_99999999999.png` end frame.
+        -   `flood_stage_[storm_name]_point_frames/`
+            -   `frame_[datehour].png` PNG frames of the point map over time.
+            -   `frame_00000000000.png` title frame.
+            -   `frame_99999999999.png` end frame.
     -   `in/`
-        -   `usgs_logo_black.png` PNG of black USGS logo
-        -   `hurricane_symbol.png` PNG of black hurricane icon to add to final viz
-        -   `custom_flood_stage_spike_leg.png` PNG of custom made legend for spike animation to describe height component of spike (duration above flood stage).
-        -   `custom_flood_stage_point_leg.png` PNG of custom made legend for point animation to describe size component of point (duration above flood stage).
-        -   `billeye.png` PNG of target/bullseye to serve as icon for rapid deployment gage on visualization.
--   `.gitignore` file specifying which files should not be tracked in git repository
--   `_targets.R` a [target script file](https://books.ropensci.org/targets/walkthrough.html#target-script-file) used to define a [targets pipeline](https://docs.ropensci.org/targets/index.html). See the [targets documentation](https://books.ropensci.org/targets/walkthrough.html) for how to run a targets pipeline.
--   `1_fetch.R` R script defining the "fetch" phase of the data pipeline.
--   `2_process.R` R script defining the "process" phase of the pipeline
--   `3_visualize.R` R script defining the "visualizing" phase of the pipeline
--   `code.json` metadata file containing information for code contained in this repository. Compliant with [USGS template](https://www.usgs.gov/products/software/software-management/distribution-usgs-code).
+        -   `usgs_logo_black.png` PNG of black USGS logo.
+        -   `hurricane_symbol.png` PNG of hurricane icon used on the storm track.
+        -   `custom_flood_stage_spike_leg.png` custom legend image for the spike animation describing spike height encoding.
+        -   `custom_flood_stage_point_leg.png` custom legend image for the point animation describing point size encoding.
+        -   `bullseye.png` target/bullseye icon for rapid deployment gages on the map.
+-   `.gitignore` file specifying which files should not be tracked in git.
+-   `_targets.R` a [target script file](https://books.ropensci.org/targets/walkthrough.html#target-script-file) used to define the [targets pipeline](https://docs.ropensci.org/targets/index.html).
+-   `0_config.R` R script that reads the active storm YAML and defines all `p0_` configuration targets.
+-   `1_fetch.R` R script defining the fetch phase of the data pipeline.
+-   `2_process.R` R script defining the process phase of the pipeline.
+-   `3_visualize.R` R script defining the visualize phase of the pipeline.
+-   `code.json` metadata file compliant with the [USGS software template](https://www.usgs.gov/products/software/software-management/distribution-usgs-code).
 -   `CODE_OF_CONDUCT.md` information on the contribution code of conduct.
--   `CONTRIBUTING.md` information on how to contribute to this repository
--   `DISCLAIMER.md` Provisional USGS disclaimer of code in repository. Should be removed when approved.
--   `LICENSE.md` license information for code
--   `README.md` general information about the project
--   `USGS_ID_black.png` USGS logo used at the top of README.md.
--   `hurricane-revamp.Rproj` an R project file. See [6.2 Projects \| R for data science](https://r4ds.hadley.nz/workflow-scripts#projects) for more information on RStudio projects
+-   `CONTRIBUTING.md` information on how to contribute to this repository.
+-   `DISCLAIMER.md` Provisional USGS disclaimer; should be removed upon approval.
+-   `LICENSE.md` license information for code.
+-   `README.md` general information about the project.
+-   `USGS_ID_black.png` USGS logo used at the top of this README.
+-   `hurricane-revamp.Rproj` an R project file.
 
 ## Expertise required
 
@@ -245,6 +250,6 @@ National Oceanic and Atmospheric Administration. NWPS all gauges report [Data se
 
 National Hurricane Center. Best track data (HURDAT2) [Data set]. National Oceanic and Atmospheric Administration. Retrieved June 23, 2025, from <https://www.nhc.noaa.gov/gis/best_track/>
 
-USGS Short-Term Network Portal. U.S. Geological Survey. *Short-Term Network Data Portal*. Accessed via: <https://stn.wim.usgs.gov/STNDataPortal/>
+USGS Short-Term Network. U.S. Geological Survey. *STN Events API*. Accessed via: <https://stn.wim.usgs.gov/STNServices/Events.json>
 
 DeCicco L, Hirsch R, Lorenz D, Read J, Walker J, Platt L, Watkins D, Blodgett D, Johnson M, Krall A, Stanish L, Zemmels J, Hinman E, Mahoney M (2025). *dataRetrieval: R packages for discovering and retrieving water data available from U.S. federal hydrologic web services*. [doi:10.5066/P9X4L3GE](https://doi.org/10.5066/P9X4L3GE).
