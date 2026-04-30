@@ -54,7 +54,7 @@ p3_targets <- list(
       flood_stage_cols_blue = p0_viz_fs_config_pal_blue,
       flood_stage_cols_red = p0_viz_fs_config_pal_red,
       precip_grayscale = p0_precip_grayscale_var,
-      # points vs spikes viz 
+      # points vs spikes viz
       flood_spikes = p0_flood_spike_var,
       points_range = c(2, 10),
       timezone_long = p0_timezone,
@@ -129,7 +129,7 @@ p3_targets <- list(
 
       title_img    <- magick::image_read(p3_title_frame_png)
       title_frames <- rep(title_img, times = 8L)
-      
+
       valid_paths <- p3_flood_stage_frames[!is.na(p3_flood_stage_frames)]
       valid_paths <- valid_paths[valid_paths != p3_title_frame_png]
 
@@ -141,7 +141,7 @@ p3_targets <- list(
 
       last_flood <- flood_frames[length(flood_frames)]
       crossfade  <- magick::image_morph(c(last_flood, end_img), frames = fade_frames)
-      end_hold   <- rep(end_img, end_hold_frames)  
+      end_hold   <- rep(end_img, end_hold_frames)
 
       all_frames <- c(title_frames, flood_frames, crossfade, end_hold)
       # coalesce to be safe before animating
