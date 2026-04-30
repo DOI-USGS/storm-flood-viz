@@ -231,8 +231,9 @@ p1_targets <- list(
   tar_target(
     p1_site_stats_pqt,
     fetch_site_stats(
-      site_nos  = p1_bbox_stream_sites,
-      out_path  = "1_fetch/out/site_stats.parquet"
+      site_nos      = p1_bbox_stream_sites,
+      out_path      = "1_fetch/out/site_stats.parquet",
+      min_por_years = 10
     ),
     format = "file"
   )
