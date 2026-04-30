@@ -55,11 +55,9 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
                                          timezone_long, y_baseheight,
                                          target_rdg_icon,
                                          rdg_now) {
-  # Font configuration
+  # Font configuration — resolved by systemfonts from system-installed fonts;
+  # no showtext registration needed when using ragg as the graphics device.
   font_legend <- config_vars$load_font
-  font_add_google(font_legend)
-  showtext_opts(dpi = config_vars$dpi, regular.wt = 200, bold.wt = 700)
-  showtext_auto(enable = TRUE)
 
   # Landfall label
   time_to_landfall <- difftime(landfall_dtg, dtg, units = "hours")
@@ -244,29 +242,65 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
             alpha = 0.75,
             stroke = 1) 
   
-  # If flood_spikes TRUE, make spikes
-  if (flood_spikes) {
-    # Peak style lines for flooded sites
-    flow_now_coords <- flow_now |> 
-      filter(is_flooded) |> 
-      arrange(             
-        sev_rank,          # Not flooded (0), Flood (1), Moderate (2), Major (3),  Major on top
-        desc(above_amt),   # more above stage sits on top within severity
-        desc(duration_above_flood_hr),
-        desc(dateTime)
-      ) |> 
-      mutate(
-        x     = sf::st_coordinates(geometry)[, 1],
-        y     = sf::st_coordinates(geometry)[, 2],
-        y_base= y + y_baseheight,
+  # Percentile category → numeric midpoint used for spike height scaling
+  pct_midpoint <- c(
+    "low"   = 2.5,  "5-10"  = 7.5,
+    "10-25" = 17.5, "25-75" = 50,
+    "75-90" = 82.5, "90-95" = 92.5,
+    "high"  = 97.5
+  )
+
+  spike_transform <- function(df) {
+    df |>
+      dplyr::mutate(
+        pct          = pct_midpoint[percentile],
+        pct_rescaled = ifelse(is.na(pct) | pct < 75, 0, (pct - 75) / 25 * 100),
+        xy           = sf::st_coordinates(geometry),
+        x     = xy[, 1],
+        y     = xy[, 2],
+        y_base = y + y_baseheight,
         xend  = x,
-        yend  = y_base + (duration_above_flood_hr / global_max_duration) * peak_height
+        yend  = y_base + (pct_rescaled / 100) * peak_height
       )
+  }
+
+  # If flood_spikes TRUE, make percentile-height spikes
+  if (flood_spikes) {
+    # Gray spikes: high-percentile gages with no NOAA flood stage thresholds
+    flow_spikes_gray <- flow_now |>
+      dplyr::filter(
+        !is.na(percentile),
+        percentile %in% c("75-90", "90-95", "high"),
+        is.na(flood.stage) & is.na(moderate.flood.stage) & is.na(major.flood.stage)
+      ) |>
+      spike_transform()
+
+    # Colored spikes: currently-flooded gages that have a flood stage reference
+    flow_spikes_col <- flow_now |>
+      dplyr::filter(
+        is_flooded,
+        !is.na(flood.stage) | !is.na(moderate.flood.stage) | !is.na(major.flood.stage)
+      ) |>
+      dplyr::arrange(sev_rank, desc(above_amt), desc(dateTime)) |>
+      spike_transform()
+
+    if (nrow(flow_spikes_gray) > 0) {
+      p <- p +
+        ggforce::geom_link(
+          data = flow_spikes_gray,
+          aes(
+            x = x, xend = xend, y = y, yend = yend,
+            alpha = after_stat(I(0.4 + index * 0.4)),
+            linewidth = after_stat(I((1 - index) * 1.5))
+          ),
+          color = config_vars$streamgage_col,
+          show.legend = FALSE
+        )
+    }
 
     p <- p +
-      # Colored peak lines
       ggforce::geom_link(
-        data = flow_now_coords,
+        data = flow_spikes_col,
         aes(
           x = x, xend = xend, y = y, yend = yend,
           color = flood_status,
@@ -291,25 +325,17 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
             color = NA,
             stroke = rep(0.1, length(flood_stage_cols_red))
           ),
-          label.theme = element_text(
-            size = config_vars$font_size,
-            family = font_legend
-          ),
-          title.theme = element_text(
-            size = config_vars$font_size,
-            family = font_legend
-          ),
+          label.theme = element_text(size = config_vars$font_size, family = font_legend),
+          title.theme = element_text(size = config_vars$font_size, family = font_legend),
           keyheight = unit(0.7, "cm")
         )
       )
 
-    # Plot all flooded gages
+    # Flooded gage points on top of spikes
     p <- p + geom_sf(
       data = flow_now |>
-        filter(is_flooded == "TRUE") |>
-        mutate(flood_status = factor(flood_status,
-          levels = names(flood_stage_cols_red)
-        )) |>
+        filter(is_flooded) |>
+        mutate(flood_status = factor(flood_status, levels = names(flood_stage_cols_red))) |>
         filter(!is.na(flood_status)),
       aes(geometry = geometry, fill = flood_status),
       shape = 21, size = 2,
@@ -323,19 +349,19 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
         name = "Flood status"
       )
 
-    # otherwise, do sized points
   } else {
-    # Prepare point data
-    flow_now_points <- flow_now |> 
-      filter(is_flooded) |> 
-      arrange(
-        sev_rank,
-        desc(above_amt),
-        desc(duration_above_flood_hr),
-        desc(dateTime)
-      ) |> 
-      mutate(index = (duration_above_flood_hr / global_max_duration)^3)
-    
+    # Sized points: size encodes percentile rank, color encodes flood status
+    pct_rank <- c(
+      "low"   = 0,    "5-10"  = 1/6,
+      "10-25" = 2/6,  "25-75" = 3/6,
+      "75-90" = 4/6,  "90-95" = 5/6,
+      "high"  = 1
+    )
+
+    flow_now_points <- flow_now |>
+      filter(is_flooded) |>
+      arrange(sev_rank, desc(above_amt), desc(dateTime)) |>
+      mutate(index = pct_rank[as.character(percentile)])
 
     p <- p +
       geom_sf(
@@ -904,7 +930,8 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
   ggsave(
     filename = frame_path, plot = p,
     width = config_vars$width, height = config_vars$height,
-    dpi = config_vars$dpi, bg = config_vars$bg_col
+    dpi = config_vars$dpi, bg = config_vars$bg_col,
+    device = ragg::agg_png
   )
 
   return(frame_path)

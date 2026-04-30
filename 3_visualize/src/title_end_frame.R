@@ -14,9 +14,7 @@ title_frame <- function(title_text_line1, title_text_line2, start_date,
   
   # Font configuration
   font_legend <- config_vars$load_font
-  font_add_google(font_legend)
-  showtext_opts(dpi = config_vars$dpi, regular.wt = 200, bold.wt = 700)
-  showtext_auto(enable = TRUE)
+  # systemfonts resolves the font from system-installed files via ragg device
   
   logo <- magick::image_read(logo_path) |> 
     magick::image_resize('x100') |> 
@@ -80,10 +78,11 @@ title_frame <- function(title_text_line1, title_text_line2, start_date,
   
   ggsave(filename = out_path, plot = p,
          width = config_vars$width, height = config_vars$height,
-         dpi = config_vars$dpi, bg = config_vars$bg_col)
-  
+         dpi = config_vars$dpi, bg = config_vars$bg_col,
+         device = ragg::agg_png)
+
   return(out_path)
-  
+
 }
 
 #' @param end_text_line1 Character. First line of title text
@@ -100,9 +99,7 @@ end_frame <- function(end_text_line1, end_text_line2, end_text_line3,
   
   # Font configuration
   font_legend <- config_vars$load_font
-  font_add_google(font_legend)
-  showtext_opts(dpi = config_vars$dpi, regular.wt = 200, bold.wt = 700)
-  showtext_auto(enable = TRUE)
+  # systemfonts resolves the font from system-installed files via ragg device
   
   logo <- magick::image_read(logo_path) |> 
     magick::image_resize('x100') |> 
@@ -151,10 +148,11 @@ end_frame <- function(end_text_line1, end_text_line2, end_text_line3,
                color = "black",
                lineheight = 1) 
   
-    ggsave(filename = out_path, plot = p,
-           width = config_vars$width, height = config_vars$height,
-           dpi = config_vars$dpi, bg = bg_col)
-  
+  ggsave(filename = out_path, plot = p,
+         width = config_vars$width, height = config_vars$height,
+         dpi = config_vars$dpi, bg = bg_col,
+         device = ragg::agg_png)
+
   return(out_path)
-  
+
 }
