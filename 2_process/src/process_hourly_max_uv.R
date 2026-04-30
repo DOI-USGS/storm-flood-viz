@@ -12,16 +12,16 @@
 #' @return A tibble in wide format with one row per site and datetime
 get_hourly_max_uv <- function(inst_data, value_cols_regex, hour_unit,
                               pcode_param_map){
-  
+
   # Lengthen dataset by pcode columns (won't need to do this with new uv service)
   # Note that some gages have multiple columns for one pcode in the old service, e.g. "X_00065_left.sensor_0000" and "X00065_right.sensor_0000". We are not discerning between these, just picking the max value.
-  
+
   if (nrow(inst_data) == 0) return(tibble())
-  
+
   # Identify value/code columns
   value_columns <- names(inst_data)[grepl(value_cols_regex, names(inst_data)) & !grepl("_cd$", names(inst_data))]
   code_columns  <- names(inst_data)[grepl(value_cols_regex, names(inst_data)) &  grepl("_cd$", names(inst_data))]
-  
+
   inst_data_long <- inst_data |>
     mutate(
       across(all_of(value_columns), as.numeric),
@@ -42,11 +42,11 @@ get_hourly_max_uv <- function(inst_data, value_cols_regex, hour_unit,
       utc_hour = lubridate::floor_date(dateTime, unit = hour_unit)
     ) |>
     select(site_no, agency_cd, dateTime, utc_hour, parameter, value)
-  
+
   # Pick the max value and (if there are ties) datetime for each site given the gage heights.
   # Grab gage height and discharge value for that site and dateTime
   # Widen dataset to have discharge and gage_height columns
-  
+
   # max gage height per site & hour
   max_gage_dt <- inst_data_long |>
     filter(parameter == "gage_height") |>
@@ -55,14 +55,14 @@ get_hourly_max_uv <- function(inst_data, value_cols_regex, hour_unit,
     slice_max(dateTime, with_ties = FALSE) |>
     ungroup() |>
     select(site_no, dateTime)
-  
+
   # join back to get both gage height and discharge
   inst_data_max <- max_gage_dt |>
     left_join(inst_data_long, by = c("site_no", "dateTime")) |>
     group_by(site_no, dateTime, parameter) |>
     slice_max(value, with_ties = FALSE) |>
     ungroup()
-  
+
   # wide and join percentile
   inst_data_wide <- inst_data_max |>
     tidyr::pivot_wider(
@@ -84,6 +84,6 @@ get_hourly_max_uv <- function(inst_data, value_cols_regex, hour_unit,
       X_00060_00000 = discharge,
       percentile
     )
-  
+
   return(inst_data_wide)
 }

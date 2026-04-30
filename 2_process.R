@@ -62,26 +62,26 @@ p2_targets <- list(
     {
       min_datetime <- min(p2_uv_data_percentiles_df[["dateTime"]])
       max_datetime <- max(p2_uv_data_percentiles_df[["dateTime"]])
-      
+
       out <- p2_uv_data_percentiles_df |>
         mutate(
           date = lubridate::date(dateTime),
           hour = lubridate::hour(dateTime),
           dateTime = lubridate::floor_date(dateTime, "hour"),
           .after = "dateTime"
-        ) |> 
-        group_by(site_no, date, hour) |> 
-        slice_max(X_00065_00000, n = 1, with_ties = FALSE) |> 
-        group_by(site_no) |> 
+        ) |>
+        group_by(site_no, date, hour) |>
+        slice_max(X_00065_00000, n = 1, with_ties = FALSE) |>
+        group_by(site_no) |>
         complete(
           dateTime = seq(
             floor_date(min_datetime, "hour"),
             floor_date(max_datetime, "hour"),
             by = "1 hour"
           )
-        ) |> 
+        ) |>
         fill(agency_cd, .direction = "downup") |>
-        ungroup() |> 
+        ungroup() |>
         # Add flood stage thresholds (drop geometry — we attach it from all-gage sf below)
         left_join(sf::st_drop_geometry(p1_usgs_flood_stage_gages), by = "site_no") |>
         # Add peaks data
@@ -102,19 +102,19 @@ p2_targets <- list(
         )
 
       # Flag only rows that are part of 4+ consecutive NA runs for X_00065_00000
-      out <- out |> 
-        arrange(site_no, dateTime) |> 
-        group_by(site_no) |> 
+      out <- out |>
+        arrange(site_no, dateTime) |>
+        group_by(site_no) |>
         mutate(
           na_flag = is.na(X_00065_00000),
           has_data_elsewhere = any(!na_flag),
           # unique identifier that increments every time a variable changes
-          run_id  = dplyr::consecutive_id(na_flag)      
-        ) |> 
-        group_by(site_no, run_id) |> 
-        mutate(run_length = dplyr::n()) |> 
-        ungroup() |> 
-        mutate(is_decommissioned = has_data_elsewhere & na_flag & run_length >= 4) |> 
+          run_id  = dplyr::consecutive_id(na_flag)
+        ) |>
+        group_by(site_no, run_id) |>
+        mutate(run_length = dplyr::n()) |>
+        ungroup() |>
+        mutate(is_decommissioned = has_data_elsewhere & na_flag & run_length >= 4) |>
         select(-na_flag, -run_id, -run_length, -has_data_elsewhere)
     }
   ),
