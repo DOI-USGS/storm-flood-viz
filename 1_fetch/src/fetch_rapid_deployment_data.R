@@ -16,7 +16,7 @@ fetch_rapid_dep_sites <- function(event, proj, start_day, end_day) {
     rdgs <- data.frame()
     } else {    # fetch the rapid deployment gages (RDGs) from the STN web services
       
-      url <- sprintf('https://stn.wim.usgs.gov/STNServices/Instruments/FilteredInstruments.json?Event=%d&EventType=&EventStatus=&States=&County=&CurrentStatus=&CollectionCondition=&SensorType=5&DeploymentType=', event)
+      url <- sprintf('https://stn.wim.usgs.gov/STNServices/Instruments/FilteredInstruments.json?Event=%d&EventType=&EventStatus=&States=&County=&CurrentStatus=&CollectionCondition=&SensorType=5&DeploymentType=', event) 
       
     rdgs <- jsonlite::fromJSON(url)
     
@@ -44,7 +44,7 @@ fetch_rapid_dep_sites <- function(event, proj, start_day, end_day) {
       dateTime = as.POSIXct(timeStamp, format = "%Y-%m-%dT%H:%M:%S",  tz = "UTC"),
       dateTime = round_date(dateTime, unit = "hour")
     ) |>
-    filter(dateTime >= start_day, dateTime <= end_day)
+    filter(dateTime >= start_day, dateTime <= end_day) 
   
   # if we wanted to look up data for these sites, we could go to NWIS by using  # this sites table to map the RDG ID (site_no) to an NWIS id (usgs_sid):  # https://stn.wim.usgs.gov/STNServices/Events/283/sites
   
