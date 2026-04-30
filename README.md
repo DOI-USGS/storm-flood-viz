@@ -24,15 +24,30 @@ This repository creates a series of hurricane/storm track related maps using NOA
 
 # Running the pipeline
 
-This repository uses a pipeline with the [`targets` library](https://github.com/ropensci/targets) for R. To run the pipeline, install `targets` and run `targets::tar_make()` in the console. You may find that you get errors at first if you do not have all of the necessary packages, e.g. `Error : could not find packages terra, ggimage in library paths`. Install the packages that are needed (using `install.packages("[packageName]")`) and try `targets::tar_make()` again. Repeat as needed. You will need the following packages installed: `tidyverse`, `sf`, `reticulate`, `janitor`, `sbtools`, `tigris`, `ragg`, `systemfonts`, `textshaping`, `readr`, `cowplot`, `rmapshaper`, `terra`, `raster`, `tidyterra`, `rvest`, `httr`, `fs`, `glue`, `dataRetrieval`, `ggimage`, `ggtext`, `arrow`, `ggforce`, `httr2`.
+This repository uses a pipeline with the [`targets` library](https://github.com/ropensci/targets) for R. To run the pipeline, install `targets` and run `targets::tar_make()` in the console. You may find that you get errors at first if you do not have all of the necessary packages, e.g. `Error : could not find packages terra, ggimage in library paths`. Install the packages that are needed (using `install.packages("[packageName]")`) and try `targets::tar_make()` again. Repeat as needed. You will need the following packages installed: `tidyverse`, `sf`, `reticulate`, `janitor`, `sbtools`, `tigris`, `ragg`, `systemfonts`, `textshaping`, `readr`, `cowplot`, `rmapshaper`, `terra`, `raster`, `tidyterra`, `rvest`, `httr`, `fs`, `glue`, `dataRetrieval`, `ggimage`, `ggtext`, `arrow`, `ggforce`, `httr2`, `maps`, `av`.
 
 This code has been organized into a data pipeline using the [targets](https://books.ropensci.org/targets/) package. Targets is a pipeline building tool that automatically tracks the status (i.e., up-to-date vs. out-of-date) and builds intermediate objects only as needed. To run the entire pipeline, you can run the command [`targets::tar_make()`](https://docs.ropensci.org/targets/reference/tar_make.html). For more information on targets, the package author has written [a walkthrough to get started](https://books.ropensci.org/targets/walkthrough.html) and there is an [Introduction to targets](https://carpentries-incubator.github.io/targets-workshop/) training that may also be useful.
 
-The pipeline will fetch and visualize flood stage and storm track data for the provided dates and bounding box. All animation frames are written to `3_visualize/out/flood_stage_[storm]_spike_frames/` or `flood_stage_[storm]_point_frames/` and compiled into a final GIF in `3_visualize/out/`.
+The pipeline will fetch and visualize flood stage and storm track data for the provided dates and bounding box. All animation frames are written to `3_visualize/out/flood_stage_[storm]_spike_frames/` or `flood_stage_[storm]_point_frames/` and compiled into a final MP4 in `3_visualize/out/`.
 
 ## Code runtime
 
 The entire pipeline run-time varies based on `p0_date_start` and `p0_date_end`, as well as the size of `p0_bbox_sf`. For the default Hurricane Helene configuration, the total run-time is \~5 hours on a high-end laptop (e.g. Apple M1 Max).
+
+## USGS Water Data API key
+
+The pipeline uses the [USGS Water Data API](https://api.waterdata.usgs.gov) to fetch streamgage UV data, peak flows, and site statistics. Requests work without a key but are rate-limited. An API token raises the limit and is recommended for full pipeline runs.
+
+1. Request a free token at <https://api.waterdata.usgs.gov/signup>.
+2. Add it to your `.Renviron` file (create it in your home directory if it does not exist):
+
+```
+API_USGS_PAT=your_token_here
+```
+
+3. Restart R so the variable is available via `Sys.getenv("API_USGS_PAT")`.
+
+Your `.Renviron` file is listed in `.gitignore` — the key will never be committed to the repository.
 
 ### Font setup
 
@@ -146,7 +161,7 @@ This pipeline is intentionally structured to be manually adjusted for new storms
 
         -   Plot margins and canvas offsets (`plot_margin`, `plot_shift_x`, `plot_shift_y`, `plot_width`, `plot_height`)
 
--   In cases where the storm occurs in regions such as Puerto Rico, Alaska, or Hawaii, users will need to adjust `p1_conus_bbox_crop_sf`, which downloads [tigris](https://github.com/walkerke/tigris) state borders and crops to the bbox. Based on storm region and bbox, users will likely also need to edit `p1_major_cities_sf` to assign appropriate city/state labels to help orient viewers.
+-   In cases where the storm occurs in regions such as Puerto Rico, Alaska, or Hawaii, users will need to adjust `p1_conus_bbox_crop_sf`, which downloads [tigris](https://github.com/walkerke/tigris) state borders and crops to the bbox. City label selection is config-driven via the `cities_*` keys in the storm YAML — adjust `cities_n`, `cities_track_buffer`, `cities_storm_types`, and `cities_override` as needed for the region.
 
 ## Repository organization
 
@@ -157,7 +172,8 @@ This pipeline is intentionally structured to be manually adjusted for new storms
     -   `src/` directory containing source code to define functions.
         -   `clip_flood_stage_gages.R` R script that filters NOAA flood stage gages to the event bbox.
         -   `fetch_rapid_deployment_data.R` R script that fetches Rapid-Deployment Gage sites from STN as an `sf` object.
-        -   `fetch_site_stats.R` R script that fetches day-of-year streamflow percentile thresholds from the USGS statistics API for all active gages in the bbox; filters to sites with ≥ 30 years of record; writes parquet.
+        -   `fetch_site_stats.R` R script that fetches day-of-year streamflow percentile thresholds from the USGS statistics API for all active gages in the bbox; filters to sites with ≥ 10 years of record; writes parquet.
+        -   `get_major_cities.R` R script that selects major cities for map labeling from `maps::us.cities`, filtered to a buffer around the storm track (HU/TS phase only) and ranked by population with greedy min-distance deduplication.
         -   `fetch_uv_peaks_data.R` R script defining downloads of USGS instantaneous (UV) data and historical peak flows via the USGS OGC Water Data API; writes parquet.
         -   `get_precip.py` Python script to pull NOAA Stage 4 precipitation and export GeoTIFF rasters.
         -   `storm_shape_functions.R` R script defining functions to download and process NOAA NHC storm track shapefiles.
@@ -176,10 +192,19 @@ This pipeline is intentionally structured to be manually adjusted for new storms
 -   `3_visualize/` directory containing files related to visualizing data.
     -   `src/` directory containing source code to define functions.
         -   `mapping_utils.R` R script containing the main frame-rendering function (`hurricane_flood_stage_frames()`), which produces one PNG per timestep in either spike or point mode.
-        -   `title_end_frame.R` R script that defines the title frame and end frame of the animation.
-    -   `out/` directory containing animation frames and GIFs (once code is run).
-        -   `[storm_name]_flood_stage_spike_animation.gif` compiled spike animation.
-        -   `[storm_name]_flood_stage_point_animation.gif` compiled point animation.
+        -   `title_end_frame.R` R script that defines the `title_frame()` and `end_frame()` functions for the opening and closing animation frames.
+        -   `video_utils.R` R script that defines `encode_flood_mp4()`, which assembles title, flood, crossfade, and end frames into a final MP4 using `av::av_encode_video()`.
+        -   `builders/` directory containing focused builder functions called by `mapping_utils.R`:
+            -   `build_flood_bar.R` builds the flood stage bar chart inset.
+            -   `build_flood_layer.R` builds the spike or point gage layer on the map.
+            -   `build_icon_legends.R` builds the dot and spike icon legends.
+            -   `build_gage_legends.R` builds the rapid deployment and decommissioned gage icon legends.
+            -   `build_precip_legend.R` builds the precipitation color scale legend.
+            -   `build_progress_bar.R` builds the time progress bar.
+            -   `compose_frame.R` assembles all layers into the final cowplot canvas for each frame.
+    -   `out/` directory containing animation frames and MP4s (once code is run).
+        -   `[storm_name]_flood_stage_spike_animation.mp4` compiled spike animation.
+        -   `[storm_name]_flood_stage_point_animation.mp4` compiled point animation.
         -   `flood_stage_[storm_name]_spike_frames/`
             -   `frame_[datehour].png` PNG frames of the spike map over time.
             -   `frame_00000000000.png` title frame.
