@@ -102,3 +102,15 @@ mean(is.na(df$percentile))              # fraction excluded by POR filter
 
 Time `tar_make(p2_uv_data_percentiles_df)` before and after; record delta in PR
 description.
+
+## Decision log
+
+**`min_por_years` lowered from 20 → 10 (2026-04-30)**
+
+The original spec called for ≥20 yr POR. After the initial fetch completed, only
+43 of 7,323 bbox sites had stats data — too few for meaningful spike visualization.
+Diagnostic confirmed that nearly all flooded gages during Helene (mountain streams,
+flashy watersheds) had NA percentile and thus no spike height, defeating the purpose
+of percentile-encoded spikes. Lowering to 10 yr brought coverage to 2,857 sites and
+gave enough flooded gages percentile data to show colored spikes. The trade-off is
+slightly less statistically stable thresholds for sites with 10–19 years of record.
