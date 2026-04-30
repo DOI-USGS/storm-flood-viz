@@ -8,27 +8,27 @@
 #' @param out_path Character. Output file path to save the generated frame (as PNG).
 #'
 #' @return Character. The output file path (`out_path`) where the image was saved.
-title_frame <- function(title_text_line1, title_text_line2, start_date, 
+title_frame <- function(title_text_line1, title_text_line2, start_date,
                         end_date, logo_path, frame_bg_path, config_vars,
                         out_path){
-  
+
   # Font configuration
   font_legend <- config_vars$load_font
   # systemfonts resolves the font from system-installed files via ragg device
-  
-  logo <- magick::image_read(logo_path) |> 
-    magick::image_resize('x100') |> 
+
+  logo <- magick::image_read(logo_path) |>
+    magick::image_resize('x100') |>
     magick::image_colorize(100, "black")
-  
+
   bg_frame <- magick::image_read(frame_bg_path) |>
     magick::image_colorize(opacity = 40, color = config_vars$bg_col)
-  
+
   canvas <- grid::rectGrob(
-    x = 0, y = 0, 
+    x = 0, y = 0,
     width = 16, height = 9,
     gp = grid::gpar(fill = config_vars$bg_col, alpha = 1, col =  config_vars$bg_col)
   )
-  
+
   p <- ggdraw(xlim = c(0, 1), ylim = c(0,1)) +
     draw_grob(canvas,
               x = 0, y = 1,
@@ -42,7 +42,7 @@ title_frame <- function(title_text_line1, title_text_line2, start_date,
                x = 0.9 - config_vars$plot_margin*2.8,
                y = config_vars$plot_margin*1,
                width = 0.155,
-               hjust = 0, vjust = 0, 
+               hjust = 0, vjust = 0,
                halign = 0, valign = 0) +
     draw_label(title_text_line1,
                x = config_vars$plot_margin, y = 0.25,
@@ -74,8 +74,8 @@ title_frame <- function(title_text_line1, title_text_line2, start_date,
                fontfamily = font_legend,
                color = "black",
                lineheight = 1)
-  
-  
+
+
   ggsave(filename = out_path, plot = p,
          width = config_vars$width, height = config_vars$height,
          dpi = config_vars$dpi, bg = config_vars$bg_col,
@@ -87,40 +87,40 @@ title_frame <- function(title_text_line1, title_text_line2, start_date,
 
 #' @param end_text_line1 Character. First line of title text
 #' @param end_text_line2 Character. Second line of title text
-#' @param end_text_line3 Character. Third line of title text 
+#' @param end_text_line3 Character. Third line of title text
 #' @param logo_path Character. File path to the logo image (e.g., a USGS logo PNG).
 #' @param config_vars Named list or dataframe. Configuration variables (e.g., fonts, dpi, plot margins, bg color).
 #' @param out_path Character. Output file path to save the generated frame (as PNG).
-#' @param bg_col Character. hex code for background color. 
+#' @param bg_col Character. hex code for background color.
 #'
 #' @return Character. The output file path (`out_path`) where the image was saved.
 end_frame <- function(end_text_line1, end_text_line2, end_text_line3,
                       logo_path, config_vars, bg_col, out_path) {
-  
+
   # Font configuration
   font_legend <- config_vars$load_font
   # systemfonts resolves the font from system-installed files via ragg device
-  
-  logo <- magick::image_read(logo_path) |> 
-    magick::image_resize('x100') |> 
+
+  logo <- magick::image_read(logo_path) |>
+    magick::image_resize('x100') |>
     magick::image_colorize(100, "black")
-  
+
   canvas <- grid::rectGrob(
-    x = 0, y = 0, 
+    x = 0, y = 0,
     width = 16, height = 9,
     gp = grid::gpar(fill = bg_col, alpha = 1, col = bg_col)
   )
-  
+
   p <- ggdraw(xlim = c(0, 1), ylim = c(0,1)) +
     draw_grob(canvas,
               x = 0, y = 1,
               height = 1, width = 1,
-              hjust = 0, vjust = 1) + 
+              hjust = 0, vjust = 1) +
     draw_image(logo,
                x = 0.9 - config_vars$plot_margin*2.8,
                y = config_vars$plot_margin*1,
                width = 0.155,
-               hjust = 0, vjust = 0, 
+               hjust = 0, vjust = 0,
                halign = 0, valign = 0) +
     draw_label(end_text_line1,
                x = config_vars$plot_margin + 0.48,
@@ -146,8 +146,8 @@ end_frame <- function(end_text_line1, end_text_line2, end_text_line3,
                hjust = 0.5,
                fontfamily = font_legend,
                color = "black",
-               lineheight = 1) 
-  
+               lineheight = 1)
+
   ggsave(filename = out_path, plot = p,
          width = config_vars$width, height = config_vars$height,
          dpi = config_vars$dpi, bg = bg_col,

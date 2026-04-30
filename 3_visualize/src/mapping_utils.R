@@ -1,3 +1,11 @@
+source("3_visualize/src/builders/build_progress_bar.R")
+source("3_visualize/src/builders/build_flood_bar.R")
+source("3_visualize/src/builders/build_precip_legend.R")
+source("3_visualize/src/builders/build_icon_legends.R")
+source("3_visualize/src/builders/build_gage_legends.R")
+source("3_visualize/src/builders/build_flood_layer.R")
+source("3_visualize/src/builders/compose_frame.R")
+
 #' Create a single map frame visualizing flood stage impacts at a timestep
 #'
 #' @param dtg POSIXct timestamp to label and filter data.
@@ -63,7 +71,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
   time_to_landfall <- difftime(landfall_dtg, dtg, units = "hours")
 
   # only show label until 2 hours after landfall
-  show_landfall_label <- time_to_landfall > -2 
+  show_landfall_label <- time_to_landfall > -2
   landfall_label <- if (show_landfall_label && time_to_landfall > 0) {
     paste0(round(as.numeric(time_to_landfall), 1), " hours to landfall")
   } else {
@@ -87,94 +95,49 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
     classification_label <- paste0(storm_match$storm_type_full[1])
   }
 
-  # flood stats for dynamic barplot
-  flood_status_summary <- flow_now |>
-    filter(flood_status %in% c("Flood", "Moderate", "Major")) |>
-    count(flood_status) |>
-    mutate(flood_status = factor(flood_status,
-      levels = c("Flood", "Moderate", "Major")
-    )) |>
-    complete(flood_status, fill = list(n = 0)) |> # fill missing flood_status with 0 so the bars don't shift vertically
-    mutate(
-      label_right = paste(n, "gages"),
-      label_left = case_when(
-        flood_status %in% c("Moderate", "Major") ~ paste(flood_status, "flood"),
-        TRUE ~ as.character(flood_status)
-      )
-    )
-
-  x_buffer <- global_max_flood_stages * 0.03
-
-  # Set conditional parmaters
-  flood_alpha <- if (precip_grayscale) 0.7 else 0.85
+  # Set conditional parameters
   flood_cols <- if (precip_grayscale) flood_stage_cols_blue else flood_stage_cols_red
 
-  # Shared base plot
-  flood_status_bar <- ggplot(
-    flood_status_summary,
-    aes(
-      y = flood_status,
-      x = n,
-      fill = flood_status
-    )
-  ) +
-    geom_col(width = 0.35, show.legend = FALSE, color = NA, alpha = flood_alpha) +
-    # number of gages to the right of bar
-    geom_text(
-      aes(label = label_right),
-      hjust = 0,
-      x = flood_status_summary$n + x_buffer,
-      family = font_legend, size = 4,
-      color = flood_cols[as.character(flood_status_summary$flood_status)]
-    ) +
-    # flood status to the left of bar
-    geom_text(
-      aes(label = label_left),
-      hjust = 1,
-      x = -x_buffer,
-      family = font_legend, fontface = "bold", size = 4,
-      color = flood_cols[as.character(flood_status_summary$flood_status)]
-    ) +
-    scale_fill_manual(values = flood_cols, drop = FALSE) +
-    scale_x_continuous(
-      limits = c(0, global_max_flood_stages * 1.15),
-      expand = c(0, 0)
-    ) +
-    scale_y_discrete(expand = expansion(add = 0.2)) +
-    coord_cartesian(clip = "off") +
-    theme_void(base_family = config_vars$load_font) +
-    theme(text = element_text(size = config_vars$font_size))
+  # Dynamic flood status barplot
+  flood_status_bar <- build_flood_bar(
+    flow_now = flow_now,
+    global_max_flood_stages = global_max_flood_stages,
+    flood_cols = flood_cols,
+    precip_grayscale = precip_grayscale,
+    font_legend = font_legend,
+    config_vars = config_vars
+  )
 
   # ggplot2 3.5+ guide API: appearance goes inside theme() within the guide
   precip_guide <- guide_coloursteps(
     theme = theme(
-      legend.direction      = "horizontal",
+      legend.direction = "horizontal",
       legend.title.position = "left",
-      legend.key.width      = unit(3, "cm"),
-      legend.key.height     = unit(0.4, "cm"),
-      legend.text.position  = "bottom",
-      legend.text  = element_text(size = 0, color = "transparent"),
+      legend.key.width = unit(3, "cm"),
+      legend.key.height = unit(0.4, "cm"),
+      legend.text.position = "bottom",
+      legend.text = element_text(size = 0, color = "transparent"),
       legend.title = element_text(family = font_legend, hjust = 0, vjust = 0.5)
     )
   )
 
   if (precip_grayscale) {
     precip_fill_scale <- scale_fill_stepsn(
-      colors   = precip_grayscale_cols,
-      breaks   = get_precip_breaks(global_max_precip),
-      limits   = c(1, global_max_precip),
-      name     = NULL,
+      colors = precip_grayscale_cols,
+      breaks = get_precip_breaks(global_max_precip),
+      limits = c(1, global_max_precip),
+      name = NULL,
       na.value = scales::alpha("white", 0),
-      guide    = precip_guide
+      guide = precip_guide
     )
   } else {
     precip_fill_scale <- scale_fill_stepsn(
-      colors   = scales::alpha(precip_cols, 0.7),
-      breaks   = get_precip_breaks(global_max_precip),
-      limits   = c(1, global_max_precip),
-      name     = NULL,
+      colors = scales::alpha(precip_cols, 0.7),
+      breaks = get_precip_breaks(global_max_precip),
+      limits = c(1, global_max_precip),
+      name = NULL,
       na.value = scales::alpha("white", 0),
-      guide    = precip_guide
+      guide = precip_guide
     )
   }
 
@@ -201,8 +164,8 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
   p <- p + ggnewscale::new_scale_fill() +
     geom_sf(
       data = flow_now |>
-        filter(is_flooded == "FALSE") |> 
-        mutate(flood_status = factor(flood_status, levels = names(flood_stage_cols_red))) |> 
+        filter(is_flooded == "FALSE") |>
+        mutate(flood_status = factor(flood_status, levels = names(flood_stage_cols_red))) |>
         filter(!is.na(flood_status)),
       aes(geometry = geometry, fill = flood_status),
       shape = 21, size = 1.25,
@@ -221,180 +184,27 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       data = major_cities, aes(label = NAME),
       color = config_vars$major_cities_text_col,
       size = 3, nudge_y = 50000, family = font_legend
-    ) + 
-  # decomissioned gages
-    geom_sf(data = flow_now |> filter(is_decommissioned), 
-            aes(geometry = geometry), 
-            shape = 4,     
-            color = config_vars$x_mark, 
-            size = 1.25, 
-            alpha = 0.75,
-            stroke = 1) 
-  
-  # Percentile category → numeric midpoint used for spike height scaling
-  pct_midpoint <- c(
-    "low"   = 2.5,  "5-10"  = 7.5,
-    "10-25" = 17.5, "25-75" = 50,
-    "75-90" = 82.5, "90-95" = 92.5,
-    "high"  = 97.5
-  )
-
-  # Both spike types: height from percentile midpoint (75th → 0, 100th → peak_height)
-  pct_spike_transform <- function(df) {
-    df |>
-      dplyr::mutate(
-        pct          = pct_midpoint[as.character(percentile)],
-        pct_rescaled = ifelse(is.na(pct) | pct < 75, 0, (pct - 75) / 25),
-        xy     = sf::st_coordinates(geometry),
-        x      = xy[, 1],
-        y      = xy[, 2],
-        y_base = y + y_baseheight,
-        xend   = x,
-        yend   = y_base + pct_rescaled * peak_height
-      )
-  }
-
-  # If flood_spikes TRUE, make spikes
-  if (flood_spikes) {
-    # Gray spikes: non-flooded gages at 75th percentile or above
-    flow_spikes_gray <- flow_now |>
-      dplyr::filter(
-        !is_flooded,
-        !is.na(percentile),
-        percentile %in% c("75-90", "90-95", "high")
-      ) |>
-      pct_spike_transform()
-
-    # Colored spikes: flooded gages at 75th percentile or above
-    flow_spikes_col <- flow_now |>
-      dplyr::filter(
-        is_flooded,
-        !is.na(percentile),
-        percentile %in% c("75-90", "90-95", "high"),
-        !is.na(flood.stage) | !is.na(moderate.flood.stage) | !is.na(major.flood.stage)
-      ) |>
-      dplyr::arrange(sev_rank, desc(above_amt), desc(dateTime)) |>
-      pct_spike_transform()
-
-    if (nrow(flow_spikes_gray) > 0) {
-      p <- p +
-        ggforce::geom_link(
-          data = flow_spikes_gray,
-          aes(
-            x = x, xend = xend, y = y + 10000, yend = yend,
-            alpha = after_stat(I(0.6 + index)),
-            linewidth = after_stat(I((1 - index) * 1.4))
-          ),
-          colour = "#dcdcdc",
-          show.legend = FALSE
-        ) +
-        geom_point(
-          data = flow_spikes_gray,
-          aes(x = x, y = y_base),
-          shape = 21, fill = "#dcdcdc", color = "white", size = 1.25,
-          stroke = 0.3,
-          show.legend = FALSE
-        )
-    }
-
-    p <- p +
-      ggforce::geom_link(
-        data = flow_spikes_col,
-        aes(
-          x = x, xend = xend, y = y, yend = yend,
-          color = flood_status,
-          alpha = after_stat(I(0.6 + index)),
-          linewidth = after_stat(I((1 - index) * 2.3))
-        ),
-        show.legend = FALSE
-      ) +
-      scale_color_manual(
-        name = "Peak flood stage",
-        values = flood_stage_cols_red,
-        limits = names(flood_stage_cols_red),
-        drop = FALSE,
-        na.value = config_vars$streamgage_col,
-        guide = guide_legend(
-          direction = "vertical",
-          override.aes = list(
-            shape = rep(22, length(flood_stage_cols_red)),
-            size = rep(6, length(flood_stage_cols_red)),
-            fill = unname(flood_stage_cols_red),
-            alpha = 0.8,
-            color = NA,
-            stroke = rep(0.1, length(flood_stage_cols_red))
-          ),
-          label.theme = element_text(size = config_vars$font_size, family = font_legend),
-          title.theme = element_text(size = config_vars$font_size, family = font_legend),
-          keyheight = unit(0.7, "cm")
-        )
-      )
-
-    # Flooded gage points on top of spikes
-    p <- p + geom_sf(
-      data = flow_now |>
-        filter(is_flooded) |>
-        mutate(flood_status = factor(flood_status, levels = names(flood_stage_cols_red))) |>
-        filter(!is.na(flood_status)),
-      aes(geometry = geometry, fill = flood_status),
-      shape = 21, size = 2,
-      stroke = 0.3,
-      color = config_vars$bg_col,
-      show.legend = FALSE
     ) +
-      scale_fill_manual(
-        values = flood_stage_cols_red,
-        drop = FALSE,
-        name = "Flood status"
-      )
+  # decomissioned gages
+    geom_sf(data = flow_now |> filter(is_decommissioned),
+            aes(geometry = geometry),
+            shape = 4,
+            color = config_vars$x_mark,
+            size = 1.25,
+            alpha = 0.75,
+            stroke = 1)
 
-  } else {
-    # Sized points: size encodes percentile rank, color encodes flood status
-    pct_rank <- c(
-      "low"   = 0,    "5-10"  = 1/6,
-      "10-25" = 2/6,  "25-75" = 3/6,
-      "75-90" = 4/6,  "90-95" = 5/6,
-      "high"  = 1
-    )
-
-    flow_now_points <- flow_now |>
-      filter(is_flooded) |>
-      arrange(sev_rank, desc(above_amt), desc(dateTime)) |>
-      mutate(index = pct_rank[as.character(percentile)])
-
-    p <- p +
-      geom_sf(
-        data = flow_now_points,
-        aes(fill = flood_status, size = index, geometry = geometry),
-        shape = 21,
-        stroke = 0.4,
-        color = config_vars$bg_col,
-        alpha = 0.75,
-        show.legend = FALSE
-      ) +
-      scale_size_continuous(range = points_range, limits = c(0, 1)) +
-      scale_fill_manual(
-        name = "Peak flood stage",
-        values = flood_stage_cols_red,
-        limits = names(flood_stage_cols_red),
-        drop = FALSE,
-        na.value = config_vars$streamgage_col,
-        guide = guide_legend(
-          direction = "vertical",
-          override.aes = list(
-            shape = rep(21, length(flood_stage_cols_red)),
-            size = rep(6, length(flood_stage_cols_red)),
-            fill = unname(flood_stage_cols_red),
-            alpha = 0.8,
-            color = "black",
-            stroke = 0.2
-          ),
-          label.theme = element_text(size = config_vars$font_size, family = font_legend),
-          title.theme = element_text(size = config_vars$font_size, family = font_legend),
-          keyheight = unit(0.7, "cm")
-        )
-      )
-  }
+  p <- build_flood_layer(
+    p = p,
+    flow_now = flow_now,
+    flood_spikes = flood_spikes,
+    flood_stage_cols_red = flood_stage_cols_red,
+    config_vars = config_vars,
+    font_legend = font_legend,
+    peak_height = peak_height,
+    y_baseheight = y_baseheight,
+    points_range = points_range
+  )
 
   # Filter storm points up to current DTG
   past_storm_points <- dplyr::filter(storm_now, DTG <= dtg)
@@ -457,47 +267,11 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
     ) +
     guides(color = "none") # removes flood legend
 
-  p_dot_legend <- ggplot() +
-    geom_point(
-      data = data.frame(x = 1, y = 1),
-      aes(x = x, y = y),
-      shape = 21,
-      fill = "#aaaaaa",
-      size = 5,
-      stroke = 0.1,
-      color = config_vars$bg_col,
-      alpha = 0.8
-    ) +
-    theme_void()
+  icon_legends <- build_icon_legends(config_vars)
+  p_dot_legend <- icon_legends$dot
+  p_peak_legend <- icon_legends$peak
 
-  p_peak_legend <- ggplot(
-    data.frame(
-      x = c(0, -0.25, 0.25),
-      y = c(1.5, 0, 0)
-    ),
-    aes(x, y)
-  ) +
-    geom_polygon(
-      fill =  "#aaaaaa",
-      color = NA,
-      alpha = 0.8
-    ) +
-    coord_fixed() +
-    theme_void()
-
-  # Build a standalone minimal plot for precip legend extraction.
-  # Uses cowplot::get_legend (works with ggplot2 4.x) on a 2-row dummy dataset
-  # so the full raster doesn't need to be rendered just to get the color bar.
-  legend_precip <- cowplot::get_legend(
-    ggplot(
-      data.frame(x = c(1, global_max_precip), y = 1,
-                 fill = c(1, global_max_precip)),
-      aes(x, y, fill = fill)
-    ) +
-      geom_tile() +
-      precip_fill_scale +
-      theme(legend.position = "right")
-  )
+  legend_precip <- build_precip_legend(precip_fill_scale, global_max_precip)
 
   logo <- magick::image_read(logo_path) |>
     magick::image_resize("x100") |>
@@ -527,406 +301,34 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
     )
   }
 
-  # rdg icon for legend
-  p_rdg_leg <- ggplot(
-    data.frame(X = 0.5, Y = 0.5),
-    aes(x = X, y = Y)
-  ) +
-    ggimage::geom_image(
-      image = target_rdg_icon,
-      size = 0.6
-    ) +
-    theme_void()
-  
-  # decomissioned/ out of service gage legend icon
-  p_decom_leg <- ggplot(
-    data.frame(x = 0, y = 0),
-    aes(x = x, y = y)
-    ) +
-    geom_point(
-      shape = 4, 
-      color = config_vars$x_mark, 
-      size = 2, 
-      alpha = 0.75, 
-      stroke = 1
-    ) +
-    theme_void()
-  
+  gage_legends <- build_gage_legends(target_rdg_icon, config_vars)
+  p_rdg_leg <- gage_legends$rdg
+  p_decom_leg <- gage_legends$decom
+
   # Progress bar plot
-  progress_bar <- ggplot() +
-    geom_rect(aes(xmin = 0, xmax = 1, ymin = 0, ymax = 1),
-      fill = config_vars$progress_bar_bg_col, color = NA
-    ) +
-    geom_rect(aes(xmin = 0, xmax = progress_fraction, ymin = 0, ymax = 1),
-      fill = config_vars$progress_bar_col, color = NA
-    ) +
-    theme_void() +
-    theme(
-      plot.margin = margin(0, 0, 0, 0),
-      panel.background = element_rect(fill = NA, color = NA)
-    )
+  progress_bar <- build_progress_bar(progress_fraction, config_vars)
 
-  canvas <- grid::rectGrob(
-    x = 0, y = 0,
-    width = 16, height = 9,
-    gp = grid::gpar(
-      fill = config_vars$bg_col, alpha = 1,
-      col = config_vars$bg_col
-    )
+  p <- compose_frame(
+    p = p,
+    logo = logo,
+    flood_stage_leg = flood_stage_leg,
+    legend_precip = legend_precip,
+    progress_bar = progress_bar,
+    flood_status_bar = flood_status_bar,
+    p_dot_legend = p_dot_legend,
+    p_peak_legend = p_peak_legend,
+    p_rdg_leg = p_rdg_leg,
+    p_decom_leg = p_decom_leg,
+    storm_info = storm_info,
+    dtg = dtg,
+    timezone_long = timezone_long,
+    landfall_label = landfall_label,
+    classification_label = classification_label,
+    global_max_precip = global_max_precip,
+    flood_spikes = flood_spikes,
+    font_legend = font_legend,
+    config_vars = config_vars
   )
-
-  p <- ggdraw(xlim = c(0, 1), ylim = c(0, 1)) +
-    draw_grob(canvas,
-      x = 0, y = 1,
-      height = 1, width = 1,
-      hjust = 0, vjust = 1
-    ) +
-    draw_plot(
-      p + theme(
-        legend.position = "none",
-        plot.title = element_blank()
-      ),
-      x = config_vars$plot_shift_x,
-      y = config_vars$plot_shift_y,
-      height = config_vars$plot_height,
-      width = config_vars$plot_width
-    ) +
-    draw_image(logo,
-      x = 0.9 - config_vars$plot_margin * 2,
-      y = config_vars$plot_margin * 1,
-      width = 0.125,
-      hjust = 0, vjust = 0,
-      halign = 0, valign = 0
-    ) +
-    draw_label("Atlantic Ocean",
-      x = 0.83, y = config_vars$plot_margin + 0.32,
-      fontfamily = font_legend,
-      color = config_vars$major_cities_text_col,
-      size = 10
-    ) +
-    draw_label(
-      paste(
-        "Hurricane",
-        stringr::str_to_sentence(storm_info$storm_name)
-      ),
-      x = config_vars$plot_margin, y = 1 - config_vars$plot_margin * 1.2,
-      size = 31,
-      hjust = 0,
-      vjust = 1,
-      fontfamily = font_legend,
-      fontface = "bold",
-      color = "black",
-      lineheight = 1
-    ) +
-    draw_label(paste0(format(lubridate::with_tz(dtg, timezone_long), "%b. %d, %Y %H:%M %Z")),
-      x = config_vars$plot_margin + 0.002,
-      y = 1 - config_vars$plot_margin - 0.055,
-      size = 14,
-      hjust = 0,
-      vjust = 1,
-      fontfamily = font_legend,
-      fontface = "bold",
-      color = "black",
-      lineheight = 1
-    ) +
-    draw_label(landfall_label,
-      x = config_vars$plot_margin + 0.26,
-      y = 1 - config_vars$plot_margin - 0.055,
-      size = 14,
-      hjust = 0,
-      vjust = 1,
-      fontfamily = font_legend,
-      color = "black",
-      lineheight = 1
-    ) +
-    draw_plot(progress_bar,
-      x = -0.05,
-      y = -0.001,
-      width = 1.1,
-      height = 0.015
-    ) +
-    draw_plot(legend_precip,
-      x = config_vars$plot_margin + 0.052,
-      y = 0.227 + 0.01,
-      height = 0.05,
-      width = 0.42 - config_vars$plot_margin
-    ) +
-    draw_label("Total rainfall (in)",
-      x = config_vars$plot_margin + 0.002,
-      y = 1 - config_vars$plot_margin - 0.715 + 0.015,
-      size = 12,
-      hjust = 0,
-      vjust = 1,
-      fontfamily = font_legend,
-      color = "black",
-      lineheight = 1
-    ) +
-    draw_label("1",
-      x = config_vars$plot_margin + 0.158,
-      y = 1 - config_vars$plot_margin - 0.716 + 0.015,
-      size = 12,
-      hjust = 0,
-      vjust = 1,
-      fontfamily = font_legend,
-      color = "black",
-      lineheight = 1
-    ) +
-    draw_label(paste(global_max_precip),
-      x = config_vars$plot_margin + 0.333,
-      y = 1 - config_vars$plot_margin - 0.716 + 0.015,
-      size = 12,
-      hjust = 0,
-      vjust = 1,
-      fontfamily = font_legend,
-      color = "black",
-      lineheight = 1
-    ) +
-    draw_label("USGS streamgage",
-      x = config_vars$plot_margin + 0.028,
-      y = 1 - config_vars$plot_margin - 0.746 + 0.017,
-      size = 12,
-      hjust = 0,
-      vjust = 1,
-      fontfamily = font_legend,
-      color = "black",
-      lineheight = 1
-    ) +
-    draw_plot(p_dot_legend,
-      x = config_vars$plot_margin - 0.025,
-      y = 0.208 + 0.017,
-      height = 0.03,
-      width = 0.1 - config_vars$plot_margin
-    )
-
-  if (flood_spikes) {
-    p <- p +
-      draw_label("Rapid-Deployment gage",
-        x = config_vars$plot_margin + 0.028,
-        y = 1 - config_vars$plot_margin - 0.775 + 0.019,
-        size = 12,
-        hjust = 0,
-        vjust = 1,
-        fontfamily = font_legend,
-        color = "black",
-        lineheight = 1
-      ) +
-      draw_plot(p_rdg_leg,
-        x = config_vars$plot_margin - 0.025,
-        y = 0.177 + 0.019,
-        height = 0.03,
-        width = 0.1 - config_vars$plot_margin
-      ) +
-      draw_label("Out-of-service streamgage",
-                 x = config_vars$plot_margin + 0.028,
-                 y = 1 - config_vars$plot_margin - 0.775 - 0.008,
-                 size = 12,
-                 hjust = 0,
-                 vjust = 1,
-                 fontfamily = font_legend,
-                 color = "black",
-                 lineheight = 1
-      ) +
-      draw_plot(p_decom_leg,
-                x = config_vars$plot_margin - 0.025,
-                y = 0.144,
-                height = 0.08,
-                width = 0.1 - config_vars$plot_margin
-      ) +
-      draw_label("A               appears at the 75th+ percentile",
-                 x = config_vars$plot_margin + 0.004,
-                 y = 1 - config_vars$plot_margin - 0.812,
-                 size = 12,
-                 hjust = 0,
-                 vjust = 1,
-                 fontfamily = font_legend,
-                 color = "black",
-                 lineheight = 1
-      ) +
-      draw_label("spike",
-                 x = config_vars$plot_margin + 0.023,
-                 y = 1 - config_vars$plot_margin - 0.812,
-                 size = 12,
-                 hjust = 0,
-                 vjust = 1,
-                 fontfamily = font_legend,
-                 fontface = "bold",
-                 color = "black",
-                 lineheight = 1
-      ) +
-      draw_plot(p_peak_legend,
-        x = config_vars$plot_margin + 0.32,
-        y = 0.147,
-        height = 0.03,
-        width = 0.1 - config_vars$plot_margin
-      ) +
-      draw_label("The                 is correlated to flow percentiles",
-                 x = config_vars$plot_margin + 0.002,
-                 y = 1 - config_vars$plot_margin - 0.84,
-                 size = 12,
-                 hjust = 0,
-                 vjust = 1,
-                 fontfamily = font_legend,
-                 color = "black",
-                 lineheight = 1
-      ) +
-      draw_label("height",
-                 x = config_vars$plot_margin + 0.0415,
-                 y = 1 - config_vars$plot_margin - 0.84,
-                 size = 12,
-                 hjust = 0,
-                 vjust = 1,
-                 fontfamily = font_legend,
-                 fontface = "bold",
-                 color = "black",
-                 lineheight = 1
-      ) +
-      draw_image(flood_stage_leg,
-                 x = config_vars$plot_margin + 0.36,
-                 y = 0.11,
-                 width = 0.12,
-                 height = 0.12
-      ) +
-      draw_label("The              is the severity of the flood",
-        x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.867,
-        size = 12,
-        hjust = 0,
-        vjust = 1,
-        fontfamily = font_legend,
-        color = "black",
-        lineheight = 1
-      ) +
-      draw_label("color",
-        x = config_vars$plot_margin + 0.042,
-        y = 1 - config_vars$plot_margin - 0.867,
-        size = 12,
-        hjust = 0,
-        vjust = 1,
-        fontfamily = font_legend,
-        fontface = "bold",
-        color = "black",
-        lineheight = 1
-      ) +
-      draw_plot(flood_status_bar,
-        x = 0.17,
-        y = 0.026,
-        width = 0.2,
-        height = 0.055
-      )
-  } else {
-    p <- p +
-      draw_label("Rapid-Deployment gage",
-                 x = config_vars$plot_margin + 0.028,
-                 y = 1 - config_vars$plot_margin - 0.775 + 0.019,
-                 size = 12,
-                 hjust = 0,
-                 vjust = 1,
-                 fontfamily = font_legend,
-                 color = "black",
-                 lineheight = 1
-      ) +
-      draw_plot(p_rdg_leg,
-                x = config_vars$plot_margin - 0.025,
-                y = 0.177 + 0.019,
-                height = 0.03,
-                width = 0.1 - config_vars$plot_margin
-      ) +
-      draw_label("Out-of-service streamgage",
-                 x = config_vars$plot_margin + 0.028,
-                 y = 1 - config_vars$plot_margin - 0.775 - 0.008,
-                 size = 12,
-                 hjust = 0,
-                 vjust = 1,
-                 fontfamily = font_legend,
-                 color = "black",
-                 lineheight = 1
-      ) +
-      draw_plot(p_decom_leg,
-                x = config_vars$plot_margin - 0.025,
-                y = 0.144,
-                height = 0.08,
-                width = 0.1 - config_vars$plot_margin
-      )  +
-      draw_label("If it floods:",
-        x = config_vars$plot_margin + 0.004,
-        y = 1 - config_vars$plot_margin - 0.810,
-        size = 12,
-        hjust = 0,
-        vjust = 1,
-        fontfamily = font_legend,
-        color = "black",
-        lineheight = 1
-      ) +
-      draw_label("     The              is the severity of the flood",
-        x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.836,
-        size = 12,
-        hjust = 0,
-        vjust = 1,
-        fontfamily = font_legend,
-        color = "black",
-        lineheight = 1
-      ) +
-      draw_label("color",
-        x = config_vars$plot_margin + 0.062,
-        y = 1 - config_vars$plot_margin - 0.836,
-        size = 12,
-        hjust = 0,
-        vjust = 1,
-        fontfamily = font_legend,
-        fontface = "bold",
-        color = "black",
-        lineheight = 1
-      ) +
-      draw_plot(flood_status_bar,
-        x = 0.189,
-        y = 0.054,
-        width = 0.2,
-        height = 0.055
-      )  +
-      draw_label("      The           is how long it's been flooded",
-        x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.934,
-        size = 12,
-        hjust = 0,
-        vjust = 1,
-        fontfamily = font_legend,
-        color = "black",
-        lineheight = 1
-      ) +
-      draw_label("       size",
-        x = config_vars$plot_margin + 0.036,
-        y = 1 - config_vars$plot_margin - 0.934,
-        size = 12,
-        hjust = 0,
-        vjust = 1,
-        fontfamily = font_legend,
-        fontface = "bold",
-        color = "black",
-        lineheight = 1
-      )
-    # Dropping custom flood stage for now, since placement is a bit awkward
-    #  +
-    # draw_image(flood_stage_leg,
-    #            x = config_vars$plot_margin + 0.28,
-    #            y = 0.0465,
-    #            width = 0.145,
-    #            height = 0.125)
-  }
-
-  if (!is.null(classification_label)) {
-    p <- p + draw_label(
-      classification_label,
-      x = config_vars$plot_margin + 0.002,
-      y = 1 - config_vars$plot_margin - 0.08,
-      size = 14,
-      hjust = 0,
-      vjust = 1,
-      fontfamily = font_legend,
-      color = "black",
-      lineheight = 1
-    )
-  }
 
   timestamp_str <- format(dtg, "%Y%m%dT%H%M")
 
