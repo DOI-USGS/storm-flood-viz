@@ -33,27 +33,6 @@ p3_targets <- list(
     p3_global_max_precip_in,
     round(max(p2_process_precip_rast$precip_in, na.rm = TRUE))
   ),
-  # Global max flood stages to flood stage dynamic barplot x-limit
-  tar_target(
-    p3_global_max_flooded,
-    max(vapply(p2_flow_by_time,
-               function(tbl) {
-                 sum(tbl$flood_status %in% c("Flood","Moderate", "Major"), na.rm = TRUE)
-               },
-               FUN.VALUE = integer(1)
-               )
-        )
-    ), 
-  # Caclulate global max duration above flood stage across all timesteps
-  # to apply to map flood peaks 
-  tar_target(
-    p3_global_max_flood_duration,
-    {
-      p2_flow_by_time |>
-        purrr::map_dbl(~ max(.x$duration_above_flood_hr, na.rm = TRUE)) |>
-        max(na.rm = TRUE)
-    }
-  ),
   # progress bar targets
   tar_target(
     p3_min_timestamp,
@@ -84,7 +63,7 @@ p3_targets <- list(
       dtg = p2_all_precip_timestamps,
       precip_now = p3_precip_by_time,
       global_max_precip = p3_global_max_precip_in,
-      global_max_flood_stages = p3_global_max_flooded,
+      global_max_flood_stages = p2_global_max_flooded,
       flow_now = p2_flow_by_time,
       storm_now = p3_storm_by_time,
       rdg_now = p3_rdg_by_time,
@@ -107,7 +86,7 @@ p3_targets <- list(
       config_vars = p0_viz_config_df,
       peak_height = 200000,
       y_baseheight = 10000,
-      global_max_duration = p3_global_max_flood_duration,
+      global_max_duration = p2_global_max_flood_duration,
       landfall_dtg = p0_landfall_time,
       target_rdg_icon = "3_visualize/in/bullseye.png",
       logo_path = '3_visualize/in/usgs_logo_black.png',

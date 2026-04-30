@@ -179,5 +179,24 @@ p2_targets <- list(
     },
     pattern = map(p2_all_precip_timestamps),
     iteration = "list"
+  ),
+  # Global max flooded gage count across all timesteps (sets barplot x-limit)
+  tar_target(
+    p2_global_max_flooded,
+    max(vapply(p2_flow_by_time,
+               function(tbl) {
+                 sum(tbl$flood_status %in% c("Flood", "Moderate", "Major"), na.rm = TRUE)
+               },
+               FUN.VALUE = integer(1)
+    ))
+  ),
+  # Global max flood duration across all timesteps (sets spike height scale)
+  tar_target(
+    p2_global_max_flood_duration,
+    {
+      p2_flow_by_time |>
+        purrr::map_dbl(~ max(.x$duration_above_flood_hr, na.rm = TRUE)) |>
+        max(na.rm = TRUE)
+    }
   )
 )
