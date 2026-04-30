@@ -11,7 +11,7 @@ source("1_fetch/src/fetch_site_stats.R")
 
 p1_targets <- list(
 # Fetch precipitation data  -----------------------------------------------
-  tar_target(p1_precip_py_file, 
+  tar_target(p1_precip_py_file,
              "1_fetch/src/get_precip.py",
              format = "file"),
   tar_target(p1_precip_tifs,
@@ -31,7 +31,7 @@ p1_targets <- list(
     p1_bbox_proj,
     {
       if (!identical(sf::st_crs(p0_proj), sf::st_crs("EPSG:4269"))) {
-        sf::st_as_sfc(p0_bbox_sf) |> 
+        sf::st_as_sfc(p0_bbox_sf) |>
           sf::st_as_sf(crs = "EPSG:4269") |>
           sf::st_transform(crs = p0_proj) |>
           sf::st_bbox()
@@ -66,7 +66,7 @@ p1_targets <- list(
     p1_storm_track_pts_sf,
     {
       pts_file <- p1_storm_track_files[grepl("_pts\\.shp$", p1_storm_track_files)]
-      
+
       sf_data <- sf::read_sf(pts_file) |>
         sf::st_transform(crs = p0_proj) |>
         filter(STORMNAME %in% dplyr::pull(p0_storm_info, storm_name)) |>
@@ -78,13 +78,13 @@ p1_targets <- list(
             STORMTYPE == "LO" ~ "Low pressure system",
             TRUE ~ NA_character_  # Keep unknowns explicit
           )
-        ) |> 
+        ) |>
         tidyr::fill(storm_type_full, .direction = "down")
-  
+
       # now bind coordinates
       bind_cols(
         sf_data,
-        sf::st_coordinates(sf_data) |> tibble::as_tibble() |> 
+        sf::st_coordinates(sf_data) |> tibble::as_tibble() |>
           rename(X = X, Y = Y)
       )
     }
@@ -93,11 +93,11 @@ p1_targets <- list(
 # State data --------------------------------------------------------------
   # Download state borders and crop to bbox
   tar_target(
-    p1_conus_bbox_crop_sf, 
+    p1_conus_bbox_crop_sf,
     tigris::states(cb = TRUE) |>
       filter(!STUSPS %in% c("AK", "HI", "MP", "VI", "AS", "GU")) |>
       st_transform(p0_proj) |>
-      rmapshaper::ms_simplify(keep = 0.2) |> 
+      rmapshaper::ms_simplify(keep = 0.2) |>
       st_crop(
         p0_bbox_sf |>
           st_as_sfc() |>
@@ -121,19 +121,19 @@ p1_targets <- list(
     p1_major_cities_sf,
     {
       city_lookup <- tibble::tibble(
-        name = c("Miami", "Atlanta", "Raleigh", "Philadelphia", "New York", 
+        name = c("Miami", "Atlanta", "Raleigh", "Philadelphia", "New York",
                  "New Orleans", "Memphis", "Jackson", "Houston",
                  "Richmond", "Mobile", "Columbia"),
-        state_abbr = c("FL", "GA", "NC", "PA", "NY", "LA", "TN", "MS", "TX", 
+        state_abbr = c("FL", "GA", "NC", "PA", "NY", "LA", "TN", "MS", "TX",
                        "VA", "AL", "SC")
       )
-      
+
       state_fips <- tigris::fips_codes |>
         dplyr::distinct(state_code, state) |>
         dplyr::rename(state_abbr = state)
-      
+
       city_join <- dplyr::left_join(city_lookup, state_fips, by = "state_abbr")
-      
+
       tigris::places(cb = TRUE) |>
         dplyr::inner_join(city_join, by = c("NAME" = "name", "STATEFP" = "state_code")) |>
         dplyr::select(NAME, geometry) |>
@@ -145,7 +145,7 @@ p1_targets <- list(
 # Fetch rapid deployment gages  -------------------------------------------
   tar_target(
     # Note that some rapid deployment gages are placed a weeks or so after
-    # hurricane landfall 
+    # hurricane landfall
     p1_rapid_dep_gages,
     fetch_rapid_dep_sites(event = p0_storm_info$stn_event,
                           proj = p0_proj,
@@ -161,7 +161,7 @@ p1_targets <- list(
       out_path <- "1_fetch/out/flood_stage_gages.csv"
       download.file(p0_flood_stage_url, out_path)
       return(out_path)
-      
+
     },
     format = "file"
   ),
