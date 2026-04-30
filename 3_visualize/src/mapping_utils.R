@@ -732,7 +732,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
                 height = 0.08,
                 width = 0.1 - config_vars$plot_margin
       ) +
-      draw_label("If it floods, a               appears",
+      draw_label("A               appears at the 75th+ percentile",
                  x = config_vars$plot_margin + 0.004,
                  y = 1 - config_vars$plot_margin - 0.812,
                  size = 12,
@@ -743,7 +743,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
                  lineheight = 1
       ) +
       draw_label("spike",
-                 x = config_vars$plot_margin + 0.118,
+                 x = config_vars$plot_margin + 0.023,
                  y = 1 - config_vars$plot_margin - 0.812,
                  size = 12,
                  hjust = 0,
@@ -754,8 +754,8 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
                  lineheight = 1
       ) +
       draw_plot(p_peak_legend,
-        x = config_vars$plot_margin + 0.22,
-        y = 0.145,
+        x = config_vars$plot_margin + 0.32,
+        y = 0.147,
         height = 0.03,
         width = 0.1 - config_vars$plot_margin
       ) +
