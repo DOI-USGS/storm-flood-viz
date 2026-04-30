@@ -1,6 +1,6 @@
-#source('3_visualize/src/plot_utils.R')
 source('3_visualize/src/mapping_utils.R')
 source('3_visualize/src/title_end_frame.R')
+source('3_visualize/src/video_utils.R')
 
 p3_targets <- list(
   # Subset hurricane track by timestep
@@ -81,7 +81,9 @@ p3_targets <- list(
   ),
   tar_target(
     p3_title_frame_png,
-    title_frame(title_text_line1 = sprintf("Hurricane %s", stringr::str_to_sentence(tolower(p0_storm_info$storm_name))),
+    title_frame(title_text_line1 = sprintf("Hurricane %s",
+                                           stringr::str_to_sentence(
+                                             tolower(p0_storm_info$storm_name))),
                 title_text_line2 = "Flooding",
                 start_date = p0_date_start,
                 end_date = p0_date_end,
@@ -104,9 +106,11 @@ p3_targets <- list(
     p3_end_frame_png,
     end_frame(end_text_line1 = "STAY SAFE DURING FLOODS",
               end_text_line2 = sprintf("Learn more about the USGS response to %s at",
-                                       stringr::str_to_sentence(tolower(p0_storm_info$storm_name))),
+                                       stringr::str_to_sentence(
+                                         tolower(p0_storm_info$storm_name))),
               end_text_line3 = sprintf("www.usgs.gov/%s",
-                                       stringr::str_to_sentence(tolower(p0_storm_info$storm_name))),
+                                       stringr::str_to_sentence(
+                                         tolower(p0_storm_info$storm_name))),
               logo_path = '3_visualize/in/usgs_logo_black.png',
               config_vars = p0_viz_config_df,
               out_path = if (p0_flood_spike_var) {
@@ -121,45 +125,20 @@ p3_targets <- list(
     format = "file"
     ),
   tar_target(
-    p3_flood_stage_hourly_gif,
-    {
-      fade_frames     <- 10L  # how smooth/long the fade is
-      end_hold_frames <- 4L   # how long to hold the end frame
-      fps             <- 2    # frames per second
-
-      title_img    <- magick::image_read(p3_title_frame_png)
-      title_frames <- rep(title_img, times = 8L)
-
-      valid_paths <- p3_flood_stage_frames[!is.na(p3_flood_stage_frames)]
-      valid_paths <- valid_paths[valid_paths != p3_title_frame_png]
-
-      flood_frames <- magick::image_read(valid_paths)
-      flood_frames <- magick::image_coalesce(flood_frames)
-
-      # end frame + fade
-      end_img <- magick::image_read(p3_end_frame_png)
-
-      last_flood <- flood_frames[length(flood_frames)]
-      crossfade  <- magick::image_morph(c(last_flood, end_img), frames = fade_frames)
-      end_hold   <- rep(end_img, end_hold_frames)
-
-      all_frames <- c(title_frames, flood_frames, crossfade, end_hold)
-      # coalesce to be safe before animating
-      all_frames <- magick::image_coalesce(all_frames)
-
-      gif <- magick::image_animate(all_frames, fps = fps)
-
-      gif_path <- if (p0_flood_spike_var) {
-        sprintf("3_visualize/out/%s_flood_stage_spike_animation.gif",
+    p3_flood_stage_hourly_mp4,
+    encode_flood_mp4(
+      title_frame_path = p3_title_frame_png,
+      flood_frame_paths = p3_flood_stage_frames[!is.na(p3_flood_stage_frames) &
+                                                  p3_flood_stage_frames != p3_title_frame_png],
+      end_frame_path = p3_end_frame_png,
+      output_path = if (p0_flood_spike_var) {
+        sprintf("3_visualize/out/%s_flood_stage_spike_animation.mp4",
                 tolower(p0_storm_info$storm_name))
       } else {
-        sprintf("3_visualize/out/%s_flood_stage_point_animation.gif",
+        sprintf("3_visualize/out/%s_flood_stage_point_animation.mp4",
                 tolower(p0_storm_info$storm_name))
       }
-
-      magick::image_write(gif, gif_path)
-      gif_path
-    },
+    ),
     format = "file"
   )
 )
