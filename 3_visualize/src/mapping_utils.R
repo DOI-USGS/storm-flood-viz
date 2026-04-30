@@ -475,11 +475,16 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
     coord_fixed() +
     theme_void()
 
-  # Build a standalone plot for precip legend extraction so that multiple
-  # fill scales from ggnewscale don't interfere with get_legend_non0.
-  legend_precip <- get_legend_non0(
-    ggplot() +
-      geom_raster(data = precip_now, aes(x = x, y = y, fill = precip_in)) +
+  # Build a standalone minimal plot for precip legend extraction.
+  # Uses cowplot::get_legend (works with ggplot2 4.x) on a 2-row dummy dataset
+  # so the full raster doesn't need to be rendered just to get the color bar.
+  legend_precip <- cowplot::get_legend(
+    ggplot(
+      data.frame(x = c(1, global_max_precip), y = 1,
+                 fill = c(1, global_max_precip)),
+      aes(x, y, fill = fill)
+    ) +
+      geom_tile() +
       precip_fill_scale +
       theme(legend.position = "right")
   )
@@ -632,7 +637,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
     ) +
     draw_plot(legend_precip,
       x = config_vars$plot_margin + 0.052,
-      y = 0.227 + 0.015,
+      y = 0.227 + 0.01,
       height = 0.05,
       width = 0.42 - config_vars$plot_margin
     ) +
