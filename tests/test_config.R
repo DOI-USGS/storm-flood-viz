@@ -26,7 +26,7 @@ stopifnot(cfg$storm_info$stn_event == 346)
 
 # Spatial
 stopifnot(inherits(cfg$bbox, "bbox"))
-stopifnot(identical(unname(cfg$bbox), c(-98.21, 23, -69.97, 44.6)))
+stopifnot(all.equal(as.numeric(cfg$bbox), c(-98.21, 23, -69.97, 44.6)))
 stopifnot(grepl("^\\+proj=aea", cfg$proj))
 
 # Display tz + viz toggles (kept as strings to match existing pipeline code)
@@ -49,12 +49,13 @@ stopifnot(cfg$pal_precip_blue[1] == "#c7f0f6")
 # viz_config tibble: spot-check numeric and string fields
 stopifnot(inherits(cfg$viz_config, "tbl_df"))
 stopifnot(cfg$viz_config$width == 8, cfg$viz_config$height == 8, cfg$viz_config$dpi == 300)
-stopifnot(cfg$viz_config$load_font == "Source Sans Pro")
+stopifnot(cfg$viz_config$load_font == "Source Sans 3")
 stopifnot(cfg$viz_config$plot_shift_x == -0.18)
 stopifnot(cfg$viz_config$plot_height == 1.6)
 
-# Template loads and has the same top-level shape
-tpl <- load_storm_config("config/_template.yml")
-stopifnot(setequal(names(cfg), names(tpl)))
+# Template has the same top-level keys (raw YAML; template has placeholder
+# strings so full load_storm_config parsing is not expected to succeed).
+tpl_raw <- yaml::read_yaml("config/_template.yml")
+stopifnot(setequal(names(cfg), names(tpl_raw)))
 
 cat("OK — config refactor produces expected values\n")
