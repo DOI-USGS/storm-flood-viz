@@ -129,7 +129,8 @@ p3_targets <- list(
     encode_flood_mp4(
       title_frame_path = p3_title_frame_png,
       flood_frame_paths = p3_flood_stage_frames[!is.na(p3_flood_stage_frames) &
-                                                  p3_flood_stage_frames != p3_title_frame_png],
+                                                  p3_flood_stage_frames != p3_title_frame_png &
+                                                  p3_flood_stage_frames != p3_end_frame_png],
       end_frame_path = p3_end_frame_png,
       output_path = if (p0_flood_spike_var) {
         sprintf("3_visualize/out/%s_flood_stage_spike_animation.mp4",
@@ -137,7 +138,11 @@ p3_targets <- list(
       } else {
         sprintf("3_visualize/out/%s_flood_stage_point_animation.mp4",
                 tolower(p0_storm_info$storm_name))
-      }
+      },
+      fps = 2,
+      title_hold = 10L,
+      fade_frames = 8L,
+      end_hold = 4L
     ),
     format = "file"
   )

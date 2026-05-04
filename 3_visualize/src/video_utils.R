@@ -16,32 +16,44 @@
 encode_flood_mp4 <- function(title_frame_path, flood_frame_paths, end_frame_path,
                              output_path, fps = 2, title_hold = 8L,
                              fade_frames = 10L, end_hold = 4L) {
-  flood_imgs <- magick::image_read(flood_frame_paths)
-  flood_imgs <- magick::image_coalesce(flood_imgs)
-  end_img <- magick::image_read(end_frame_path)
+  # targets returns branched file paths in hash order, not pattern order.
+  # Frame filenames are timestamp-based so string sort gives chronological order.
+  flood_frame_paths <- sort(flood_frame_paths)
+
+  last_flood_img <- magick::image_read(
+    flood_frame_paths[length(flood_frame_paths)]
+  )
+  end_img   <- magick::image_read(end_frame_path)
   crossfade <- magick::image_morph(
-    c(flood_imgs[length(flood_imgs)], end_img),
+    c(last_flood_img, end_img),
     frames = fade_frames
   )
 
   tmp_dir <- tempfile("crossfade_")
   dir.create(tmp_dir)
-  crossfade_paths <- file.path(tmp_dir, sprintf("crossfade_%04d.png", seq_len(fade_frames)))
+  crossfade_paths <- file.path(
+    tmp_dir, sprintf("crossfade_%04d.png", seq_len(fade_frames))
+  )
   for (i in seq_len(fade_frames)) {
     magick::image_write(crossfade[i], crossfade_paths[i])
   }
 
+  # Encode at 10 fps (repeating each display frame 5x) so that the output
+  # plays correctly in QuickTime and other players that mis-handle <5 fps H.264.
+  encode_fps <- 10L
+  reps <- encode_fps / fps
+
   all_frame_paths <- c(
-    rep(title_frame_path, title_hold),
-    flood_frame_paths,
-    crossfade_paths,
-    rep(end_frame_path, end_hold)
+    rep(title_frame_path, title_hold * reps),
+    rep(flood_frame_paths, each = reps),
+    rep(crossfade_paths, each = reps),
+    rep(end_frame_path, end_hold * reps)
   )
 
   av::av_encode_video(
     input = all_frame_paths,
     output = output_path,
-    framerate = fps,
+    framerate = encode_fps,
     vfilter = "scale=trunc(iw/2)*2:trunc(ih/2)*2"
   )
 
