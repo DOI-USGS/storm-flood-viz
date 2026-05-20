@@ -1,13 +1,13 @@
-# Set Python environment and run precipitation and percentiles data processing scripts
-reticulate::use_condaenv("hurricane-precip", required = TRUE)
+# Set Python environment and run precipitation data processing script
+reticulate::use_python(Sys.getenv("RETICULATE_PYTHON"), required = TRUE)
 reticulate::source_python("1_fetch/src/get_precip.py")
-reticulate::source_python("1_fetch/src/generate_hyswap_percentiles.py")
 
 # Source functions
 source("1_fetch/src/storm_shape_functions.R")
 source("1_fetch/src/clip_flood_stage_gages.R")
 source("1_fetch/src/fetch_uv_peaks_data.R")
 source("1_fetch/src/fetch_rapid_deployment_data.R")
+source("1_fetch/src/fetch_site_stats.R")
 
 p1_targets <- list(
 # Fetch precipitation data  -----------------------------------------------
@@ -174,10 +174,38 @@ p1_targets <- list(
       bbox = p1_conus_bbox_crop_sf
     )
   ),
+  # Get all stream gages in the event bbox (not just flood-stage sites).
+  # Queries time-series-metadata/items by bbox + pcode + statistic_id "00011"
+  # (instantaneous/UV), then post-filters to series whose end_utc >= storm start.
+  # One compact row per time series — much faster than scanning continuous/items.
+  # Returns a data.frame with site_no, lon, lat.
+  tar_target(
+    p1_bbox_stream_sites_df,
+    fetch_bbox_stream_sites(
+      bbox = as.numeric(p0_bbox_sf),
+      pcodes = p0_pcodes,
+      time_range = paste0(p0_nwis_start, "/", p0_nwis_end)
+    )
+  ),
+  # Character vector of site numbers for UV/stats fetching
+  tar_target(
+    p1_bbox_stream_sites,
+    p1_bbox_stream_sites_df$site_no
+  ),
+  # sf point object for mapping all active stream gages
+  tar_target(
+    p1_bbox_stream_sites_sf,
+    sf::st_as_sf(
+      p1_bbox_stream_sites_df,
+      coords = c("lon", "lat"),
+      crs = "EPSG:4269"
+    ) |>
+      sf::st_transform(p0_proj)
+  ),
   # Get sites chunked up for uv data download
   tar_target(
     p1_site_id_chunks,
-    chunk_up_sites(unique(p1_usgs_flood_stage_gages$site_no), n_sites_per_vector = 200)
+    chunk_up_sites(p1_bbox_stream_sites, n_sites_per_vector = 300)
   ),
   # Download uv data to parquet
   tar_target(
@@ -201,8 +229,10 @@ p1_targets <- list(
     format = "file"
   ),
   tar_target(
-    p1_hyswap_py_file,
-    "1_fetch/src/generate_hyswap_percentiles.py",
-    format = 'file'
+    p1_site_stats_pqt,
+    fetch_site_stats(site_nos = p1_bbox_stream_sites,
+                     out_path = "1_fetch/out/site_stats.parquet",
+                     min_por_years = 10),
+    format = "file"
   )
 )
