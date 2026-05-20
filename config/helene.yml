@@ -1,0 +1,113 @@
+# Per-storm and viz configuration for Hurricane Helene (Sept 2024).
+#
+# To configure a new storm: copy config/_template.yml, fill in values,
+# then update p0_storm_cfg_file in 0_config.R to point at the new file.
+#
+# Times are UTC. Display timezone is applied only in the final mapping
+# step (see 3_visualize/src/mapping_utils.R).
+
+# Storm metadata
+date_start: "2024-09-24"
+date_end: "2024-09-29"
+landfall_time: "2024-09-27 03:00:00"   # UTC
+
+storm_info:
+  storm_name: "HELENE"
+  storm_code: "al092024"
+  storm_buffer: 250000
+  shape_type: "buffered_storm_track"
+  storm_best_track_url: "https://www.nhc.noaa.gov/gis/best_track/"
+  # STN event id from REST URLs at https://stn.wim.usgs.gov/STNDataPortal/#
+  stn_event: 346
+
+# Spatial
+# bbox must be in NAD83 (EPSG:4269) decimal degrees.
+# When bbox area changes, viz_config plot_shift_x/y and plot_width/height
+# below will likely need to be re-tuned.
+bbox:
+  xmin: -98.21
+  xmax: -69.97
+  ymin: 23
+  ymax: 44.6
+
+# Projection chosen for the area of interest within the bbox.
+proj: "+proj=aea +lat_0=23 +lon_0=-84 +lat_1=30 +lat_2=37 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +type=crs"
+
+# Display timezone (see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
+timezone: "America/New_York"
+timezone_abv: "ET"
+
+# Viz toggles
+# precip_grayscale: "FALSE" = colorized precip, "TRUE" = grayscale precip
+# flood_spike: "FALSE" = sized flooded points, "TRUE" = sized flooded spikes
+precip_grayscale: "FALSE"
+flood_spike: "TRUE"
+
+# Color palettes
+pal_fs_blue:
+  "Not flooded": "#dcdcdc"
+  "Flood": "#4ecad7"
+  "Moderate": "#17718E"
+  "Major": "#003e6a"
+
+pal_fs_red:
+  "Not flooded": "#dcdcdc"
+  "Flood": "#e5a000"
+  "Moderate": "#F7513B"
+  "Major": "#C917E8"
+
+pal_percentile:
+  - "#8c2d04"
+  - "#cc9e02"
+  - "#fee391"
+  - "#C0C0C0"
+  - "#80cdc1"
+  - "#35978f"
+  - "#045a8d"
+
+pal_precip_blue:
+  - "#c7f0f6"
+  - "#92dce5"
+  - "#5fc8d1"
+  - "#38b1bc"
+  - "#259db0"
+  - "#1b88a1"
+  - "#16738c"
+
+pal_precip_grayscale:
+  - "#E6E6E6"
+  - "#CBCBCB"
+  - "#B6B6B6"
+  - "#A6A6A6"
+  - "#979797"
+  - "#858585"
+  - "#6D6D6D"
+
+# Plot config
+# plot_margin / plot_shift_x|y / plot_width|height are relative to the
+# 0-1 canvas; re-tune whenever bbox area changes.
+viz_config:
+  width: 8
+  height: 8
+  dpi: 300
+  state_outline_col: "white"
+  major_cities_col: "gray60"
+  major_cities_text_col: "gray50"
+  streamgage_col: "gray30"
+  storm_path_col: "black"
+  state_inner_borders_col: "gray85"
+  state_outer_lines_col: "gray80"
+  bg_col: "white"
+  ocean_col: "#f8fcfc"
+  progress_bar_bg_col: "gray80"
+  progress_bar_col: "gray45"
+  x_mark: "black"
+  load_font: "Source Sans 3"
+  font_size_title: 16
+  font_size: 14
+  leg_font_size: 12
+  plot_margin: 0.025
+  plot_shift_x: -0.18
+  plot_shift_y: -0.212
+  plot_width: 1.39
+  plot_height: 1.6

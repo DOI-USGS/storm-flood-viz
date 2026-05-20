@@ -23,7 +23,8 @@ tar_option_set(packages = c('tidyverse',
                             'glue',
                             'dataRetrieval',
                             'ggimage',
-                            'ggtext'))
+                            'ggtext',
+                            'yaml'))
 
 # Phase target makefiles
 source("0_config.R")

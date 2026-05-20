@@ -90,7 +90,42 @@ def download_precip(
 
     # time in Coordinated Universal Time (UTC) (I believe)
     start_time = pd.to_datetime(start_time_str)
-    end_time = pd.to_datetime(end_time_str)
+    end_time   = pd.to_datetime(end_time_str)
+    hours      = pd.date_range(start=start_time, end=end_time, freq="h")
+    start_str  = start_time.strftime("%Y-%m-%dT%H")
+
+    # Check expected files before opening zarr.
+    # Cumulative files: start_to_hourN.tif; none files: hourN.tif.
+    if summed == "cumulative":
+        expected_paths = [
+            output_path + start_str + "_to_" + h.strftime("%Y-%m-%dT%H") + ".tif"
+            for h in hours
+        ]
+    else:
+        expected_paths = [
+            output_path + h.strftime("%Y-%m-%dT%H") + ".tif"
+            for h in hours
+        ]
+
+    missing = [p for p in expected_paths if not os.path.exists(p)]
+    if not missing:
+        print("All precip files already exist, skipping download.")
+        return expected_paths
+
+    # Index of the first missing file
+    first_missing_idx = next(i for i, p in enumerate(expected_paths) if not os.path.exists(p))
+
+    # For cumulative: load the last existing file from disk as the base sum
+    # so zarr only needs to fetch the missing hours, not the full range.
+    if summed == "cumulative" and first_missing_idx > 0:
+        prev_raster = gdal.Open(expected_paths[first_missing_idx - 1])
+        # files were written with np.flipud, so flip back to restore orientation
+        interp_precip_sum = np.flipud(prev_raster.GetRasterBand(1).ReadAsArray().astype(np.float32))
+        prev_raster = None
+        zarr_start = hours[first_missing_idx]
+    else:
+        interp_precip_sum = None
+        zarr_start = start_time
 
     # access the s3 bucket?
     fs = fsspec.filesystem("s3", anon=True, endpoint_url="https://usgs.osn.mghpcc.org")
@@ -103,8 +138,8 @@ def download_precip(
         chunks={},
     )
 
-    # get data from Wednesday 10/9/24 4 PM Eastern to Thursday 10/10/24 12 AM Eastern
-    time_filtered_ds = ds.sel(time=slice(start_time, end_time))
+    # fetch only the hours we actually need
+    time_filtered_ds = ds.sel(time=slice(zarr_start, end_time))
 
     # isolate the 1-hr precip data
     precip = time_filtered_ds["Total_precipitation_surface_1_Hour_Accumulation"]
@@ -128,7 +163,9 @@ def download_precip(
         (precip.longitude.values.flatten(), precip.latitude.values.flatten())
     )
 
-    file_paths = []
+    # seed file_paths with already-existing cumulative files
+    file_paths = list(expected_paths[:first_missing_idx]) if summed == "cumulative" else []
+
     # save array from each time
     for i in range(0, precip.shape[0]):
 
@@ -143,43 +180,11 @@ def download_precip(
         if summed == "none":
             # specify file path
             file_path = output_path + str(precip.time.values[i])[:-16] + ".tif"
-            # convert to gdal tiff
-            print("saving tif: " + file_path)
-            numpy_array_to_raster(
-                file_path,
-                np.flipud(interp_precip),
-                (bBox[0] - dx * 0.5, bBox[3] + dx * 0.5),
-                dx,
-                nband=1,
-                no_data=NO_DATA,
-                gdal_data_type=gdal.GDT_Float32,
-                spatial_reference_system_wkid=SPATIAL_REFERENCE_SYSTEM_WKID,
-                driver=GEOTIFF_DRIVER_NAME,
-            )
-            # make a list of output paths
-            file_paths += [file_path]
-        else:
-            if i == 0:
-                interp_precip_sum = interp_precip
-            else:
-                interp_precip_sum += interp_precip
-
-            if summed == "cumulative" or (
-                summed == "total" and i == precip.shape[0] - 1
-            ):  # Save a sum is cumulative or the sum at the end of the loop if summed mode == total
-                # specify file path
-                file_path = (
-                    output_path
-                    + str(precip.time.values[0])[:-16]
-                    + "_to_"
-                    + str(precip.time.values[i])[:-16]
-                    + ".tif"
-                )
-                # convert to gdal tiff
+            if not os.path.exists(file_path):
                 print("saving tif: " + file_path)
                 numpy_array_to_raster(
                     file_path,
-                    np.flipud(interp_precip_sum),
+                    np.flipud(interp_precip),
                     (bBox[0] - dx * 0.5, bBox[3] + dx * 0.5),
                     dx,
                     nband=1,
@@ -188,7 +193,31 @@ def download_precip(
                     spatial_reference_system_wkid=SPATIAL_REFERENCE_SYSTEM_WKID,
                     driver=GEOTIFF_DRIVER_NAME,
                 )
-                # make a list of output paths
+            # make a list of output paths
+            file_paths += [file_path]
+        else:
+            if interp_precip_sum is None:
+                interp_precip_sum = interp_precip
+            else:
+                interp_precip_sum += interp_precip
+
+            if summed == "cumulative" or (
+                summed == "total" and i == precip.shape[0] - 1
+            ):  # Save a sum is cumulative or the sum at the end of the loop if summed mode == total
+                file_path = expected_paths[first_missing_idx + i]
+                if not os.path.exists(file_path):
+                    print("saving tif: " + file_path)
+                    numpy_array_to_raster(
+                        file_path,
+                        np.flipud(interp_precip_sum),
+                        (bBox[0] - dx * 0.5, bBox[3] + dx * 0.5),
+                        dx,
+                        nband=1,
+                        no_data=NO_DATA,
+                        gdal_data_type=gdal.GDT_Float32,
+                        spatial_reference_system_wkid=SPATIAL_REFERENCE_SYSTEM_WKID,
+                        driver=GEOTIFF_DRIVER_NAME,
+                    )
                 file_paths += [file_path]
 
     return file_paths
