@@ -83,10 +83,10 @@ This pipeline is intentionally structured to be manually adjusted for new storms
 -   `p0_precip_start / p0_precip_end`
 
     -   Start and end timestamps (in `"YYYY-MM-DDTHH"` format) for retrieving gridded precipitation data. Must align with the desired animation timeframe.
-    
-- `p0_nwis_start / p0_nwis_end` 
 
-    - Start and end timestamps (in `"YYYY-MM-DDTHH:MMZ"` format) for pulling instantaneous values for gage height from `dataRetrieval::readNWISuv()`. We define these in UTC time to match the precip data pull. 
+-   `p0_nwis_start / p0_nwis_end`
+
+    -   Start and end timestamps (in `"YYYY-MM-DDTHH:MMZ"` format) for pulling instantaneous values for gage height from `dataRetrieval::readNWISuv()`. We define these in UTC time to match the precip data pull.
 
 -   `p0_timezone`
 
@@ -157,11 +157,13 @@ This pipeline is intentionally structured to be manually adjusted for new storms
         -   `fetch_rapid_deployment_data.R` R script that fetches Rapid-Deployment Gage sites from STN as `sf`
         -   `fetch_uv_peaks_data.R` R script defining downloads of NWIS instantaneous data and peaks; write parquet.
         -   `get_precip.py` Python script to pull NOAA Stage 4 precipitation and export GeoTIFF rasters.
-        -   `generate_hyswap_percentiles.py` Python script that computes percentiles from historical daily data; tag instantaneous data.
+        -   `fetch_site_stats.R` R script that fetches day-of-year streamflow percentile thresholds (p05–p95) from the USGS waterdata statistics API for all active gages in the bbox, filtered to sites with a minimum period of record. Replaces the former `generate_hyswap_percentiles.py` approach.
         -   `storm_shape_functions.R` R script defining percentiles from historical daily data; tag instantaneous data.
+    -   **Percentile threshold note:** Sites are filtered to a minimum of **10 years** of discharge record (parameter `min_por_years` in `fetch_site_stats()`). The original spec called for 20 years. Testing against the Helene site list showed ≥20 yr qualifies 4,158 sites while ≥10 yr qualifies 4,937 — a gain of 779 sites (+19%), with the added sites having PORs clustered between 10–20 years. Sites below the threshold receive `percentile = NA` and appear as gray dots without a percentile spike. The threshold is configurable if 20 years is preferred for future events.
     -   `out/` directory containing output files (once code is run).
         -   `gage_peak_data.parquet` parquet file of NWIS peaks
         -   `gage_uv_data.parquet` parquet file of instantaneous NWIS data
+        -   `site_stats.parquet` parquet file of USGS day-of-year percentile thresholds (p05–p95) per site
         -   `[p0_precip_start]_to_[p0_precip_end].tif` precipitation raster files for given date and hours.
         -   `storm_shape_[p0_storm_info$storm_code]` shapefiles associated with hurricane path/points/radii/windswath.
 -   `2_process/` directory containing files related to processing data.
