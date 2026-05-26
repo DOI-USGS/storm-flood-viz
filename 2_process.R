@@ -1,3 +1,9 @@
+py <- Sys.getenv("RETICULATE_PYTHON", unset = "")
+if (nzchar(py)) {
+  reticulate::use_python(py, required = TRUE)
+} else {
+  reticulate::use_condaenv("hurricane-precip", required = TRUE)
+}
 source("2_process/src/process_precip.R")
 source("2_process/src/process_states.R")
 source("2_process/src/process_hourly_max_uv.R")
