@@ -24,7 +24,21 @@ This repository creates a series of hurricane/storm track related maps using NOA
 
 # Running the pipeline
 
-This repository uses a pipeline with the [`targets` library](https://github.com/ropensci/targets) for R. To run the pipeline, install `targets` and run `targets::tar_make()` in the console. You may find that you get errors at first if you do not have all of the necessary packages, e.g. `Error : could not find packages terra, ggimage in library paths`. Install the packages that are needed (using `install.packages("[packageName]")` and try `targets::tar_make()`again. Repeat as needed. You will need the following packages installed:`tidyverse`, `sf`, `reticulate`, `janitor`, `sbtools`, `tigris`, `sysfonts`, `showtext`, `readr`, `cowplot`, `rmapshaper`, `terra`, `raster`, `tidyterra`, `rvest`, `httr`, `fs`, `glue`, `dataRetrieval`, `ggimage`, `ggtext`.
+This repository uses a pipeline with the [`targets` library](https://github.com/ropensci/targets) for R. To run the pipeline, install `targets` and run `targets::tar_make()` in the console. You may find that you get errors at first if you do not have all of the necessary packages, e.g. `Error : could not find packages terra, ggimage in library paths`. Install the packages that are needed (using `install.packages("[packageName]")` and try `targets::tar_make()` again. Repeat as needed. You will need the following packages installed: `tidyverse`, `sf`, `reticulate`, `janitor`, `sbtools`, `tigris`, `sysfonts`, `showtext`, `readr`, `cowplot`, `rmapshaper`, `terra`, `raster`, `tidyterra`, `rvest`, `httr`, `httr2`, `fs`, `glue`, `dataRetrieval`, `arrow`, `purrr`, `ggimage`, `ggtext`.
+
+## Python environment setup
+
+The pipeline uses Python only for precipitation data retrieval (`get_precip.py`). The following Python packages are required: `xarray`, `fsspec`, `numpy`, `pandas`, `scipy`, `gdal`.
+
+The pipeline resolves the Python environment in the following order:
+
+1. If the environment variable `RETICULATE_PYTHON` is set, it will use that Python executable. Set this in your `.Renviron` file:
+```
+RETICULATE_PYTHON=/path/to/your/python
+```
+You can find the correct path by activating your Python environment in the terminal and running `which python`.
+
+2. If `RETICULATE_PYTHON` is not set, the pipeline falls back to a conda environment named `hurricane-precip`. Ensure this environment exists and has the required dependencies installed.
 
 The pipeline will fetch and visualize flood stage and storm track data for provided dates and bounding box. All animation frames will then be loaded in `3_visualize/out/food_stage_frames` and the frames will be compiled to build the final animation in `3_visualize/out`
 
