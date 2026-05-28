@@ -1,3 +1,9 @@
+py <- Sys.getenv("RETICULATE_PYTHON", unset = "")
+if (nzchar(py)) {
+  reticulate::use_python(py, required = TRUE)
+} else {
+  reticulate::use_condaenv("hurricane-precip", required = TRUE)
+}
 source("2_process/src/process_precip.R")
 source("2_process/src/process_states.R")
 source("2_process/src/process_hourly_max_uv.R")
@@ -9,27 +15,28 @@ p2_targets <- list(
     p2_uv_data_df,
     arrow::read_parquet(p1_uv_data_pqt)
   ),
-  # Make list of sites to run through the percentiles calculations
-  tar_target(
-    p2_uv_sites,
-    unique(p2_uv_data_df$site_no)
-  ),
-  # Branch over site ids to generate percentiles and place in single df
-  # of uv data
+  # Join USGS day-of-year percentile thresholds to uv data and derive a
+  # category string. Sites absent from p1_site_stats_pqt (< 20 yr POR)
+  # receive percentile = NA and are excluded from percentile viz layers.
   tar_target(
     p2_uv_data_percentiles_df,
     {
-      # Make this target dependent upon the hyswap python file
-      p1_hyswap_py_file
-
-      # Print message about time to run
-      if (p2_uv_sites == unique(p2_uv_data_df$site_no)[1]) {
-        print("This branching step may take a while (~30 minutes)")
-      }
-
-      calculate_uv_percentiles_from_dv(p2_uv_sites, p2_uv_data_df, pcode = "00060")
-    },
-    pattern = map(p2_uv_sites)
+      thresholds <- arrow::read_parquet(p1_site_stats_pqt)
+      p2_uv_data_df |>
+        mutate(time_of_year = format(dateTime, "%m-%d")) |>
+        left_join(thresholds, by = c("site_no", "time_of_year")) |>
+        mutate(percentile = case_when(
+          is.na(X_00060_00000) | is.na(p05) ~ NA_character_,
+          X_00060_00000 >= p95 ~ "high",
+          X_00060_00000 >= p90 ~ "90-95",
+          X_00060_00000 >= p75 ~ "75-90",
+          X_00060_00000 >= p25 ~ "25-75",
+          X_00060_00000 >= p10 ~ "10-25",
+          X_00060_00000 >= p05 ~ "5-10",
+          TRUE ~ "low"
+        )) |>
+        select(-time_of_year, -any_of(c("p05","p10","p25","p50","p75","p90","p95")))
+    }
   ),
   # Read in peak data and grab max peak value per site, with ties
   # broken using the latest date in the dataset - makes more sense to compare

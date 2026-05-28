@@ -24,7 +24,21 @@ This repository creates a series of hurricane/storm track related maps using NOA
 
 # Running the pipeline
 
-This repository uses a pipeline with the [`targets` library](https://github.com/ropensci/targets) for R. To run the pipeline, install `targets` and run `targets::tar_make()` in the console. You may find that you get errors at first if you do not have all of the necessary packages, e.g. `Error : could not find packages terra, ggimage in library paths`. Install the packages that are needed (using `install.packages("[packageName]")` and try `targets::tar_make()`again. Repeat as needed. You will need the following packages installed:`tidyverse`, `sf`, `reticulate`, `janitor`, `sbtools`, `tigris`, `sysfonts`, `showtext`, `readr`, `cowplot`, `rmapshaper`, `terra`, `raster`, `tidyterra`, `rvest`, `httr`, `fs`, `glue`, `dataRetrieval`, `ggimage`, `ggtext`.
+This repository uses a pipeline with the [`targets` library](https://github.com/ropensci/targets) for R. To run the pipeline, install `targets` and run `targets::tar_make()` in the console. You may find that you get errors at first if you do not have all of the necessary packages, e.g. `Error : could not find packages terra, ggimage in library paths`. Install the packages that are needed (using `install.packages("[packageName]")` and try `targets::tar_make()` again. Repeat as needed. You will need the following packages installed: `tidyverse`, `sf`, `reticulate`, `janitor`, `sbtools`, `tigris`, `sysfonts`, `showtext`, `readr`, `cowplot`, `rmapshaper`, `terra`, `raster`, `tidyterra`, `rvest`, `httr`, `httr2`, `fs`, `glue`, `dataRetrieval`, `arrow`, `purrr`, `ggimage`, `ggtext`.
+
+## Python environment setup
+
+The pipeline uses Python only for precipitation data retrieval (`get_precip.py`). The following Python packages are required: `xarray`, `fsspec`, `numpy`, `pandas`, `scipy`, `gdal`.
+
+The pipeline resolves the Python environment in the following order:
+
+1. If the environment variable `RETICULATE_PYTHON` is set, it will use that Python executable. Set this in your `.Renviron` file:
+```
+RETICULATE_PYTHON=/path/to/your/python
+```
+You can find the correct path by activating your Python environment in the terminal and running `which python`.
+
+2. If `RETICULATE_PYTHON` is not set, the pipeline falls back to a conda environment named `hurricane-precip`. Ensure this environment exists and has the required dependencies installed.
 
 The pipeline will fetch and visualize flood stage and storm track data for provided dates and bounding box. All animation frames will then be loaded in `3_visualize/out/food_stage_frames` and the frames will be compiled to build the final animation in `3_visualize/out`
 
@@ -83,10 +97,10 @@ This pipeline is intentionally structured to be manually adjusted for new storms
 -   `p0_precip_start / p0_precip_end`
 
     -   Start and end timestamps (in `"YYYY-MM-DDTHH"` format) for retrieving gridded precipitation data. Must align with the desired animation timeframe.
-    
-- `p0_nwis_start / p0_nwis_end` 
 
-    - Start and end timestamps (in `"YYYY-MM-DDTHH:MMZ"` format) for pulling instantaneous values for gage height from `dataRetrieval::readNWISuv()`. We define these in UTC time to match the precip data pull. 
+-   `p0_nwis_start / p0_nwis_end`
+
+    -   Start and end timestamps (in `"YYYY-MM-DDTHH:MMZ"` format) for pulling instantaneous values for gage height from `dataRetrieval::readNWISuv()`. We define these in UTC time to match the precip data pull.
 
 -   `p0_timezone`
 
@@ -157,11 +171,13 @@ This pipeline is intentionally structured to be manually adjusted for new storms
         -   `fetch_rapid_deployment_data.R` R script that fetches Rapid-Deployment Gage sites from STN as `sf`
         -   `fetch_uv_peaks_data.R` R script defining downloads of NWIS instantaneous data and peaks; write parquet.
         -   `get_precip.py` Python script to pull NOAA Stage 4 precipitation and export GeoTIFF rasters.
-        -   `generate_hyswap_percentiles.py` Python script that computes percentiles from historical daily data; tag instantaneous data.
+        -   `fetch_site_stats.R` R script that fetches day-of-year streamflow percentile thresholds (p05–p95) from the USGS waterdata statistics API for all active gages in the bbox, filtered to sites with a minimum period of record. Replaces the former `generate_hyswap_percentiles.py` approach.
         -   `storm_shape_functions.R` R script defining percentiles from historical daily data; tag instantaneous data.
+    -   **Percentile threshold note:** Sites are filtered to a minimum of **10 years** of discharge record (parameter `min_por_years` in `fetch_site_stats()`). The original spec called for 20 years. Testing against the Helene site list showed ≥20 yr qualifies 4,158 sites while ≥10 yr qualifies 4,937 — a gain of 779 sites (+19%), with the added sites having PORs clustered between 10–20 years. Sites below the threshold receive `percentile = NA` and appear as gray dots without a percentile spike. The threshold is configurable if 20 years is preferred for future events.
     -   `out/` directory containing output files (once code is run).
         -   `gage_peak_data.parquet` parquet file of NWIS peaks
         -   `gage_uv_data.parquet` parquet file of instantaneous NWIS data
+        -   `site_stats.parquet` parquet file of USGS day-of-year percentile thresholds (p05–p95) per site
         -   `[p0_precip_start]_to_[p0_precip_end].tif` precipitation raster files for given date and hours.
         -   `storm_shape_[p0_storm_info$storm_code]` shapefiles associated with hurricane path/points/radii/windswath.
 -   `2_process/` directory containing files related to processing data.
