@@ -1,5 +1,10 @@
 # Set Python environment and run precipitation data processing script
-reticulate::use_python(Sys.getenv("RETICULATE_PYTHON"), required = TRUE)
+py <- Sys.getenv("RETICULATE_PYTHON", unset = "")
+if (nzchar(py)) {
+  reticulate::use_python(py, required = TRUE)
+} else {
+  reticulate::use_condaenv("hurricane-precip", required = TRUE)
+}
 reticulate::source_python("1_fetch/src/get_precip.py")
 
 # Source functions
