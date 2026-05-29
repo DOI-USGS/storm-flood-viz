@@ -42,6 +42,16 @@ You can find the correct path by activating your Python environment in the termi
 
 The pipeline will fetch and visualize flood stage and storm track data for provided dates and bounding box. All animation frames will then be loaded in `3_visualize/out/food_stage_frames` and the frames will be compiled to build the final animation in `3_visualize/out`
 
+## Font setup
+
+Map frames are rendered using `ragg` as the graphics device, which resolves fonts through `systemfonts` from your system's installed font files. The pipeline uses **Source Sans 3** (configured via `load_font` in `config/helene.yml`). To set it up:
+
+1. Download the Source Sans 3 static `.ttf` files from [Google Fonts](https://fonts.google.com/specimen/Source+Sans+3) (click "Download family", then use the files in the `static/` folder).
+2. Install the fonts on your system (double-click each `.ttf` on macOS/Windows, or place them in `~/.local/share/fonts/` on Linux and run `fc-cache -f`).
+3. In RStudio ≥ 1.4, go to **Tools > Global Options > General > Graphics** and set the Backend to **AGG** so the IDE preview also uses `ragg`.
+
+If you change `load_font` to a different font family, install that font on your system using the same steps above.
+
 ## Running the code
 
 This code has been organized into a data pipeline using the [targets](https://books.ropensci.org/targets/) package. Targets is a pipeline building tool that automatically tracks the status (i.e., up-to-date vs. out-of-date) and builds intermediate objects only as needed. To run the entire pipeline, you can run the command [`targets::tar_make()`](https://docs.ropensci.org/targets/reference/tar_make.html), after the steps (above) have been completed. For more information on targets, the package author has written [a walkthrough to get started](https://books.ropensci.org/targets/walkthrough.html) and there is an [Introduction to targets](https://carpentries-incubator.github.io/targets-workshop/) training that is currently in development but still may be useful in its current state.
