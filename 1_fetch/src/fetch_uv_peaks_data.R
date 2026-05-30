@@ -1,91 +1,30 @@
 #' Find active USGS stream gages in a bbox with UV time series during the event.
 #'
-#' Queries the time-series-metadata endpoint (one compact row per time series)
-#' filtered by bbox, parameter code, and statistic_id "00011" (instantaneous/UV).
-#' Sites whose most recent observation predates the storm start are dropped, so
-#' only gages with active UV data during the event window are returned.
+#' Thin wrapper around `dataRetrieval::read_waterdata_ts_meta()`, filtered by
+#' bbox, parameter code, and statistic_id "00011" (instantaneous/UV). Sites
+#' whose most recent observation predates the storm start are dropped, so only
+#' gages with active UV data during the event window are returned. The
+#' `API_USGS_PAT` env var is picked up automatically by dataRetrieval.
 #'
 #' @param bbox Numeric vector of length 4: c(xmin, ymin, xmax, ymax).
 #' @param pcodes Character vector of USGS parameter codes (e.g. c("00060","00065")).
-#' @param time_range ISO 8601 interval "startZ/endZ" spanning the event window.
-#' @param page_size Rows per API page; default 10000.
-#' @return data.frame with columns site_no (character), lon, lat (numeric).
-fetch_bbox_stream_sites <- function(bbox, pcodes, time_range, page_size = 10000L) {
+#' @param time_range ISO 8601 interval "startZ/endZ"; the start side is used to
+#'   drop series whose most recent observation predates the event.
+#' @return `sf` object with one row per active site, columns `site_no` and
+#'   `geometry` (POINT, WGS 84).
+fetch_bbox_stream_sites <- function(bbox, pcodes, time_range) {
   storm_start <- as.POSIXct(sub("/.*", "", time_range),
-                            format = "%Y-%m-%dT%H:%MZ", tz = "UTC"
-  )
-  
-  base_req <- httr2::request(
-    "https://api.waterdata.usgs.gov/ogcapi/v0/collections/time-series-metadata/items"
+                            format = "%Y-%m-%dT%H:%MZ", tz = "UTC")
+
+  dataRetrieval::read_waterdata_ts_meta(
+    bbox = bbox,
+    parameter_code = pcodes,
+    statistic_id = "00011"
   ) |>
-    httr2::req_url_query(
-      f = "json",
-      bbox = paste(bbox, collapse = ","),
-      parameter_code = paste(pcodes, collapse = ","),
-      statistic_id = "00011",
-      limit = page_size
-    )
-  
-  api_key <- Sys.getenv("API_USGS_PAT")
-  next_url <- base_req$url
-  rows <- list()
-  
-  repeat {
-    req <- httr2::request(next_url) |>
-      httr2::req_throttle(rate = 0.5) |>
-      httr2::req_retry(
-        max_tries    = 4L,
-        is_transient = \(r) httr2::resp_status(r) %in% c(429L, 500L, 503L),
-        after        = NULL
-      )
-    if (nzchar(api_key)) req <- httr2::req_headers(req, `X-Api-Token` = api_key)
-    resp <- req |>
-      httr2::req_perform() |>
-      httr2::resp_body_json()
-    
-    features <- resp$features
-    if (length(features) > 0L) {
-      rows[[length(rows) + 1L]] <- data.frame(
-        monitoring_location_id = vapply(
-          features,
-          \(f) f$properties$monitoring_location_id %||% NA_character_, character(1L)
-        ),
-        end_utc = vapply(
-          features,
-          \(f) f$properties$end_utc %||% NA_character_, character(1L)
-        ),
-        lon = vapply(
-          features,
-          \(f) tryCatch(f$geometry$coordinates[[1L]], error = \(e) NA_real_), numeric(1L)
-        ),
-        lat = vapply(
-          features,
-          \(f) tryCatch(f$geometry$coordinates[[2L]], error = \(e) NA_real_), numeric(1L)
-        ),
-        stringsAsFactors = FALSE
-      )
-    }
-    
-    next_link <- Filter(\(lk) identical(lk$rel, "next"), resp$links)
-    if (length(next_link) == 0L) break
-    next_url <- next_link[[1L]]$href
-  }
-  
-  if (length(rows) == 0L) {
-    return(data.frame(
-      site_no = character(0),
-      lon = numeric(0), lat = numeric(0)
-    ))
-  }
-  
-  ts_meta <- do.call(rbind, rows)
-  ts_meta$end_utc <- as.POSIXct(ts_meta$end_utc,
-                                format = "%Y-%m-%dT%H:%M:%S", tz = "UTC"
-  )
-  active <- ts_meta[!is.na(ts_meta$end_utc) & ts_meta$end_utc >= storm_start, ]
-  active$site_no <- sub("^USGS-", "", active$monitoring_location_id)
-  
-  unique(active[, c("site_no", "lon", "lat")])
+    dplyr::filter(!is.na(end_utc), end_utc >= storm_start) |>
+    dplyr::mutate(site_no = sub("^USGS-", "", monitoring_location_id)) |>
+    dplyr::distinct(site_no, .keep_all = TRUE) |>
+    dplyr::select(site_no, geometry)
 }
 
 #' Fetch continuous UV data for a batch of sites directly from the OGC API.
