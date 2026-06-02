@@ -181,31 +181,22 @@ p1_targets <- list(
   ),
   # Get all stream gages in the event bbox (not just flood-stage sites).
   # Queries time-series-metadata/items by bbox + pcode + statistic_id "00011"
-  # (instantaneous/UV), then post-filters to series whose end_utc >= storm start.
-  # One compact row per time series — much faster than scanning continuous/items.
-  # Returns a data.frame with site_no, lon, lat.
+  # (instantaneous/UV) via dataRetrieval, then drops series whose end_utc
+  # predates storm start. Returns sf (WGS 84); we reproject to p0_proj for
+  # downstream mapping.
   tar_target(
-    p1_bbox_stream_sites_df,
+    p1_bbox_stream_sites_sf,
     fetch_bbox_stream_sites(
       bbox = as.numeric(p0_bbox_sf),
       pcodes = p0_pcodes,
       time_range = paste0(p0_nwis_start, "/", p0_nwis_end)
-    )
+    ) |>
+      sf::st_transform(p0_proj)
   ),
   # Character vector of site numbers for UV/stats fetching
   tar_target(
     p1_bbox_stream_sites,
-    p1_bbox_stream_sites_df$site_no
-  ),
-  # sf point object for mapping all active stream gages
-  tar_target(
-    p1_bbox_stream_sites_sf,
-    sf::st_as_sf(
-      p1_bbox_stream_sites_df,
-      coords = c("lon", "lat"),
-      crs = "EPSG:4269"
-    ) |>
-      sf::st_transform(p0_proj)
+    p1_bbox_stream_sites_sf$site_no
   ),
   # Get sites chunked up for uv data download
   tar_target(
