@@ -201,8 +201,11 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
   p <- p + ggnewscale::new_scale_fill() +
     geom_sf(
       data = flow_now |>
-        filter(is_flooded == "FALSE") |> 
-        mutate(flood_status = factor(flood_status, levels = names(flood_stage_cols_red))) |> 
+        filter(is_flooded == "FALSE") |>
+        # in point mode, >=75th percentile gages are rendered as sized gray points
+        # below — exclude them here to avoid double-plotting at the same location
+        filter(isTRUE(flood_spikes) | !(percentile %in% c("75-90", "90-95", "high"))) |>
+        mutate(flood_status = factor(flood_status, levels = names(flood_stage_cols_red))) |>
         filter(!is.na(flood_status)),
       aes(geometry = geometry, fill = flood_status),
       shape = 21, size = 1.25,
@@ -355,23 +358,46 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
         name = "Flood status"
       )
 
-    # otherwise, do sized points
+    # otherwise, do sized points — mirrors spike logic:
+    # gray sized points for non-flooded gages at >=75th percentile,
+    # colored sized points for all flooded gages sized by percentile.
   } else {
-    # Prepare point data
-    flow_now_points <- flow_now |> 
-      filter(is_flooded) |> 
-      arrange(
-        sev_rank,
-        desc(above_amt),
-        desc(duration_above_flood_hr),
-        desc(dateTime)
-      ) |> 
-      mutate(index = (duration_above_flood_hr / global_max_duration)^3)
-    
+    pct_rank <- c(
+      "low" = 0, "5-10" = 1/6,
+      "10-25" = 2/6, "25-75" = 3/6,
+      "75-90" = 4/6, "90-95" = 5/6,
+      "high" = 1
+    )
+
+    # Gray sized points: non-flooded gages at >=75th percentile
+    flow_points_gray <- flow_now |>
+      dplyr::filter(
+        !is_flooded,
+        !is.na(percentile),
+        percentile %in% c("75-90", "90-95", "high")
+      ) |>
+      mutate(index = pct_rank[as.character(percentile)])
+
+    # Colored sized points: all flooded gages sized by percentile
+    flow_points_col <- flow_now |>
+      filter(is_flooded) |>
+      arrange(sev_rank, desc(above_amt), desc(dateTime)) |>
+      mutate(index = dplyr::coalesce(pct_rank[as.character(percentile)], 0))
+
+    if (nrow(flow_points_gray) > 0) {
+      p <- p +
+        geom_sf(
+          data = flow_points_gray,
+          aes(size = index, geometry = geometry),
+          shape = 21, fill = "#dcdcdc", color = "white",
+          stroke = 0.3, alpha = 0.75,
+          show.legend = FALSE
+        )
+    }
 
     p <- p +
       geom_sf(
-        data = flow_now_points,
+        data = flow_points_col,
         aes(fill = flood_status, size = index, geometry = geometry),
         shape = 21,
         stroke = 0.4,
