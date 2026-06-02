@@ -3,6 +3,20 @@ source('3_visualize/src/title_end_frame.R')
 source('3_visualize/src/video_utils.R')
 
 p3_targets <- list(
+  # One symbolic name for the layer style ("spike" or "point")
+  tar_target(p3_layer, if (p0_flood_spike_var) "spike" else "point"),
+  # Storm slug used across many file paths
+  tar_target(p3_storm_slug, tolower(p0_storm_info$storm_name)),
+  # Per-frame PNG directory — single source of truth
+  tar_target(
+    p3_frame_dir,
+    sprintf("3_visualize/out/flood_stage_%s_%s_frames", p3_storm_slug, p3_layer)
+  ),
+  # Final mp4 output path
+  tar_target(
+    p3_mp4_path,
+    sprintf("3_visualize/out/%s_flood_stage_%s_animation.mp4", p3_storm_slug, p3_layer)
+  ),
   # Subset hurricane track by timestep
   tar_target(
     p3_storm_by_time,
@@ -70,10 +84,7 @@ p3_targets <- list(
       hurricane_symbol_path = "3_visualize/in/hurricane_symbol.png",
       flood_stage_spike_leg_path = "3_visualize/in/custom_flood_stage_spike_leg_percentile.png",
       flood_stage_point_leg_path = "3_visualize/in/custom_flood_stage_point_leg_percentile.png",
-      frame_spike_dir = sprintf("3_visualize/out/flood_stage_%s_spike_frames",
-                          tolower(p0_storm_info$storm_name)),
-      frame_point_dir = sprintf("3_visualize/out/flood_stage_%s_point_frames",
-                                tolower(p0_storm_info$storm_name))
+      frame_dir = p3_frame_dir
     ),
     pattern = map(p2_all_precip_timestamps, p3_precip_by_time, p2_flow_by_time,
                   p3_storm_by_time, p2_progress_fract, p3_rdg_by_time),
@@ -81,46 +92,31 @@ p3_targets <- list(
   ),
   tar_target(
     p3_title_frame_png,
-    title_frame(title_text_line1 = sprintf("Hurricane %s",
-                                           stringr::str_to_sentence(
-                                             tolower(p0_storm_info$storm_name))),
-                title_text_line2 = "Flooding",
-                start_date = p0_date_start,
-                end_date = p0_date_end,
-                logo_path = '3_visualize/in/usgs_logo_black.png',
-                frame_bg_path = as.character(p3_flood_stage_frames)[
-                  grepl("frame_20240928T0800.png$", p3_flood_stage_frames)
-                ],
-                config_vars = p0_viz_config_df,
-                out_path = if (p0_flood_spike_var) {
-                  sprintf("3_visualize/out/flood_stage_%s_spike_frames/frame_00000000000.png",
-                          tolower(p0_storm_info$storm_name))
-                } else {
-                  sprintf("3_visualize/out/flood_stage_%s_point_frames/frame_00000000000.png",
-                          tolower(p0_storm_info$storm_name))
-                }
+    title_frame(
+      title_text_line1 = sprintf("Hurricane %s", stringr::str_to_sentence(p3_storm_slug)),
+      title_text_line2 = "Flooding",
+      start_date = p0_date_start,
+      end_date = p0_date_end,
+      logo_path = '3_visualize/in/usgs_logo_black.png',
+      frame_bg_path = as.character(p3_flood_stage_frames)[
+        grepl("frame_20240928T0800.png$", p3_flood_stage_frames)
+      ],
+      config_vars = p0_viz_config_df,
+      out_path = file.path(p3_frame_dir, "frame_00000000000.png")
     ),
     format = "file"
   ),
   tar_target(
     p3_end_frame_png,
-    end_frame(end_text_line1 = "STAY SAFE DURING FLOODS",
-              end_text_line2 = sprintf("Learn more about the USGS response to %s at",
-                                       stringr::str_to_sentence(
-                                         tolower(p0_storm_info$storm_name))),
-              end_text_line3 = sprintf("www.usgs.gov/%s",
-                                       stringr::str_to_sentence(
-                                         tolower(p0_storm_info$storm_name))),
-              logo_path = '3_visualize/in/usgs_logo_black.png',
-              config_vars = p0_viz_config_df,
-              out_path = if (p0_flood_spike_var) {
-                sprintf("3_visualize/out/flood_stage_%s_spike_frames/frame_99999999999.png",
-                        tolower(p0_storm_info$storm_name))
-              } else {
-                sprintf("3_visualize/out/flood_stage_%s_point_frames/frame_99999999999.png",
-                        tolower(p0_storm_info$storm_name))
-              },
-              bg_col = p0_viz_precip_config_pal_blue[1]
+    end_frame(
+      end_text_line1 = "STAY SAFE DURING FLOODS",
+      end_text_line2 = sprintf("Learn more about the USGS response to %s at",
+                               stringr::str_to_sentence(p3_storm_slug)),
+      end_text_line3 = sprintf("www.usgs.gov/%s", stringr::str_to_sentence(p3_storm_slug)),
+      logo_path = '3_visualize/in/usgs_logo_black.png',
+      config_vars = p0_viz_config_df,
+      out_path = file.path(p3_frame_dir, "frame_99999999999.png"),
+      bg_col = p0_viz_precip_config_pal_blue[1]
     ),
     format = "file"
   ),
@@ -132,13 +128,7 @@ p3_targets <- list(
                                                   p3_flood_stage_frames != p3_title_frame_png &
                                                   p3_flood_stage_frames != p3_end_frame_png],
       end_frame_path = p3_end_frame_png,
-      output_path = if (p0_flood_spike_var) {
-        sprintf("3_visualize/out/%s_flood_stage_spike_animation.mp4",
-                tolower(p0_storm_info$storm_name))
-      } else {
-        sprintf("3_visualize/out/%s_flood_stage_point_animation.mp4",
-                tolower(p0_storm_info$storm_name))
-      },
+      output_path = p3_mp4_path,
       fps = 2,
       title_hold = 10L,
       fade_frames = 8L,

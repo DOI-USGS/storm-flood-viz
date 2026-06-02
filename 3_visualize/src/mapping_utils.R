@@ -14,8 +14,7 @@
 #' @param config_vars Named list of styling and theme options.
 #' @param peak_height Maximum height of flood lines (numeric).
 #' @param global_max_duration Numeric. The maximum `duration_above_flood_hr` across all time steps.
-#' @param frame_spike_dir Character path for saving flood stage spike viz PNGs.
-#' @param frame_point_dir Character path for saving flood stage points viz PNGs.
+#' @param frame_dir Character path for saving flood stage frame PNGs.
 #' @param logo_path Character path for USGS logo.
 #' @param hurricane_symbol_path Character path for hurricane symbology.
 #' @param landfall_dtg POSIXct. The expected date-time of hurricane landfall, used to calculate and display a countdown label.
@@ -42,7 +41,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
                                          major_cities, flood_stage_cols_blue,
                                          flood_stage_cols_red,
                                          precip_cols, config_vars, peak_height,
-                                         frame_spike_dir, frame_point_dir,
+                                         frame_dir,
                                          logo_path, bbox_coords, state_outer_lines,
                                          hurricane_symbol_path, global_max_duration,
                                          landfall_dtg, progress_fraction,
@@ -929,13 +928,8 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
 
   timestamp_str <- format(dtg, "%Y%m%dT%H%M")
 
-  if (flood_spikes) {
-    fs::dir_create(frame_spike_dir)
-    frame_path <- file.path(frame_spike_dir, paste0("frame_", timestamp_str, ".png"))
-  } else {
-    fs::dir_create(frame_point_dir)
-    frame_path <- file.path(frame_point_dir, paste0("frame_", timestamp_str, ".png"))
-  }
+  fs::dir_create(frame_dir)
+  frame_path <- file.path(frame_dir, paste0("frame_", timestamp_str, ".png"))
 
   ggsave(
     filename = frame_path, plot = p,
