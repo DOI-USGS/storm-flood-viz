@@ -142,38 +142,42 @@ p2_targets <- list(
     p2_all_precip_timestamps,
     sort(unique(p2_process_precip_rast$dateTime))
   ),
-  # Classify flood status and compute flood duration for each gage at each timestep
+  # Compute above_flood flag and cumulative flood duration once over the full
+  # time series. 
+  tar_target(
+    p2_flow_with_duration_df,
+    p2_flow_height_complete_df |>
+      arrange(site_no, dateTime) |>
+      group_by(site_no) |>
+      mutate(
+        above_flood = ifelse(is.na(X_00065_00000), FALSE, X_00065_00000 >= flood.stage),
+        duration_above_flood_hr = ifelse(above_flood, cumsum(above_flood), NA)
+      ) |>
+      ungroup()
+  ),
+  # Classify flood status for each gage at each timestep — branches only slice
+  # the single timestamp row
   tar_target(
     p2_flow_by_time,
-    {
-      p2_flow_height_complete_df |>
-        filter(dateTime <= p2_all_precip_timestamps) |>
-        group_by(site_no) |>
-        arrange(site_no, dateTime) |>
-        mutate(
-          above_flood = ifelse(is.na(X_00065_00000), FALSE, X_00065_00000 >= flood.stage),
-          duration_above_flood_hr = ifelse(above_flood, cumsum(above_flood), NA)
-        ) |>
-        ungroup() |>
-        filter(dateTime == p2_all_precip_timestamps) |>
-        mutate(
-          flood_status = case_when(
-            !is.na(major.flood.stage) & X_00065_00000 >= major.flood.stage ~ "Major",
-            !is.na(moderate.flood.stage) & X_00065_00000 >= moderate.flood.stage ~ "Moderate",
-            !is.na(flood.stage) & X_00065_00000 >= flood.stage ~ "Flood",
-            TRUE ~ "Not flooded"
-          ),
-          flood_status = factor(flood_status, levels = c("Not flooded", "Flood", "Moderate", "Major")),
-          is_flooded = above_flood,
-          sev_rank = c("Not flooded" = 0L, "Flood" = 1L, "Moderate" = 2L, "Major" = 3L)[as.character(flood_status)],
-          above_amt = dplyr::case_when(
-            flood_status == "Major" ~ X_00065_00000 - major.flood.stage,
-            flood_status == "Moderate" ~ X_00065_00000 - moderate.flood.stage,
-            flood_status == "Flood" ~ X_00065_00000 - flood.stage,
-            TRUE ~ NA_real_
-          )
+    p2_flow_with_duration_df |>
+      filter(dateTime == p2_all_precip_timestamps) |>
+      mutate(
+        flood_status = case_when(
+          !is.na(major.flood.stage) & X_00065_00000 >= major.flood.stage ~ "Major",
+          !is.na(moderate.flood.stage) & X_00065_00000 >= moderate.flood.stage ~ "Moderate",
+          !is.na(flood.stage) & X_00065_00000 >= flood.stage ~ "Flood",
+          TRUE ~ "Not flooded"
+        ),
+        flood_status = factor(flood_status, levels = c("Not flooded", "Flood", "Moderate", "Major")),
+        is_flooded = above_flood,
+        sev_rank = c("Not flooded" = 0L, "Flood" = 1L, "Moderate" = 2L, "Major" = 3L)[as.character(flood_status)],
+        above_amt = dplyr::case_when(
+          flood_status == "Major" ~ X_00065_00000 - major.flood.stage,
+          flood_status == "Moderate" ~ X_00065_00000 - moderate.flood.stage,
+          flood_status == "Flood" ~ X_00065_00000 - flood.stage,
+          TRUE ~ NA_real_
         )
-    },
+      ),
     pattern = map(p2_all_precip_timestamps),
     iteration = "list"
   ),
