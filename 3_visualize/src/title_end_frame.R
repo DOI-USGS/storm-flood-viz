@@ -12,6 +12,8 @@ title_frame <- function(title_text_line1, title_text_line2, start_date,
                         end_date, logo_path, frame_bg_path, config_vars,
                         out_path){
 
+  dir.create(dirname(out_path), recursive = TRUE, showWarnings = FALSE)
+
   # Font configuration
   font_legend <- config_vars$load_font
   # systemfonts resolves the font from system-installed files via ragg device
@@ -96,6 +98,8 @@ title_frame <- function(title_text_line1, title_text_line2, start_date,
 #' @return Character. The output file path (`out_path`) where the image was saved.
 end_frame <- function(end_text_line1, end_text_line2, end_text_line3,
                       logo_path, config_vars, bg_col, out_path) {
+
+  dir.create(dirname(out_path), recursive = TRUE, showWarnings = FALSE)
 
   # Font configuration
   font_legend <- config_vars$load_font
