@@ -646,7 +646,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
     ) +
     draw_plot(legend_precip,
       x = config_vars$plot_margin + 0.052,
-      y = 0.227 + 0.015,
+      y = 0.227 + 0.011,
       height = 0.05,
       width = 0.42 - config_vars$plot_margin
     ) +
@@ -780,8 +780,8 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
         lineheight = 1
       ) +
       draw_image(flood_stage_leg,
-        x = config_vars$plot_margin + 0.329,
-        y = 0.105,
+        x = config_vars$plot_margin + 0.335,
+        y = 0.113,
         width = 0.13,
         height = 0.135
       ) +
