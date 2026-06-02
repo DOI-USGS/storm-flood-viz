@@ -29,7 +29,7 @@ p3_targets <- list(
   # Subset precipitation raster by timestep
   tar_target(
     p3_precip_by_time,
-    filter(p2_process_precip_rast, dateTime <= p2_all_precip_timestamps),
+    filter(p2_process_precip_rast, dateTime == p2_all_precip_timestamps),
     pattern = map(p2_all_precip_timestamps),
     iteration = "list"
   ),
