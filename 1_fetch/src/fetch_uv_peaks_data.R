@@ -33,7 +33,7 @@ fetch_bbox_stream_sites <- function(bbox, pcodes, time_range) {
 #' @param n_sites_per_vector The number of sites contained within each vector in the output list
 #'
 #' @return A list of vectors, each containing `n_sites_per_vector` site ID's for use
-#' iterating over the `dataRetrieval::readNWISuv()` function.
+#' iterating over the `dataRetrieval::read_waterdata_continuous()` function.
 
 chunk_up_sites <- function(site_ids, n_sites_per_vector) {
   n_lists <- ceiling(length(site_ids) / n_sites_per_vector)
