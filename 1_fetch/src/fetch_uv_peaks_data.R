@@ -27,90 +27,13 @@ fetch_bbox_stream_sites <- function(bbox, pcodes, time_range) {
     dplyr::select(site_no, geometry)
 }
 
-#' Fetch continuous UV data for a batch of sites directly from the OGC API.
-#'
-#' Bypasses `dataRetrieval::read_waterdata_continuous()` to avoid an internal
-#' type-coercion bug: `qualifier` arrives as NULL in some JSON features and a
-#' string in others, causing `bind_rows()` failures during internal pagination.
-#' This function extracts only the four needed properties from raw JSON and
-#' handles cursor-based pagination itself.
-#'
-#' @param ids Character vector of "USGS-XXXXXXXX" site IDs.
-#' @param pcodes Character vector of USGS parameter codes.
-#' @param time_range ISO 8601 interval string "startZ/endZ".
-#' @param page_size Rows per API page; default 50000.
-#' @return data.frame with columns monitoring_location_id, parameter_code,
-#'   time (character ISO 8601), value (numeric).
-fetch_continuous_direct <- function(ids, pcodes, time_range, page_size = 50000L) {
-  base_req <- httr2::request(
-    "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items"
-  ) |>
-    httr2::req_url_query(
-      f = "json",
-      skipGeometry = "TRUE",
-      monitoring_location_id = paste(ids, collapse = ","),
-      parameter_code = paste(pcodes, collapse = ","),
-      time = time_range,
-      limit = page_size
-    )
-  
-  api_key <- Sys.getenv("API_USGS_PAT")
-  next_url <- base_req$url
-  pages <- list()
-  
-  repeat {
-    req <- httr2::request(next_url) |>
-      httr2::req_throttle(rate = 0.5) |>
-      httr2::req_retry(
-        max_tries = 4L,
-        is_transient = \(r) httr2::resp_status(r) %in% c(429L, 500L, 503L),
-        after = NULL
-      )
-    if (nzchar(api_key)) req <- httr2::req_headers(req, `X-Api-Token` = api_key)
-    resp <- req |>
-      httr2::req_perform() |>
-      httr2::resp_body_json()
-    
-    features <- resp$features
-    if (length(features) > 0L) {
-      p <- resp$features
-      pages[[length(pages) + 1L]] <- data.frame(
-        monitoring_location_id = vapply(p, \(f) f$properties$monitoring_location_id %||% NA_character_, character(1L)),
-        parameter_code = vapply(p, \(f) f$properties$parameter_code %||% NA_character_, character(1L)),
-        time = vapply(p, \(f) f$properties$time %||% NA_character_, character(1L)),
-        value = vapply(p, \(f) {
-          v <- f$properties$value
-          if (is.null(v)) NA_real_ else as.numeric(v)
-        }, numeric(1L)),
-        stringsAsFactors = FALSE
-      )
-    }
-    
-    next_link <- Filter(\(lk) identical(lk$rel, "next"), resp$links)
-    if (length(next_link) == 0L) break
-    next_url <- next_link[[1L]]$href
-  }
-  
-  if (length(pages) == 0L) {
-    return(data.frame(
-      monitoring_location_id = character(0),
-      parameter_code = character(0),
-      time = character(0),
-      value = numeric(0),
-      stringsAsFactors = FALSE
-    ))
-  }
-  
-  do.call(rbind, pages)
-}
-
 #' This function takes a vector of site ids and the desired number of sites
 # per list and chunks them up into multiple vectors within a list
 #' @param site_ids A vector of USGS site id's that include the leading zero, e.g. "01234567".
 #' @param n_sites_per_vector The number of sites contained within each vector in the output list
 #'
 #' @return A list of vectors, each containing `n_sites_per_vector` site ID's for use
-#' iterating over the `dataRetrieval::readNWISuv()` function.
+#' iterating over the `dataRetrieval::read_waterdata_continuous()` function.
 
 chunk_up_sites <- function(site_ids, n_sites_per_vector) {
   n_lists <- ceiling(length(site_ids) / n_sites_per_vector)
@@ -152,10 +75,10 @@ fetch_uv_data <- function(outfile_path, sites_list, pcodes, startDate, endDate) 
         message("Chunk ", chunk_name, ": loading from cache")
         return(arrow::read_parquet(cache_file))
       }
-      result <- fetch_continuous_direct(
-        ids = paste0("USGS-", chunk),
-        pcodes = pcodes,
-        time_range = time_range
+      result <- dataRetrieval::read_waterdata_continuous(
+        monitoring_location_id = paste0("USGS-", chunk),
+        parameter_code = pcodes,
+        time = time_range
       )
       arrow::write_parquet(result, cache_file)
       result
@@ -163,13 +86,13 @@ fetch_uv_data <- function(outfile_path, sites_list, pcodes, startDate, endDate) 
     rate = purrr::rate_backoff(pause_base = 5, pause_cap = 120, max_times = 6),
     quiet = FALSE
   )
-  
+
   out <- purrr::imap(sites_list, fetch_chunk) |>
     dplyr::bind_rows() |>
     dplyr::mutate(
       site_no = sub("^USGS-", "", monitoring_location_id),
       agency_cd = "USGS",
-      dateTime = as.POSIXct(time, format = "%Y-%m-%dT%H:%M:%S", tz = "UTC"),
+      dateTime = lubridate::with_tz(time, tzone = "UTC"),
       col_name = paste0("X_", parameter_code, "_00000")
     ) |>
     dplyr::distinct(site_no, dateTime, col_name, .keep_all = TRUE) |>
