@@ -14,8 +14,7 @@
 #' @param config_vars Named list of styling and theme options.
 #' @param peak_height Maximum height of flood lines (numeric).
 #' @param global_max_duration Numeric. The maximum `duration_above_flood_hr` across all time steps.
-#' @param frame_spike_dir Character path for saving flood stage spike viz PNGs.
-#' @param frame_point_dir Character path for saving flood stage points viz PNGs.
+#' @param frame_dir Character path for saving flood stage frame PNGs.
 #' @param logo_path Character path for USGS logo.
 #' @param hurricane_symbol_path Character path for hurricane symbology.
 #' @param landfall_dtg POSIXct. The expected date-time of hurricane landfall, used to calculate and display a countdown label.
@@ -40,11 +39,12 @@
 hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
                                          state_borders, state_inner_borders,
                                          major_cities, flood_stage_cols_blue,
-                                         flood_stage_cols_red,
-                                         precip_cols, config_vars, peak_height,
-                                         frame_spike_dir, frame_point_dir,
-                                         logo_path, bbox_coords, state_outer_lines,
-                                         hurricane_symbol_path, global_max_duration,
+                                         flood_stage_cols_red, precip_cols,
+                                         config_vars, peak_height, frame_dir,
+                                         logo_path, bbox_coords,
+                                         state_outer_lines,
+                                         hurricane_symbol_path,
+                                         global_max_duration,
                                          landfall_dtg, progress_fraction,
                                          flood_stage_point_leg_path,
                                          flood_stage_spike_leg_path,
@@ -55,11 +55,9 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
                                          timezone_long, y_baseheight,
                                          target_rdg_icon,
                                          rdg_now) {
-  # Font configuration
+  # Font configuration — resolved by systemfonts from system-installed fonts;
+  # no showtext registration needed when using ragg as the graphics device.
   font_legend <- config_vars$load_font
-  font_add_google(font_legend)
-  showtext_opts(dpi = config_vars$dpi, regular.wt = 200, bold.wt = 700)
-  showtext_auto(enable = TRUE)
 
   # Landfall label
   time_to_landfall <- difftime(landfall_dtg, dtg, units = "hours")
@@ -144,50 +142,39 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
     ) +
     scale_y_discrete(expand = expansion(add = 0.2)) +
     coord_cartesian(clip = "off") +
-    theme_void(base_family = config_vars$font_size) +
+    theme_void(base_family = font_legend) +
     theme(text = element_text(size = config_vars$font_size))
 
+  # ggplot2 3.5+ guide API: appearance goes inside theme() within the guide
+  precip_guide <- guide_coloursteps(
+    theme = theme(
+      legend.direction = "horizontal",
+      legend.title.position = "left",
+      legend.key.width = unit(3, "cm"),
+      legend.key.height = unit(0.4, "cm"),
+      legend.text.position = "bottom",
+      legend.text = element_text(size = 0, color = "transparent"),
+      legend.title = element_text(family = font_legend, hjust = 0, vjust = 0.5)
+    )
+  )
+
   if (precip_grayscale) {
-    # Use grayscale palette
     precip_fill_scale <- scale_fill_stepsn(
       colors = precip_grayscale_cols,
       breaks = get_precip_breaks(global_max_precip),
       limits = c(1, global_max_precip),
       name = NULL,
       na.value = scales::alpha("white", 0),
-      guide = guide_coloursteps(
-        title.theme = element_text(family = font_legend, hjust = 0),
-        title.position = "left",
-        title.hjust = 0,
-        title.vjust = 0.5,
-        direction = "horizontal",
-        barwidth = unit(3, "cm"),
-        barheight = unit(0.4, "cm"),
-        label.position = "bottom",
-        label.theme = element_blank()
-      )
+      guide = precip_guide
     )
   } else {
-    # Use colorized palette
     precip_fill_scale <- scale_fill_stepsn(
-      colors = scales::alpha(
-        precip_cols, 0.7
-      ),
+      colors = scales::alpha(precip_cols, 0.7),
       breaks = get_precip_breaks(global_max_precip),
       limits = c(1, global_max_precip),
       name = NULL,
       na.value = scales::alpha("white", 0),
-      guide = guide_coloursteps(
-        title.theme = element_text(family = font_legend, hjust = 0),
-        title.position = "left",
-        title.hjust = 0,
-        title.vjust = 0.5,
-        direction = "horizontal",
-        barwidth = unit(3, "cm"),
-        barheight = unit(0.4, "cm"),
-        label.position = "bottom",
-        label.theme = element_blank()
-      )
+      guide = precip_guide
     )
   }
 
@@ -214,8 +201,11 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
   p <- p + ggnewscale::new_scale_fill() +
     geom_sf(
       data = flow_now |>
-        filter(is_flooded == "FALSE") |> 
-        mutate(flood_status = factor(flood_status, levels = names(flood_stage_cols_red))) |> 
+        filter(above_flood == "FALSE") |>
+        # in point mode, >=75th percentile gages are rendered as sized gray points
+        # below — exclude them here to avoid double-plotting at the same location
+        filter(isTRUE(flood_spikes) | !(percentile %in% c("75-90", "90-95", "high"))) |>
+        mutate(flood_status = factor(flood_status, levels = names(flood_stage_cols_red))) |>
         filter(!is.na(flood_status)),
       aes(geometry = geometry, fill = flood_status),
       shape = 21, size = 1.25,
@@ -246,27 +236,71 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
   
   # If flood_spikes TRUE, make spikes
   if (flood_spikes) {
-    # Peak style lines for flooded sites
-    flow_now_coords <- flow_now |> 
-      filter(is_flooded) |> 
-      arrange(             
-        sev_rank,          # Not flooded (0), Flood (1), Moderate (2), Major (3),  Major on top
-        desc(above_amt),   # more above stage sits on top within severity
-        desc(duration_above_flood_hr),
-        desc(dateTime)
-      ) |> 
-      mutate(
-        x     = sf::st_coordinates(geometry)[, 1],
-        y     = sf::st_coordinates(geometry)[, 2],
-        y_base= y + y_baseheight,
-        xend  = x,
-        yend  = y_base + (duration_above_flood_hr / global_max_duration) * peak_height
-      )
+    pct_midpoint <- c(
+      "low" = 2.5, "5-10" = 7.5,
+      "10-25" = 17.5, "25-75" = 50,
+      "75-90" = 82.5, "90-95" = 92.5,
+      "high" = 97.5
+    )
+
+    pct_spike_transform <- function(df) {
+      df |>
+        dplyr::mutate(
+          pct = pct_midpoint[as.character(percentile)],
+          pct_rescaled = ifelse(is.na(pct) | pct < 75, 0, (pct - 75) / 25),
+          xy = sf::st_coordinates(geometry),
+          x = xy[, 1],
+          y = xy[, 2],
+          y_base = y + y_baseheight,
+          xend = x,
+          yend = y_base + pct_rescaled * peak_height
+        )
+    }
+
+    # Gray spikes: non-flooded gages at >=75th percentile
+    flow_spikes_gray <- flow_now |>
+      dplyr::filter(
+        !above_flood,
+        !is.na(percentile),
+        percentile %in% c("75-90", "90-95", "high")
+      ) |>
+      pct_spike_transform()
+
+    # Colored spikes: flooded gages at >=75th percentile
+    flow_spikes_col <- flow_now |>
+      dplyr::filter(
+        above_flood,
+        !is.na(percentile),
+        percentile %in% c("75-90", "90-95", "high"),
+        !is.na(flood.stage) | !is.na(moderate.flood.stage) | !is.na(major.flood.stage)
+      ) |>
+      dplyr::arrange(sev_rank, desc(above_amt), desc(dateTime)) |>
+      pct_spike_transform()
+
+    if (nrow(flow_spikes_gray) > 0) {
+      p <- p +
+        ggforce::geom_link(
+          data = flow_spikes_gray,
+          aes(
+            x = x, xend = xend, y = y + 10000, yend = yend,
+            alpha = after_stat(I(0.6 + index)),
+            linewidth = after_stat(I((1 - index) * 1.4))
+          ),
+          colour = "#dcdcdc",
+          show.legend = FALSE
+        ) +
+        geom_point(
+          data = flow_spikes_gray,
+          aes(x = x, y = y_base),
+          shape = 21, fill = "#dcdcdc", color = "white", size = 1.25,
+          stroke = 0.3,
+          show.legend = FALSE
+        )
+    }
 
     p <- p +
-      # Colored peak lines
       ggforce::geom_link(
-        data = flow_now_coords,
+        data = flow_spikes_col,
         aes(
           x = x, xend = xend, y = y, yend = yend,
           color = flood_status,
@@ -303,43 +337,67 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
         )
       )
 
-    # Plot all flooded gages
-    p <- p + geom_sf(
-      data = flow_now |>
-        filter(is_flooded == "TRUE") |>
-        mutate(flood_status = factor(flood_status,
-          levels = names(flood_stage_cols_red)
-        )) |>
-        filter(!is.na(flood_status)),
-      aes(geometry = geometry, fill = flood_status),
-      shape = 21, size = 2,
-      stroke = 0.3,
-      color = config_vars$bg_col,
-      show.legend = FALSE
-    ) +
+    # Plot all flooded gages on top of spikes
+    p <- p +
+      geom_sf(
+        data = flow_now |>
+          filter(above_flood) |>
+          mutate(flood_status = factor(flood_status,
+            levels = names(flood_stage_cols_red)
+          )) |>
+          filter(!is.na(flood_status)),
+        aes(geometry = geometry, fill = flood_status),
+        shape = 21, size = 2,
+        stroke = 0.3,
+        color = config_vars$bg_col,
+        show.legend = FALSE
+      ) +
       scale_fill_manual(
         values = flood_stage_cols_red,
         drop = FALSE,
         name = "Flood status"
       )
 
-    # otherwise, do sized points
+    # otherwise, do sized points — mirrors spike logic:
+    # gray sized points for non-flooded gages at >=75th percentile,
+    # colored sized points for all flooded gages sized by percentile.
   } else {
-    # Prepare point data
-    flow_now_points <- flow_now |> 
-      filter(is_flooded) |> 
-      arrange(
-        sev_rank,
-        desc(above_amt),
-        desc(duration_above_flood_hr),
-        desc(dateTime)
-      ) |> 
-      mutate(index = (duration_above_flood_hr / global_max_duration)^3)
-    
+    pct_rank <- c(
+      "low" = 0, "5-10" = 1/6,
+      "10-25" = 2/6, "25-75" = 3/6,
+      "75-90" = 4/6, "90-95" = 5/6,
+      "high" = 1
+    )
+
+    # Gray sized points: non-flooded gages at >=75th percentile
+    flow_points_gray <- flow_now |>
+      dplyr::filter(
+        !above_flood,
+        !is.na(percentile),
+        percentile %in% c("75-90", "90-95", "high")
+      ) |>
+      mutate(index = pct_rank[as.character(percentile)])
+
+    # Colored sized points: all flooded gages sized by percentile
+    flow_points_col <- flow_now |>
+      filter(above_flood) |>
+      arrange(sev_rank, desc(above_amt), desc(dateTime)) |>
+      mutate(index = dplyr::coalesce(pct_rank[as.character(percentile)], 0))
+
+    if (nrow(flow_points_gray) > 0) {
+      p <- p +
+        geom_sf(
+          data = flow_points_gray,
+          aes(size = index, geometry = geometry),
+          shape = 21, fill = "#dcdcdc", color = "white",
+          stroke = 0.3, alpha = 0.75,
+          show.legend = FALSE
+        )
+    }
 
     p <- p +
       geom_sf(
-        data = flow_now_points,
+        data = flow_points_col,
         aes(fill = flood_status, size = index, geometry = geometry),
         shape = 21,
         stroke = 0.4,
@@ -425,12 +483,18 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       legend.box.just = "center"
     )
 
-  p_precip_legend <- p +
-    theme(
-      legend.position = "right",
-      plot.title = element_blank()
+  # Build precip legend from a minimal 2-row dummy dataset using the same
+  # fill scale — avoids re-rendering the full raster just to get the color bar.
+  legend_precip <- cowplot::get_legend(
+    ggplot(
+      data.frame(x = c(1, global_max_precip), y = 1,
+                 fill = c(1, global_max_precip)),
+      aes(x, y, fill = fill)
     ) +
-    guides(color = "none") # removes flood legend
+      geom_tile() +
+      precip_fill_scale +
+      theme(legend.position = "right")
+  )
 
   p_dot_legend <- ggplot() +
     geom_point(
@@ -459,8 +523,6 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
     ) +
     coord_fixed() +
     theme_void()
-
-  legend_precip <- get_legend_non0(p_precip_legend)
 
   logo <- magick::image_read(logo_path) |>
     magick::image_resize("x100") |>
@@ -610,7 +672,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
     ) +
     draw_plot(legend_precip,
       x = config_vars$plot_margin + 0.052,
-      y = 0.227 + 0.015,
+      y = 0.227 + 0.011,
       height = 0.05,
       width = 0.42 - config_vars$plot_margin
     ) +
@@ -744,8 +806,8 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
         lineheight = 1
       ) +
       draw_image(flood_stage_leg,
-        x = config_vars$plot_margin + 0.329,
-        y = 0.105,
+        x = config_vars$plot_margin + 0.335,
+        y = 0.113,
         width = 0.13,
         height = 0.135
       ) +
@@ -893,13 +955,8 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
 
   timestamp_str <- format(dtg, "%Y%m%dT%H%M")
 
-  if (flood_spikes) {
-    fs::dir_create(frame_spike_dir)
-    frame_path <- file.path(frame_spike_dir, paste0("frame_", timestamp_str, ".png"))
-  } else {
-    fs::dir_create(frame_point_dir)
-    frame_path <- file.path(frame_point_dir, paste0("frame_", timestamp_str, ".png"))
-  }
+  fs::dir_create(frame_dir)
+  frame_path <- file.path(frame_dir, paste0("frame_", timestamp_str, ".png"))
 
   ggsave(
     filename = frame_path, plot = p,
@@ -917,7 +974,12 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
 #' @return a grob with "guide-box" component name (i.e., a legend)
 #'
 get_legend_non0 <- function(plot) {
+  # ggplot2 3.5+ stores guide boxes as "guide-box-right", "guide-box-bottom",
+  # etc. rather than "guide-box", so use a regex pattern to catch all variants.
   legends <- cowplot::get_plot_component(plot, "guide-box", return_all = TRUE)
+  if (length(legends) == 0) {
+    legends <- cowplot::get_plot_component(plot, "^guide-box", return_all = TRUE)
+  }
   non0_idx <- which(!purrr::map_lgl(legends, ~ inherits(., what = "zeroGrob")))
 
   if (length(non0_idx) == 0) {

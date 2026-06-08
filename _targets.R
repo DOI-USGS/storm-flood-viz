@@ -9,8 +9,6 @@ tar_option_set(packages = c('tidyverse',
                             'janitor',
                             'sbtools',
                             'tigris',
-                            'sysfonts',
-                            'showtext',
                             'readr',
                             'cowplot',
                             'rmapshaper',
@@ -24,7 +22,10 @@ tar_option_set(packages = c('tidyverse',
                             'dataRetrieval',
                             'ggimage',
                             'ggtext',
-                            'yaml'))
+                            'yaml',
+                            'ragg',
+                            'av',
+                            'ggforce'))
 
 # Phase target makefiles
 source("0_config.R")

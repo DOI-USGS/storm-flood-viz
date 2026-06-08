@@ -1,9 +1,3 @@
-py <- Sys.getenv("RETICULATE_PYTHON", unset = "")
-if (nzchar(py)) {
-  reticulate::use_python(py, required = TRUE)
-} else {
-  reticulate::use_condaenv("hurricane-precip", required = TRUE)
-}
 source("2_process/src/process_precip.R")
 source("2_process/src/process_states.R")
 source("2_process/src/process_hourly_max_uv.R")
@@ -84,15 +78,24 @@ p2_targets <- list(
           )
         ) |> 
         fill(agency_cd, .direction = "downup") |>
-        ungroup() |> 
-        # Add in stage data
-        left_join(p1_usgs_flood_stage_gages, by = "site_no") |>  
-        # Add in peaks data
-        left_join(p2_peak_data_max_df, by = c("site_no", "agency_cd")) |> 
+        ungroup() |>
+        # Add flood stage thresholds (drop geometry — we attach it from all-gage sf below)
+        left_join(sf::st_drop_geometry(p1_usgs_flood_stage_gages), by = "site_no") |>
+        # Add peaks data
+        left_join(p2_peak_data_max_df, by = c("site_no", "agency_cd")) |>
+        # Attach geometry for all bbox stream gages (not just flood-stage sites)
+        left_join(
+          tibble::tibble(
+            site_no = p1_bbox_stream_sites_sf$site_no,
+            geometry = sf::st_geometry(p1_bbox_stream_sites_sf)
+          ),
+          by = "site_no"
+        ) |>
+        sf::st_as_sf(sf_column_name = "geometry") |>
         select(
           site_no, dateTime, X_00060_00000, X_00065_00000,
           percentile, action.stage, flood.stage, moderate.flood.stage, major.flood.stage,
-          peak_va, peak_cd, peak_dateTime, geometry
+          peak_va, peak_cd, peak_dt, geometry
         )
 
       # Flag only rows that are part of 4+ consecutive NA runs for X_00065_00000
@@ -133,5 +136,80 @@ p2_targets <- list(
     get_outer_lines(
       in_sf = p1_conus_bbox_crop_sf
     )
+  ),
+  # Unique precipitation timestamps that drive all per-frame targets
+  tar_target(
+    p2_all_precip_timestamps,
+    sort(unique(p2_process_precip_rast$dateTime))
+  ),
+  # Compute above_flood flag and cumulative flood duration once over the full
+  # time series. 
+  tar_target(
+    p2_flow_with_duration_df,
+    p2_flow_height_complete_df |>
+      arrange(site_no, dateTime) |>
+      group_by(site_no) |>
+      mutate(
+        above_flood = ifelse(is.na(X_00065_00000), FALSE, X_00065_00000 >= flood.stage),
+        duration_above_flood_hr = ifelse(above_flood, cumsum(above_flood), NA)
+      ) |>
+      ungroup()
+  ),
+  # Classify flood status for each gage at each timestep — branches only slice
+  # the single timestamp row
+  tar_target(
+    p2_flow_by_time,
+    p2_flow_with_duration_df |>
+      filter(dateTime == p2_all_precip_timestamps) |>
+      mutate(
+        flood_status = case_when(
+          !is.na(major.flood.stage) & X_00065_00000 >= major.flood.stage ~ "Major",
+          !is.na(moderate.flood.stage) & X_00065_00000 >= moderate.flood.stage ~ "Moderate",
+          !is.na(flood.stage) & X_00065_00000 >= flood.stage ~ "Flood",
+          TRUE ~ "Not flooded"
+        ),
+        flood_status = factor(flood_status, levels = c("Not flooded", "Flood", "Moderate", "Major")),
+        sev_rank = c("Not flooded" = 0L, "Flood" = 1L, "Moderate" = 2L, "Major" = 3L)[as.character(flood_status)],
+        above_amt = dplyr::case_when(
+          flood_status == "Major" ~ X_00065_00000 - major.flood.stage,
+          flood_status == "Moderate" ~ X_00065_00000 - moderate.flood.stage,
+          flood_status == "Flood" ~ X_00065_00000 - flood.stage,
+          TRUE ~ NA_real_
+        )
+      ),
+    pattern = map(p2_all_precip_timestamps),
+    iteration = "list"
+  ),
+  # Global max flooded gage count and max flood duration.
+  tar_target(
+    p2_global_flow_maxes,
+    p2_flow_by_time |>
+      map(~ list(
+        max_flooded = sum(.x$flood_status %in% c("Flood", "Moderate", "Major"), na.rm = TRUE),
+        max_duration = max(.x$duration_above_flood_hr, na.rm = TRUE)
+      )) |>
+      transpose() |>
+      map(~ max(unlist(.x), na.rm = TRUE))
+  ),
+  # Progress bar math
+  tar_target(
+    p2_min_timestamp,
+    p2_all_precip_timestamps[[1]]
+  ),
+  tar_target(
+    p2_precip_duration,
+    as.double(
+      p2_all_precip_timestamps[[length(p2_all_precip_timestamps)]] - p2_min_timestamp,
+      units = "hours"
+    )
+  ),
+  tar_target(
+    p2_progress_fract,
+    {
+      hours_since_start <- as.double(p2_all_precip_timestamps - p2_min_timestamp, units = "hours")
+      hours_since_start / p2_precip_duration
+    },
+    pattern = map(p2_all_precip_timestamps),
+    iteration = "list"
   )
 )
