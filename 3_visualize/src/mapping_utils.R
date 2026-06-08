@@ -201,7 +201,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
   p <- p + ggnewscale::new_scale_fill() +
     geom_sf(
       data = flow_now |>
-        filter(is_flooded == "FALSE") |>
+        filter(above_flood == "FALSE") |>
         # in point mode, >=75th percentile gages are rendered as sized gray points
         # below — exclude them here to avoid double-plotting at the same location
         filter(isTRUE(flood_spikes) | !(percentile %in% c("75-90", "90-95", "high"))) |>
@@ -260,7 +260,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
     # Gray spikes: non-flooded gages at >=75th percentile
     flow_spikes_gray <- flow_now |>
       dplyr::filter(
-        !is_flooded,
+        !above_flood,
         !is.na(percentile),
         percentile %in% c("75-90", "90-95", "high")
       ) |>
@@ -269,7 +269,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
     # Colored spikes: flooded gages at >=75th percentile
     flow_spikes_col <- flow_now |>
       dplyr::filter(
-        is_flooded,
+        above_flood,
         !is.na(percentile),
         percentile %in% c("75-90", "90-95", "high"),
         !is.na(flood.stage) | !is.na(moderate.flood.stage) | !is.na(major.flood.stage)
@@ -341,7 +341,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
     p <- p +
       geom_sf(
         data = flow_now |>
-          filter(is_flooded) |>
+          filter(above_flood) |>
           mutate(flood_status = factor(flood_status,
             levels = names(flood_stage_cols_red)
           )) |>
@@ -372,7 +372,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
     # Gray sized points: non-flooded gages at >=75th percentile
     flow_points_gray <- flow_now |>
       dplyr::filter(
-        !is_flooded,
+        !above_flood,
         !is.na(percentile),
         percentile %in% c("75-90", "90-95", "high")
       ) |>
@@ -380,7 +380,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
 
     # Colored sized points: all flooded gages sized by percentile
     flow_points_col <- flow_now |>
-      filter(is_flooded) |>
+      filter(above_flood) |>
       arrange(sev_rank, desc(above_amt), desc(dateTime)) |>
       mutate(index = dplyr::coalesce(pct_rank[as.character(percentile)], 0))
 

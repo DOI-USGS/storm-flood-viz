@@ -169,7 +169,6 @@ p2_targets <- list(
           TRUE ~ "Not flooded"
         ),
         flood_status = factor(flood_status, levels = c("Not flooded", "Flood", "Moderate", "Major")),
-        is_flooded = above_flood,
         sev_rank = c("Not flooded" = 0L, "Flood" = 1L, "Moderate" = 2L, "Major" = 3L)[as.character(flood_status)],
         above_amt = dplyr::case_when(
           flood_status == "Major" ~ X_00065_00000 - major.flood.stage,
