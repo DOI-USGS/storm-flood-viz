@@ -9,17 +9,11 @@
 #' @param dtg POSIXct. Current frame timestamp; points after this are excluded.
 #' @param hurricane_symbol_path Character. Path to the hurricane symbol PNG.
 #' @param config_vars Named list of styling options. Must contain
-#'   `storm_path_col`.
+#'   `storm_path_col`, `storm_track_lw`, `storm_track_dot_size`, and
+#'   `hurricane_symbol_size` (all set in storm YAML viz_config).
 #' @return A list of ggplot2 layer objects suitable for use with `+`.
 build_storm_track <- function(storm_now, dtg, hurricane_symbol_path,
                               config_vars) {
-  # Track line width and dot size are visual calibration values tuned so the
-  # path is legible at 1920x1080 without overpowering the gage symbols.
-  lw_track <- 0.8
-  size_dots <- 2
-  # Symbol size is in fraction of plot width 
-  size_symbol <- 0.035
-
   past_storm_points <- dplyr::filter(storm_now, DTG <= dtg)
   latest_point <- dplyr::slice_tail(past_storm_points, n = 1)
 
@@ -28,19 +22,19 @@ build_storm_track <- function(storm_now, dtg, hurricane_symbol_path,
       data = past_storm_points,
       aes(x = X, y = Y),
       color = config_vars$storm_path_col,
-      linewidth = lw_track
+      linewidth = config_vars$storm_track_lw
     ),
     geom_point(
       data = past_storm_points,
       aes(x = X, y = Y),
       color = "black",
-      size = size_dots
+      size = config_vars$storm_track_dot_size
     ),
     ggimage::geom_image(
       data = latest_point,
       aes(x = X, y = Y),
       image = hurricane_symbol_path,
-      size = size_symbol
+      size = config_vars$hurricane_symbol_size
     )
   )
 }
