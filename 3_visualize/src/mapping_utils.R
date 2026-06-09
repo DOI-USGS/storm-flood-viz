@@ -422,32 +422,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       )
   }
 
-  # Filter storm points up to current DTG
-  past_storm_points <- dplyr::filter(storm_now, DTG <= dtg)
-
-  # Get the latest point (this will be the only one with the icon)
-  latest_point <- dplyr::slice_tail(past_storm_points, n = 1)
-
-  # Plot path and only the latest symbol
-  p <- p +
-    geom_path(
-      data = past_storm_points,
-      aes(x = X, y = Y),
-      color = config_vars$storm_path_col,
-      linewidth = 0.8
-    ) +
-    geom_point(
-      data = past_storm_points,
-      aes(x = X, y = Y),
-      color = "black",
-      size = 2
-    ) +
-    ggimage::geom_image(
-      data = latest_point,
-      aes(x = X, y = Y),
-      image = hurricane_symbol_path,
-      size = 0.035
-    )
+  p <- p + build_storm_track(storm_now, dtg, hurricane_symbol_path, config_vars)
 
   # Final plot theme and save
   p <- p +
@@ -604,6 +579,9 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       hjust = 0, vjust = 0,
       halign = 0, valign = 0
     ) +
+    # TODO (compose_frame extraction): move ocean label text + x/y position into
+    # the storm YAML (e.g. ocean_label: {text, x, y}) so each storm can specify
+    # the correct ocean body and placement without a code change.
     draw_label("Atlantic Ocean",
       x = 0.83, y = config_vars$plot_margin + 0.32,
       fontfamily = font_legend,
