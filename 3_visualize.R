@@ -7,7 +7,7 @@ source('3_visualize/src/builders/build_flood_layer.R')
 source('3_visualize/src/builders/build_cities_layer.R')
 source('3_visualize/src/builders/build_legends.R')
 source('3_visualize/src/builders/build_title_block.R')
-source('3_visualize/src/mapping_utils.R')
+source('3_visualize/src/builders/compose_frame.R')
 source('3_visualize/src/title_end_frame.R')
 source('3_visualize/src/video_utils.R')
 
@@ -59,7 +59,7 @@ p3_targets <- list(
   # Build flood stage animation frames
   tar_target(
     p3_flood_stage_frames,
-    hurricane_flood_stage_frames(
+    compose_frame(
       dtg = p2_all_precip_timestamps,
       precip_now = p3_precip_by_time,
       global_max_precip = p3_global_max_precip_in,
@@ -70,7 +70,6 @@ p3_targets <- list(
       storm_info = p0_storm_info,
       progress_fraction = p2_progress_fract,
       bbox_coords = p1_bbox_coords,
-      state_borders = p1_conus_bbox_crop_sf,
       state_inner_borders = p2_state_inner_lines,
       state_outer_lines = p2_bbox_outer_lines,
       major_cities = p1_major_cities_sf,
@@ -86,7 +85,6 @@ p3_targets <- list(
       config_vars = p0_viz_config_df,
       peak_height = 200000,
       y_baseheight = 10000,
-      global_max_duration = p2_global_flow_maxes$max_duration,
       landfall_dtg = p0_landfall_time,
       target_rdg_icon = "3_visualize/in/bullseye.png",
       logo_path = '3_visualize/in/usgs_logo_black.png',
