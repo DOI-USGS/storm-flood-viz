@@ -78,7 +78,7 @@ p3_targets <- list(
       precip_grayscale = p0_precip_grayscale_var,
       # points vs spikes viz
       flood_spikes = p0_flood_spike_var,
-      points_range = c(2, 6),
+      points_range = c(1.5, 4.5),
       timezone_long = p0_timezone,
       precip_cols = p0_viz_precip_config_pal_blue,
       precip_grayscale_cols = p0_viz_precip_config_pal_grayscale,
