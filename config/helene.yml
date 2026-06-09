@@ -128,3 +128,7 @@ viz_config:
   city_label_nudge_y: 50000
   flood_point_alpha: 0.75
   flood_legend_key_height_cm: 0.7
+  dot_legend_size: 5
+  rdg_legend_icon_size: 0.6
+  decom_legend_size: 2
+  legend_icon_col: "#aaaaaa"

@@ -195,85 +195,18 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       legend.box.just = "center"
     )
 
-  # Build precip legend from a minimal 2-row dummy dataset using the same
-  # fill scale — avoids re-rendering the full raster just to get the color bar.
-  legend_precip <- cowplot::get_legend(
-    ggplot(
-      data.frame(x = c(1, global_max_precip), y = 1,
-                 fill = c(1, global_max_precip)),
-      aes(x, y, fill = fill)
-    ) +
-      geom_tile() +
-      precip_fill_scale +
-      theme(legend.position = "right")
+  legends <- build_legends(
+    precip_fill_scale, global_max_precip,
+    flood_spikes, flood_stage_spike_leg_path,
+    flood_stage_point_leg_path, target_rdg_icon,
+    config_vars
   )
-
-  p_dot_legend <- ggplot() +
-    geom_point(
-      data = data.frame(x = 1, y = 1),
-      aes(x = x, y = y),
-      shape = 21,
-      fill = "#aaaaaa",
-      size = 5,
-      stroke = 0.1,
-      color = config_vars$bg_col,
-      alpha = 0.8
-    ) +
-    theme_void()
-
-  p_peak_legend <- ggplot(
-    data.frame(
-      x = c(0, -0.25, 0.25),
-      y = c(1.5, 0, 0)
-    ),
-    aes(x, y)
-  ) +
-    geom_polygon(
-      fill =  "#aaaaaa",
-      color = NA,
-      alpha = 0.8
-    ) +
-    coord_fixed() +
-    theme_void()
 
   logo <- magick::image_read(logo_path) |>
     magick::image_resize("x100") |>
     magick::image_colorize(100, "black")
 
-  if (flood_spikes) {
-    flood_stage_leg <- magick::image_read(flood_stage_spike_leg_path)
-  } else {
-    flood_stage_leg <- magick::image_read(flood_stage_point_leg_path)
-  }
-
-  flood_stage_leg <- flood_stage_leg |> magick::image_resize("x200")
-
   p <- p + build_rdg_layer(rdg_now, target_rdg_icon, config_vars)
-
-  # rdg icon for legend
-  p_rdg_leg <- ggplot(
-    data.frame(X = 0.5, Y = 0.5),
-    aes(x = X, y = Y)
-  ) +
-    ggimage::geom_image(
-      image = target_rdg_icon,
-      size = 0.6
-    ) +
-    theme_void()
-  
-  # decomissioned/ out of service gage legend icon
-  p_decom_leg <- ggplot(
-    data.frame(x = 0, y = 0),
-    aes(x = x, y = y)
-    ) +
-    geom_point(
-      shape = 4, 
-      color = config_vars$x_mark, 
-      size = 2, 
-      alpha = 0.75, 
-      stroke = 1
-    ) +
-    theme_void()
   
   progress_bar <- build_progress_bar(progress_fraction, config_vars)
 
@@ -359,7 +292,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       width = 1.1,
       height = 0.015
     ) +
-    draw_plot(legend_precip,
+    draw_plot(legends$precip,
       x = config_vars$plot_margin + 0.052,
       y = 0.227 + 0.011,
       height = 0.05,
@@ -405,7 +338,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       color = "black",
       lineheight = 1
     ) +
-    draw_plot(p_dot_legend,
+    draw_plot(legends$dot,
       x = config_vars$plot_margin - 0.025,
       y = 0.208 + 0.017,
       height = 0.03,
@@ -424,7 +357,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
         color = "black",
         lineheight = 1
       ) +
-      draw_plot(p_rdg_leg,
+      draw_plot(legends$rdg,
         x = config_vars$plot_margin - 0.025,
         y = 0.177 + 0.019,
         height = 0.03,
@@ -440,7 +373,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
                  color = "black",
                  lineheight = 1
       ) +
-      draw_plot(p_decom_leg,
+      draw_plot(legends$decom,
                 x = config_vars$plot_margin - 0.025,
                 y = 0.144,
                 height = 0.08,
@@ -467,7 +400,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
                  color = "black",
                  lineheight = 1
       ) +
-      draw_plot(p_peak_legend,
+      draw_plot(legends$peak,
         x = config_vars$plot_margin + 0.22,
         y = 0.145,
         height = 0.03,
@@ -494,7 +427,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
         color = "black",
         lineheight = 1
       ) +
-      draw_image(flood_stage_leg,
+      draw_image(legends$flood_stage,
         x = config_vars$plot_margin + 0.335,
         y = 0.113,
         width = 0.13,
@@ -539,7 +472,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
                  color = "black",
                  lineheight = 1
       ) +
-      draw_plot(p_rdg_leg,
+      draw_plot(legends$rdg,
                 x = config_vars$plot_margin - 0.025,
                 y = 0.177 + 0.019,
                 height = 0.03,
@@ -555,7 +488,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
                  color = "black",
                  lineheight = 1
       ) +
-      draw_plot(p_decom_leg,
+      draw_plot(legends$decom,
                 x = config_vars$plot_margin - 0.025,
                 y = 0.144,
                 height = 0.08,
@@ -621,7 +554,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       )
     # Dropping custom flood stage for now, since placement is a bit awkward
     #  +
-    # draw_image(flood_stage_leg,
+    # draw_image(legends$flood_stage,
     #            x = config_vars$plot_margin + 0.28,
     #            y = 0.0465,
     #            width = 0.145,
