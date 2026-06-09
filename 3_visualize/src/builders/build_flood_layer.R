@@ -11,7 +11,6 @@
 #' @param flow_now data.frame. One row per gage at the current timestep; must
 #'   contain columns `above_flood`, `percentile`, `flood_status`, `sev_rank`,
 #'   `above_amt`, `dateTime`, `is_decommissioned`, and an sf `geometry` column.
-#' @param major_cities sf. City points; must contain a `NAME` column.
 #' @param flood_spikes Logical. TRUE for spike mode; FALSE for sized-point mode.
 #' @param flood_stage_cols_red Named character vector mapping flood-status
 #'   labels to hex colors. Used for fill/color scales and factor levels.
@@ -25,7 +24,7 @@
 #'   `major_cities_col`, `major_cities_text_col`, `x_mark`, `streamgage_col`,
 #'   `font_size`, and `leg_font_size` (set in storm YAML viz_config).
 #' @return A list of ggplot2 layer and scale objects suitable for use with `+`.
-build_flood_layer <- function(flow_now, major_cities, flood_spikes,
+build_flood_layer <- function(flow_now, flood_spikes,
                                flood_stage_cols_red, peak_height, y_baseheight,
                                points_range, font_legend, config_vars) {
   base_layers <- list(
@@ -46,18 +45,6 @@ build_flood_layer <- function(flow_now, major_cities, flood_spikes,
     ),
     ggplot2::theme(
       text = ggplot2::element_text(family = font_legend)
-    ),
-    ggplot2::geom_sf(
-      data = major_cities, shape = 23, fill = NA,
-      color = config_vars$major_cities_col,
-      size = config_vars$city_symbol_size, stroke = 0.3
-    ),
-    ggplot2::geom_sf_text(
-      data = major_cities, ggplot2::aes(label = .data$NAME),
-      color = config_vars$major_cities_text_col,
-      size = config_vars$city_text_size,
-      nudge_y = config_vars$city_label_nudge_y,
-      family = font_legend
     ),
     ggplot2::geom_sf(
       data = dplyr::filter(flow_now, is_decommissioned),

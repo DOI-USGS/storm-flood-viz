@@ -161,10 +161,11 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
 
   p <- p +
     build_flood_layer(
-      flow_now, major_cities, flood_spikes,
+      flow_now, flood_spikes,
       flood_stage_cols_red, peak_height, y_baseheight,
       points_range, font_legend, config_vars
-    )
+    ) +
+    build_cities_layer(major_cities, font_legend, config_vars)
 
   p <- p + build_storm_track(storm_now, dtg, hurricane_symbol_path, config_vars)
 
