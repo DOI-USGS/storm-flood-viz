@@ -8,8 +8,8 @@ source('3_visualize/src/builders/build_cities_layer.R')
 source('3_visualize/src/builders/build_legends.R')
 source('3_visualize/src/builders/build_title_block.R')
 source('3_visualize/src/builders/compose_frame.R')
-source('3_visualize/src/title_end_frame.R')
-source('3_visualize/src/video_utils.R')
+source('3_visualize/src/builders/build_title_end_frame.R')
+source('3_visualize/src/builders/build_video_mp4.R')
 
 p3_targets <- list(
   # One symbolic name for the layer style ("spike" or "point")
