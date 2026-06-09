@@ -12,12 +12,12 @@
 #' @return A list of ggplot2 layer objects suitable for use with `+`.
 build_cities_layer <- function(major_cities, font_legend, config_vars) {
   list(
-    ggplot2::geom_sf(
+    geom_sf(
       data = major_cities, shape = 23, fill = NA,
       color = config_vars$major_cities_col,
       size = config_vars$city_symbol_size, stroke = 0.3
     ),
-    ggplot2::geom_sf_text(
+    geom_sf_text(
       data = major_cities, aes(label = NAME),
       color = config_vars$major_cities_text_col,
       size = config_vars$city_text_size,

@@ -4,7 +4,7 @@
 #'   frame is.
 #' @param config_vars Named list of styling options. Must contain
 #'   `progress_bar_bg_col` and `progress_bar_col`.
-#' @return A ggplot object suitable for use with [cowplot::draw_plot()].
+#' @return A ggplot object suitable for use with [draw_plot()].
 build_progress_bar <- function(progress_fraction, config_vars) {
   ggplot() +
     geom_rect(

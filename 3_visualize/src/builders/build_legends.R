@@ -22,7 +22,7 @@
 #'   and `x_mark` (set in storm YAML viz_config).
 #' @return A named list:
 #'   \describe{
-#'     \item{precip}{grob. Precip colorbar extracted via cowplot::get_legend.}
+#'     \item{precip}{grob. Precip colorbar extracted via get_legend.}
 #'     \item{dot}{ggplot. Gray circle icon (USGS streamgage; both modes).}
 #'     \item{peak}{ggplot. Gray triangle icon (spike-mode flood indicator).}
 #'     \item{flood_stage}{magick-image. Resized flood-stage explainer PNG.}
@@ -33,36 +33,36 @@ build_legends <- function(precip_fill_scale, global_max_precip,
                            flood_spikes, flood_stage_spike_leg_path,
                            flood_stage_point_leg_path, target_rdg_icon,
                            config_vars) {
-  legend_precip <- cowplot::get_legend(
-    ggplot2::ggplot(
+  legend_precip <- get_legend(
+    ggplot(
       data.frame(
         x = c(1, global_max_precip),
         y = 1,
         fill = c(1, global_max_precip)
       ),
-      ggplot2::aes(x, y, fill = fill)
+      aes(x, y, fill = fill)
     ) +
-      ggplot2::geom_tile() +
+      geom_tile() +
       precip_fill_scale +
-      ggplot2::theme(legend.position = "right")
+      theme(legend.position = "right")
   )
 
-  p_dot <- ggplot2::ggplot() +
-    ggplot2::geom_point(
+  p_dot <- ggplot() +
+    geom_point(
       data = data.frame(x = 1, y = 1),
-      ggplot2::aes(x = x, y = y),
+      aes(x = x, y = y),
       shape = 21, fill = config_vars$legend_icon_col, size = config_vars$dot_legend_size,
       stroke = 0.1, color = config_vars$bg_col, alpha = 0.8
     ) +
-    ggplot2::theme_void()
+    theme_void()
 
-  p_peak <- ggplot2::ggplot(
+  p_peak <- ggplot(
     data.frame(x = c(0, -0.25, 0.25), y = c(1.5, 0, 0)),
-    ggplot2::aes(x = x, y = y)
+    aes(x = x, y = y)
   ) +
-    ggplot2::geom_polygon(fill = config_vars$legend_icon_col, color = NA, alpha = 0.8) +
-    ggplot2::coord_fixed() +
-    ggplot2::theme_void()
+    geom_polygon(fill = config_vars$legend_icon_col, color = NA, alpha = 0.8) +
+    coord_fixed() +
+    theme_void()
 
   flood_stage_img <- if (flood_spikes) {
     magick::image_read(flood_stage_spike_leg_path)
@@ -71,24 +71,24 @@ build_legends <- function(precip_fill_scale, global_max_precip,
   }
   flood_stage_img <- magick::image_resize(flood_stage_img, "x200")
 
-  p_rdg <- ggplot2::ggplot(
+  p_rdg <- ggplot(
     data.frame(X = 0.5, Y = 0.5),
-    ggplot2::aes(x = X, y = Y)
+    aes(x = X, y = Y)
   ) +
     ggimage::geom_image(image = target_rdg_icon,
                         size = config_vars$rdg_legend_icon_size) +
-    ggplot2::theme_void()
+    theme_void()
 
-  p_decom <- ggplot2::ggplot(
+  p_decom <- ggplot(
     data.frame(x = 0, y = 0),
-    ggplot2::aes(x = x, y = y)
+    aes(x = x, y = y)
   ) +
-    ggplot2::geom_point(
+    geom_point(
       shape = 4, color = config_vars$x_mark,
       size = config_vars$decom_legend_size,
       alpha = config_vars$flood_point_alpha, stroke = 1
     ) +
-    ggplot2::theme_void()
+    theme_void()
 
   list(
     precip = legend_precip,

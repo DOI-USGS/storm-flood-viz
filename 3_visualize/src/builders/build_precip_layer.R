@@ -39,8 +39,8 @@ build_precip_layer <- function(precip_now, precip_cols, precip_grayscale_cols,
                                global_max_precip, precip_grayscale,
                                font_legend, config_vars) {
   # ggplot2 3.5+ guide API: appearance goes inside theme() within the guide
-  precip_guide <- ggplot2::guide_coloursteps(
-    theme = ggplot2::theme(
+  precip_guide <- guide_coloursteps(
+    theme = theme(
       legend.direction = "horizontal",
       legend.title.position = "left",
       legend.key.width = grid::unit(
@@ -48,8 +48,8 @@ build_precip_layer <- function(precip_now, precip_cols, precip_grayscale_cols,
       legend.key.height = grid::unit(
         config_vars$precip_legend_key_height_cm, "cm"),
       legend.text.position = "bottom",
-      legend.text = ggplot2::element_text(size = 0, color = "transparent"),
-      legend.title = ggplot2::element_text(
+      legend.text = element_text(size = 0, color = "transparent"),
+      legend.title = element_text(
         family = font_legend, hjust = 0, vjust = 0.5)
     )
   )
@@ -60,7 +60,7 @@ build_precip_layer <- function(precip_now, precip_cols, precip_grayscale_cols,
     scales::alpha(precip_cols, config_vars$precip_col_alpha)
   }
 
-  scale <- ggplot2::scale_fill_stepsn(
+  scale <- scale_fill_stepsn(
     colors = cols,
     breaks = get_precip_breaks(global_max_precip),
     limits = c(1, global_max_precip),
@@ -70,9 +70,9 @@ build_precip_layer <- function(precip_now, precip_cols, precip_grayscale_cols,
   )
 
   layers <- list(
-    ggplot2::geom_raster(
+    geom_raster(
       data = precip_now,
-      ggplot2::aes(x = .data$x, y = .data$y, fill = .data$precip_in),
+      aes(x = .data$x, y = .data$y, fill = .data$precip_in),
       alpha = config_vars$precip_raster_alpha
     ),
     scale

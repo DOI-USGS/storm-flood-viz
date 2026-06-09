@@ -12,12 +12,12 @@
 #' @return A list of ggplot2 layer objects suitable for use with `+`.
 build_basemap <- function(state_inner_borders, state_outer_lines, config_vars) {
   list(
-    ggplot2::geom_sf(
+    geom_sf(
       data = state_inner_borders,
       color = config_vars$state_inner_borders_col,
       fill = NA, linewidth = config_vars$state_inner_border_lw
     ),
-    ggplot2::geom_sf(
+    geom_sf(
       data = state_outer_lines,
       color = config_vars$state_outer_lines_col,
       fill = NA, linewidth = config_vars$state_outer_border_lw

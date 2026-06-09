@@ -40,8 +40,8 @@ build_title_block <- function(storm_info, dtg, timezone_long,
   }
 
   storm_match <- storm_now |>
-    dplyr::filter(.data$DTG <= dtg, !is.na(.data$storm_type_full)) |>
-    dplyr::slice_tail(n = 1)
+    filter(.data$DTG <= dtg, !is.na(.data$storm_type_full)) |>
+    slice_tail(n = 1)
   classification <- if (nrow(storm_match) > 0) {
     storm_match$storm_type_full[1]
   } else {

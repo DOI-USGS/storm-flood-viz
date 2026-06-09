@@ -14,8 +14,8 @@
 #' @return A list of ggplot2 layer objects suitable for use with `+`.
 build_storm_track <- function(storm_now, dtg, hurricane_symbol_path,
                               config_vars) {
-  past_storm_points <- dplyr::filter(storm_now, DTG <= dtg)
-  latest_point <- dplyr::slice_tail(past_storm_points, n = 1)
+  past_storm_points <- filter(storm_now, DTG <= dtg)
+  latest_point <- slice_tail(past_storm_points, n = 1)
 
   list(
     geom_path(

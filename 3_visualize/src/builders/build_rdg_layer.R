@@ -17,7 +17,7 @@ build_rdg_layer <- function(rdg_now, target_rdg_icon, config_vars) {
   if (nrow(rdg_now) == 0) return(list())
 
   rdg_coords <- rdg_now |>
-    dplyr::mutate(
+    mutate(
       X = sf::st_coordinates(geometry)[, 1],
       Y = sf::st_coordinates(geometry)[, 2]
     )

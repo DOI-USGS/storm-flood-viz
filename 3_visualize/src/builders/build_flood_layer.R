@@ -29,26 +29,26 @@ build_flood_layer <- function(flow_now, flood_spikes,
                                points_range, font_legend, config_vars) {
   base_layers <- list(
     ggnewscale::new_scale_fill(),
-    ggplot2::geom_sf(
+    geom_sf(
       data = flow_now |>
-        dplyr::filter(above_flood == "FALSE") |>
-        dplyr::filter(
+        filter(above_flood == "FALSE") |>
+        filter(
           isTRUE(flood_spikes) |
             !(percentile %in% c("75-90", "90-95", "high"))
         ) |>
-        dplyr::mutate(flood_status = factor(
+        mutate(flood_status = factor(
           flood_status, levels = names(flood_stage_cols_red))) |>
-        dplyr::filter(!is.na(flood_status)),
-      ggplot2::aes(geometry = geometry, fill = flood_status),
+        filter(!is.na(flood_status)),
+      aes(geometry = geometry, fill = flood_status),
       shape = 21, size = config_vars$non_flooded_point_size, stroke = 0.3,
       color = config_vars$bg_col, show.legend = FALSE
     ),
-    ggplot2::theme(
-      text = ggplot2::element_text(family = font_legend)
+    theme(
+      text = element_text(family = font_legend)
     ),
-    ggplot2::geom_sf(
-      data = dplyr::filter(flow_now, is_decommissioned),
-      ggplot2::aes(geometry = geometry),
+    geom_sf(
+      data = filter(flow_now, is_decommissioned),
+      aes(geometry = geometry),
       shape = 4, color = config_vars$x_mark,
       size = 1.25, alpha = 0.75, stroke = 1
     )
@@ -59,8 +59,8 @@ build_flood_layer <- function(flow_now, flood_spikes,
 
     pct_spike_transform <- function(df) {
       df |>
-        dplyr::mutate(
-          pct_rescaled = dplyr::coalesce(
+        mutate(
+          pct_rescaled = coalesce(
             pct_spike_height[as.character(percentile)], 0),
           xy = sf::st_coordinates(geometry),
           x = xy[, 1],
@@ -72,7 +72,7 @@ build_flood_layer <- function(flow_now, flood_spikes,
     }
 
     flow_spikes_gray <- flow_now |>
-      dplyr::filter(
+      filter(
         !above_flood,
         !is.na(percentile),
         percentile %in% c("75-90", "90-95", "high")
@@ -80,33 +80,33 @@ build_flood_layer <- function(flow_now, flood_spikes,
       pct_spike_transform()
 
     flow_spikes_col <- flow_now |>
-      dplyr::filter(
+      filter(
         above_flood,
         !is.na(percentile),
         percentile %in% c("75-90", "90-95", "high"),
         !is.na(flood.stage) | !is.na(moderate.flood.stage) |
           !is.na(major.flood.stage)
       ) |>
-      dplyr::arrange(sev_rank, dplyr::desc(above_amt),
-                     dplyr::desc(dateTime)) |>
+      arrange(sev_rank, desc(above_amt),
+                     desc(dateTime)) |>
       pct_spike_transform()
 
     gray_spike_layers <- if (nrow(flow_spikes_gray) > 0) {
       list(
         ggforce::geom_link(
           data = flow_spikes_gray,
-          ggplot2::aes(
+          aes(
             x = .data$x, xend = .data$xend,
             y = .data$y + 10000, yend = .data$yend,
-            alpha = ggplot2::after_stat(I(0.6 + index)),
-            linewidth = ggplot2::after_stat(I((1 - index) * 1.4))
+            alpha = after_stat(I(0.6 + index)),
+            linewidth = after_stat(I((1 - index) * 1.4))
           ),
           colour = flood_stage_cols_red[["Not flooded"]],
           show.legend = FALSE
         ),
-        ggplot2::geom_point(
+        geom_point(
           data = flow_spikes_gray,
-          ggplot2::aes(x = .data$x, y = .data$y_base),
+          aes(x = .data$x, y = .data$y_base),
           shape = 21, fill = flood_stage_cols_red[["Not flooded"]],
           color = "white",
           size = config_vars$non_flooded_point_size,
@@ -120,22 +120,22 @@ build_flood_layer <- function(flow_now, flood_spikes,
     spike_layers <- list(
       ggforce::geom_link(
         data = flow_spikes_col,
-        ggplot2::aes(
+        aes(
           x = .data$x, xend = .data$xend,
           y = .data$y, yend = .data$yend,
           color = flood_status,
-          alpha = ggplot2::after_stat(I(0.6 + index)),
-          linewidth = ggplot2::after_stat(I((1 - index) * 2.3))
+          alpha = after_stat(I(0.6 + index)),
+          linewidth = after_stat(I((1 - index) * 2.3))
         ),
         show.legend = FALSE
       ),
-      ggplot2::scale_color_manual(
+      scale_color_manual(
         name = "Peak flood stage",
         values = flood_stage_cols_red,
         limits = names(flood_stage_cols_red),
         drop = FALSE,
         na.value = config_vars$streamgage_col,
-        guide = ggplot2::guide_legend(
+        guide = guide_legend(
           direction = "vertical",
           override.aes = list(
             shape = rep(22, length(flood_stage_cols_red)),
@@ -144,24 +144,24 @@ build_flood_layer <- function(flow_now, flood_spikes,
             alpha = 0.8, color = NA,
             stroke = rep(0.1, length(flood_stage_cols_red))
           ),
-          label.theme = ggplot2::element_text(
+          label.theme = element_text(
             size = config_vars$font_size, family = font_legend),
-          title.theme = ggplot2::element_text(
+          title.theme = element_text(
             size = config_vars$font_size, family = font_legend),
           keyheight = grid::unit(config_vars$flood_legend_key_height_cm, "cm")
         )
       ),
-      ggplot2::geom_sf(
+      geom_sf(
         data = flow_now |>
-          dplyr::filter(above_flood) |>
-          dplyr::mutate(flood_status = factor(
+          filter(above_flood) |>
+          mutate(flood_status = factor(
             flood_status, levels = names(flood_stage_cols_red))) |>
-          dplyr::filter(!is.na(flood_status)),
-        ggplot2::aes(geometry = geometry, fill = flood_status),
+          filter(!is.na(flood_status)),
+        aes(geometry = geometry, fill = flood_status),
         shape = 21, size = config_vars$flooded_point_size, stroke = 0.3,
         color = config_vars$bg_col, show.legend = FALSE
       ),
-      ggplot2::scale_fill_manual(
+      scale_fill_manual(
         values = flood_stage_cols_red,
         drop = FALSE,
         name = "Flood status"
@@ -177,25 +177,25 @@ build_flood_layer <- function(flow_now, flood_spikes,
     )
 
     flow_points_gray <- flow_now |>
-      dplyr::filter(
+      filter(
         !above_flood,
         !is.na(percentile),
         percentile %in% c("75-90", "90-95", "high")
       ) |>
-      dplyr::mutate(index = pct_rank[as.character(percentile)])
+      mutate(index = pct_rank[as.character(percentile)])
 
     flow_points_col <- flow_now |>
-      dplyr::filter(above_flood) |>
-      dplyr::arrange(sev_rank, dplyr::desc(above_amt),
-                     dplyr::desc(dateTime)) |>
-      dplyr::mutate(
-        index = dplyr::coalesce(pct_rank[as.character(percentile)], 0))
+      filter(above_flood) |>
+      arrange(sev_rank, desc(above_amt),
+                     desc(dateTime)) |>
+      mutate(
+        index = coalesce(pct_rank[as.character(percentile)], 0))
 
     gray_point_layers <- if (nrow(flow_points_gray) > 0) {
       list(
-        ggplot2::geom_sf(
+        geom_sf(
           data = flow_points_gray,
-          ggplot2::aes(size = .data$index, geometry = geometry),
+          aes(size = .data$index, geometry = geometry),
           shape = 21, fill = flood_stage_cols_red[["Not flooded"]],
           color = "white",
           stroke = 0.3, alpha = config_vars$flood_point_alpha,
@@ -207,22 +207,22 @@ build_flood_layer <- function(flow_now, flood_spikes,
     }
 
     point_layers <- list(
-      ggplot2::geom_sf(
+      geom_sf(
         data = flow_points_col,
-        ggplot2::aes(
+        aes(
           fill = flood_status, size = .data$index, geometry = geometry),
         shape = 21, stroke = 0.4,
         color = config_vars$bg_col,
         alpha = config_vars$flood_point_alpha, show.legend = FALSE
       ),
-      ggplot2::scale_size_continuous(range = points_range, limits = c(0, 1)),
-      ggplot2::scale_fill_manual(
+      scale_size_continuous(range = points_range, limits = c(0, 1)),
+      scale_fill_manual(
         name = "Peak flood stage",
         values = flood_stage_cols_red,
         limits = names(flood_stage_cols_red),
         drop = FALSE,
         na.value = config_vars$streamgage_col,
-        guide = ggplot2::guide_legend(
+        guide = guide_legend(
           direction = "vertical",
           override.aes = list(
             shape = rep(21, length(flood_stage_cols_red)),
@@ -231,9 +231,9 @@ build_flood_layer <- function(flow_now, flood_spikes,
             alpha = 0.8, color = "black",
             stroke = 0.2
           ),
-          label.theme = ggplot2::element_text(
+          label.theme = element_text(
             size = config_vars$font_size, family = font_legend),
-          title.theme = ggplot2::element_text(
+          title.theme = element_text(
             size = config_vars$font_size, family = font_legend),
           keyheight = grid::unit(config_vars$flood_legend_key_height_cm, "cm")
         )
