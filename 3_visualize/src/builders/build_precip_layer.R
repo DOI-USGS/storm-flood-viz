@@ -1,3 +1,14 @@
+#' Generate clean breakpoints for a precipitation scale.
+#'
+#' @param global_max_precip Numeric. Max precipitation value (inches).
+#' @param max_breaks Integer. Maximum number of breaks in the scale.
+#' @return A numeric vector of breakpoints for use in a stepped color scale.
+get_precip_breaks <- function(global_max_precip, max_breaks = 8) {
+  if (global_max_precip <= 1) return(c(1, global_max_precip))
+  breaks <- seq(1, global_max_precip, length.out = max_breaks)
+  signif(breaks, digits = 2)
+}
+
 #' Build the precipitation raster layer and fill scale.
 #'
 #' Constructs the stepped fill scale (colorized or grayscale) and the
