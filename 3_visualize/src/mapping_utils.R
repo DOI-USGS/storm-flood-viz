@@ -577,19 +577,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
     ) +
     theme_void()
   
-  # Progress bar plot
-  progress_bar <- ggplot() +
-    geom_rect(aes(xmin = 0, xmax = 1, ymin = 0, ymax = 1),
-      fill = config_vars$progress_bar_bg_col, color = NA
-    ) +
-    geom_rect(aes(xmin = 0, xmax = progress_fraction, ymin = 0, ymax = 1),
-      fill = config_vars$progress_bar_col, color = NA
-    ) +
-    theme_void() +
-    theme(
-      plot.margin = margin(0, 0, 0, 0),
-      panel.background = element_rect(fill = NA, color = NA)
-    )
+  progress_bar <- build_progress_bar(progress_fraction, config_vars)
 
   canvas <- grid::rectGrob(
     x = 0, y = 0,
