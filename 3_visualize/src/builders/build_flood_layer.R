@@ -55,19 +55,13 @@ build_flood_layer <- function(flow_now, flood_spikes,
   )
 
   if (flood_spikes) {
-    pct_midpoint <- c(
-      "low" = 2.5, "5-10" = 7.5,
-      "10-25" = 17.5, "25-75" = 50,
-      "75-90" = 82.5, "90-95" = 92.5,
-      "high" = 97.5
-    )
+    pct_spike_height <- c("75-90" = 0.20, "90-95" = 0.55, "high" = 0.85)
 
     pct_spike_transform <- function(df) {
       df |>
         dplyr::mutate(
-          pct = pct_midpoint[as.character(percentile)],
-          pct_rescaled = ifelse(
-            is.na(pct) | pct < 75, 0, (pct - 75) / 25),
+          pct_rescaled = dplyr::coalesce(
+            pct_spike_height[as.character(percentile)], 0),
           xy = sf::st_coordinates(geometry),
           x = xy[, 1],
           y = xy[, 2],
