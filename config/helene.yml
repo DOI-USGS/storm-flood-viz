@@ -112,6 +112,10 @@ viz_config:
   plot_width: 1.39
   plot_height: 1.6
   rdg_icon_size: 0.014
+  precip_raster_alpha: 0.6
+  precip_col_alpha: 0.7
+  precip_legend_key_width_cm: 3
+  precip_legend_key_height_cm: 0.4
   state_inner_border_lw: 0.27
   state_outer_border_lw: 0.3
   storm_track_lw: 0.8

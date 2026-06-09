@@ -145,50 +145,19 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
     theme_void(base_family = font_legend) +
     theme(text = element_text(size = config_vars$font_size))
 
-  # ggplot2 3.5+ guide API: appearance goes inside theme() within the guide
-  precip_guide <- guide_coloursteps(
-    theme = theme(
-      legend.direction = "horizontal",
-      legend.title.position = "left",
-      legend.key.width = unit(3, "cm"),
-      legend.key.height = unit(0.4, "cm"),
-      legend.text.position = "bottom",
-      legend.text = element_text(size = 0, color = "transparent"),
-      legend.title = element_text(family = font_legend, hjust = 0, vjust = 0.5)
-    )
+  precip <- build_precip_layer(
+    precip_now, precip_cols, precip_grayscale_cols,
+    global_max_precip, precip_grayscale, font_legend, config_vars
   )
-
-  if (precip_grayscale) {
-    precip_fill_scale <- scale_fill_stepsn(
-      colors = precip_grayscale_cols,
-      breaks = get_precip_breaks(global_max_precip),
-      limits = c(1, global_max_precip),
-      name = NULL,
-      na.value = scales::alpha("white", 0),
-      guide = precip_guide
-    )
-  } else {
-    precip_fill_scale <- scale_fill_stepsn(
-      colors = scales::alpha(precip_cols, 0.7),
-      breaks = get_precip_breaks(global_max_precip),
-      limits = c(1, global_max_precip),
-      name = NULL,
-      na.value = scales::alpha("white", 0),
-      guide = precip_guide
-    )
-  }
+  precip_fill_scale <- precip$scale
 
   p <- ggplot() +
-    geom_raster(
-      data = precip_now, aes(x = x, y = y, fill = precip_in),
-      alpha = 0.6
-    ) +
+    precip$layers +
     build_basemap(state_inner_borders, state_outer_lines, config_vars) +
     theme(
       text = element_text(family = font_legend),
       legend.spacing.x = unit(0, "cm")
-    ) +
-    precip_fill_scale
+    )
 
   # plot non flooded points + city labels
   p <- p + ggnewscale::new_scale_fill() +
