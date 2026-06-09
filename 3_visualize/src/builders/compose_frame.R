@@ -293,7 +293,7 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
         y = 0.144,
         height = 0.08, width = 0.1 - config_vars$plot_margin
       ) +
-      cowplot::draw_label("If it floods, a               appears",
+      cowplot::draw_label("A               appears at the 75th+ percentile",
         x = config_vars$plot_margin + 0.004,
         y = 1 - config_vars$plot_margin - 0.812,
         size = config_vars$canvas_legend_size,
@@ -301,18 +301,18 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
         color = "black", lineheight = 1
       ) +
       cowplot::draw_label("spike",
-        x = config_vars$plot_margin + 0.118,
+        x = config_vars$plot_margin + 0.023,
         y = 1 - config_vars$plot_margin - 0.812,
         size = config_vars$canvas_legend_size,
         hjust = 0, vjust = 1, fontfamily = font_legend,
         fontface = "bold", color = "black", lineheight = 1
       ) +
       cowplot::draw_plot(legends$peak,
-        x = config_vars$plot_margin + 0.22,
-        y = 0.145,
+        x = config_vars$plot_margin + 0.32,
+        y = 0.147,
         height = 0.03, width = 0.1 - config_vars$plot_margin
       ) +
-      cowplot::draw_label("The                 is how long it's been flooded",
+      cowplot::draw_label("The                 is correlated to flow percentiles",
         x = config_vars$plot_margin + 0.002,
         y = 1 - config_vars$plot_margin - 0.84,
         size = config_vars$canvas_legend_size,
@@ -327,8 +327,8 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
         fontface = "bold", color = "black", lineheight = 1
       ) +
       cowplot::draw_image(legends$flood_stage,
-        x = config_vars$plot_margin + 0.335,
-        y = 0.113, width = 0.13, height = 0.135
+        x = config_vars$plot_margin + 0.36,
+        y = 0.114, width = 0.12, height = 0.12
       ) +
       cowplot::draw_label("The              is the severity of the flood",
         x = config_vars$plot_margin + 0.002,
