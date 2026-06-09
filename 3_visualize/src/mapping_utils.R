@@ -59,32 +59,12 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
   # no showtext registration needed when using ragg as the graphics device.
   font_legend <- config_vars$load_font
 
-  # Landfall label
-  time_to_landfall <- difftime(landfall_dtg, dtg, units = "hours")
-
-  # only show label until 2 hours after landfall
-  show_landfall_label <- time_to_landfall > -2 
-  landfall_label <- if (show_landfall_label && time_to_landfall > 0) {
-    paste0(round(as.numeric(time_to_landfall), 1), " hours to landfall")
-  } else {
-    NULL
-  }
+  title_block <- build_title_block(
+    storm_info, dtg, timezone_long, landfall_dtg, storm_now)
 
   # return NA if no streamgage data
   if (nrow(flow_now) == 0) {
     return(NULL)
-  }
-
-  # Storm classification label
-  # latest known classification (up to the current frame's dtg) is shown.
-  storm_match <- storm_now |>
-    filter(DTG <= dtg, !is.na(storm_type_full)) |>
-    slice_tail(n = 1)
-
-  # Only proceed if a valid match exists
-  classification_label <- NULL
-  if (nrow(storm_match) > 0) {
-    classification_label <- paste0(storm_match$storm_type_full[1])
   }
 
   # flood stats for dynamic barplot
@@ -252,11 +232,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       color = config_vars$major_cities_text_col,
       size = 10
     ) +
-    draw_label(
-      paste(
-        "Hurricane",
-        stringr::str_to_sentence(storm_info$storm_name)
-      ),
+    draw_label(title_block$storm_name,
       x = config_vars$plot_margin, y = 1 - config_vars$plot_margin * 1.2,
       size = 31,
       hjust = 0,
@@ -266,7 +242,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       color = "black",
       lineheight = 1
     ) +
-    draw_label(paste0(format(lubridate::with_tz(dtg, timezone_long), "%b. %d, %Y %H:%M %Z")),
+    draw_label(title_block$timestamp,
       x = config_vars$plot_margin + 0.002,
       y = 1 - config_vars$plot_margin - 0.055,
       size = 14,
@@ -277,7 +253,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       color = "black",
       lineheight = 1
     ) +
-    draw_label(landfall_label,
+    draw_label(title_block$landfall,
       x = config_vars$plot_margin + 0.26,
       y = 1 - config_vars$plot_margin - 0.055,
       size = 14,
@@ -562,9 +538,9 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
     #            height = 0.125)
   }
 
-  if (!is.null(classification_label)) {
+  if (!is.null(title_block$classification)) {
     p <- p + draw_label(
-      classification_label,
+      title_block$classification,
       x = config_vars$plot_margin + 0.002,
       y = 1 - config_vars$plot_margin - 0.08,
       size = 14,

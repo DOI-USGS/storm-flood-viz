@@ -13,6 +13,7 @@ landfall_time: "2024-09-27 03:00:00"   # UTC
 
 storm_info:
   storm_name: "HELENE"
+  storm_type_label: "Hurricane"
   storm_code: "al092024"
   storm_buffer: 250000
   shape_type: "buffered_storm_track"
