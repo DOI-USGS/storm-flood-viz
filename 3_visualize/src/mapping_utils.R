@@ -504,21 +504,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
 
   flood_stage_leg <- flood_stage_leg |> magick::image_resize("x200")
 
-  # Rapid deployement gages icon (target)
-  if (nrow(rdg_now) > 0) {
-    rdg_now_coords <- rdg_now |>
-      mutate(
-        X = sf::st_coordinates(geometry)[, 1],
-        Y = sf::st_coordinates(geometry)[, 2]
-      )
-
-    p <- p + ggimage::geom_image(
-      data = rdg_now_coords,
-      aes(x = X, y = Y),
-      image = target_rdg_icon,
-      size = 0.014
-    )
-  }
+  p <- p + build_rdg_layer(rdg_now, target_rdg_icon, config_vars)
 
   # rdg icon for legend
   p_rdg_leg <- ggplot(
