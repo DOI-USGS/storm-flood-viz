@@ -121,3 +121,10 @@ viz_config:
   storm_track_lw: 0.8
   storm_track_dot_size: 2
   hurricane_symbol_size: 0.035
+  non_flooded_point_size: 1.25
+  flooded_point_size: 2
+  city_symbol_size: 1.75
+  city_text_size: 3
+  city_label_nudge_y: 50000
+  flood_point_alpha: 0.75
+  flood_legend_key_height_cm: 0.7
