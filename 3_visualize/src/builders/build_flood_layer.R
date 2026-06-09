@@ -171,10 +171,9 @@ build_flood_layer <- function(flow_now, flood_spikes,
     c(base_layers, gray_spike_layers, spike_layers)
   } else {
     pct_rank <- c(
-      "low" = 0, "5-10" = 1/6,
-      "10-25" = 2/6, "25-75" = 3/6,
-      "75-90" = 4/6, "90-95" = 5/6,
-      "high" = 1
+      "low" = 0, "5-10" = 0.05,
+      "10-25" = 0.10, "25-75" = 0.18,
+      "75-90" = 0.30, "90-95" = 0.65, "high" = 1.0
     )
 
     flow_points_gray <- flow_now |>
