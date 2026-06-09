@@ -1,3 +1,4 @@
+source('3_visualize/src/builders/build_progress_bar.R')
 source('3_visualize/src/mapping_utils.R')
 source('3_visualize/src/title_end_frame.R')
 source('3_visualize/src/video_utils.R')
