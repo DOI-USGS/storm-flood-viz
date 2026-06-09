@@ -395,21 +395,25 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
       ) +
       cowplot::draw_plot(flood_status_bar,
         x = 0.189, y = 0.054, width = 0.2, height = 0.055) +
-      cowplot::draw_label("      The           is how long it's been flooded",
-        x = config_vars$plot_margin + 0.002,
+      cowplot::draw_label("      The           is correlated to flow percentiles",
+        x = config_vars$plot_margin - 0.02,
         y = 1 - config_vars$plot_margin - 0.934,
         size = config_vars$canvas_legend_size,
         hjust = 0, vjust = 1, fontfamily = font_legend,
         color = "black", lineheight = 1
       ) +
       cowplot::draw_label("       size",
-        x = config_vars$plot_margin + 0.036,
+        x = config_vars$plot_margin + 0.014,
         y = 1 - config_vars$plot_margin - 0.934,
         size = config_vars$canvas_legend_size,
         hjust = 0, vjust = 1, fontfamily = font_legend,
         fontface = "bold", color = "black", lineheight = 1
+      ) +
+      cowplot::draw_image(legends$flood_stage,
+        x = config_vars$plot_margin + 0.355,
+        y = 0.011, width = 0.08, height = 0.14,
+        scale = 1.0
       )
-    # custom flood-stage PNG omitted in point mode (placement is awkward)
   }
 
   if (!is.null(title_block$classification)) {
