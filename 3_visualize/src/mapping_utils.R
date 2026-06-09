@@ -183,14 +183,7 @@ hurricane_flood_stage_frames <- function(dtg, precip_now, flow_now, storm_now,
       data = precip_now, aes(x = x, y = y, fill = precip_in),
       alpha = 0.6
     ) +
-    geom_sf(
-      data = state_inner_borders, color = config_vars$state_inner_borders_col,
-      fill = NA, linewidth = 0.27
-    ) +
-    geom_sf(
-      data = state_outer_lines, color = config_vars$state_outer_lines_col,
-      fill = NA, linewidth = 0.3
-    ) +
+    build_basemap(state_inner_borders, state_outer_lines, config_vars) +
     theme(
       text = element_text(family = font_legend),
       legend.spacing.x = unit(0, "cm")
