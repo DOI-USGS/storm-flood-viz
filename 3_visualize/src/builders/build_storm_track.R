@@ -16,7 +16,7 @@ build_storm_track <- function(storm_now, dtg, hurricane_symbol_path,
   # Track line width and dot size are visual calibration values tuned so the
   # path is legible at 1920x1080 without overpowering the gage symbols.
   lw_track <- 0.8
-  size_dots  <- 2
+  size_dots <- 2
   # Symbol size is in fraction of plot width 
   size_symbol <- 0.035
 
