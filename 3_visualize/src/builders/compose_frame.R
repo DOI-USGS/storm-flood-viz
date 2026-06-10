@@ -60,6 +60,15 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
                            frame_dir, config_vars, precip_grayscale) {
   font_legend <- config_vars$load_font
 
+  # Convenience wrapper — captures font/defaults so call sites only vary in
+  # text, position, and the occasional bold or size override.
+  lbl <- function(text, x, y, bold = FALSE,
+                  size = config_vars$canvas_legend_size, color = "black") {
+    draw_label(text, x = x, y = y, size = size,
+      fontfamily = font_legend, fontface = if (bold) "bold" else "plain",
+      hjust = 0, vjust = 1, color = color, lineheight = 1)
+  }
+
   title_block <- build_title_block(
     storm_info, dtg, timezone_long, landfall_dtg, storm_now)
 
@@ -147,33 +156,26 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
       width = config_vars$logo_width,
       hjust = 0, vjust = 0, halign = 0, valign = 0
     ) +
-    draw_label(config_vars$ocean_label_text,
+    lbl(config_vars$ocean_label_text,
       x = config_vars$ocean_label_x,
       y = config_vars$plot_margin + config_vars$ocean_label_y_offset,
-      fontfamily = font_legend,
-      color = config_vars$major_cities_text_col,
-      size = config_vars$ocean_label_size
+      size = config_vars$ocean_label_size,
+      color = config_vars$major_cities_text_col
     ) +
-    draw_label(title_block$storm_name,
+    lbl(title_block$storm_name,
       x = config_vars$plot_margin,
       y = 1 - config_vars$plot_margin * 1.2,
-      size = config_vars$storm_title_size,
-      hjust = 0, vjust = 1, fontfamily = font_legend,
-      fontface = "bold", color = "black", lineheight = 1
+      size = config_vars$storm_title_size, bold = TRUE
     ) +
-    draw_label(title_block$timestamp,
+    lbl(title_block$timestamp,
       x = config_vars$plot_margin + 0.002,
       y = 1 - config_vars$plot_margin - 0.055,
-      size = config_vars$canvas_subtitle_size,
-      hjust = 0, vjust = 1, fontfamily = font_legend,
-      fontface = "bold", color = "black", lineheight = 1
+      size = config_vars$canvas_subtitle_size, bold = TRUE
     ) +
-    draw_label(title_block$landfall,
+    lbl(title_block$landfall,
       x = config_vars$plot_margin + 0.26,
       y = 1 - config_vars$plot_margin - 0.055,
-      size = config_vars$canvas_subtitle_size,
-      hjust = 0, vjust = 1, fontfamily = font_legend,
-      color = "black", lineheight = 1
+      size = config_vars$canvas_subtitle_size
     ) +
     draw_plot(progress_bar,
       x = config_vars$progress_x, y = config_vars$progress_y,
@@ -184,33 +186,21 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
       y = 0.227 + 0.011,
       height = 0.05, width = 0.42 - config_vars$plot_margin
     ) +
-    draw_label("Total rainfall (in)",
+    lbl("Total rainfall (in)",
       x = config_vars$plot_margin + 0.002,
-      y = 1 - config_vars$plot_margin - 0.715 + 0.015,
-      size = config_vars$canvas_legend_size,
-      hjust = 0, vjust = 1, fontfamily = font_legend,
-      color = "black", lineheight = 1
+      y = 1 - config_vars$plot_margin - 0.715 + 0.015
     ) +
-    draw_label("1",
+    lbl("1",
       x = config_vars$plot_margin + 0.158,
-      y = 1 - config_vars$plot_margin - 0.716 + 0.015,
-      size = config_vars$canvas_legend_size,
-      hjust = 0, vjust = 1, fontfamily = font_legend,
-      color = "black", lineheight = 1
+      y = 1 - config_vars$plot_margin - 0.716 + 0.015
     ) +
-    draw_label(paste(global_max_precip),
+    lbl(paste(global_max_precip),
       x = config_vars$plot_margin + 0.333,
-      y = 1 - config_vars$plot_margin - 0.716 + 0.015,
-      size = config_vars$canvas_legend_size,
-      hjust = 0, vjust = 1, fontfamily = font_legend,
-      color = "black", lineheight = 1
+      y = 1 - config_vars$plot_margin - 0.716 + 0.015
     ) +
-    draw_label("USGS streamgage",
+    lbl("USGS streamgage",
       x = config_vars$plot_margin + 0.028,
-      y = 1 - config_vars$plot_margin - 0.746 + 0.017,
-      size = config_vars$canvas_legend_size,
-      hjust = 0, vjust = 1, fontfamily = font_legend,
-      color = "black", lineheight = 1
+      y = 1 - config_vars$plot_margin - 0.746 + 0.017
     ) +
     draw_plot(legends$dot,
       x = config_vars$plot_margin - 0.025,
@@ -220,145 +210,100 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
 
   if (flood_spikes) {
     p <- p +
-      draw_label("Rapid-Deployment gage",
+      lbl("Rapid-Deployment gage",
         x = config_vars$plot_margin + 0.028,
-        y = 1 - config_vars$plot_margin - 0.775 + 0.019,
-        size = config_vars$canvas_legend_size,
-        hjust = 0, vjust = 1, fontfamily = font_legend,
-        color = "black", lineheight = 1
+        y = 1 - config_vars$plot_margin - 0.775 + 0.019
       ) +
       draw_plot(legends$rdg,
         x = config_vars$plot_margin - 0.025,
         y = 0.177 + 0.019,
         height = 0.03, width = 0.1 - config_vars$plot_margin
       ) +
-      draw_label("Out-of-service streamgage",
+      lbl("Out-of-service streamgage",
         x = config_vars$plot_margin + 0.028,
-        y = 1 - config_vars$plot_margin - 0.775 - 0.008,
-        size = config_vars$canvas_legend_size,
-        hjust = 0, vjust = 1, fontfamily = font_legend,
-        color = "black", lineheight = 1
+        y = 1 - config_vars$plot_margin - 0.775 - 0.008
       ) +
       draw_plot(legends$decom,
         x = config_vars$plot_margin - 0.025,
         y = 0.144,
         height = 0.08, width = 0.1 - config_vars$plot_margin
       ) +
-      draw_label("A               appears at the 75th+ percentile",
+      lbl("A               appears at the 75th+ percentile",
         x = config_vars$plot_margin + 0.004,
-        y = 1 - config_vars$plot_margin - 0.812,
-        size = config_vars$canvas_legend_size,
-        hjust = 0, vjust = 1, fontfamily = font_legend,
-        color = "black", lineheight = 1
+        y = 1 - config_vars$plot_margin - 0.812
       ) +
-      draw_label("spike",
+      lbl("spike",
         x = config_vars$plot_margin + 0.023,
-        y = 1 - config_vars$plot_margin - 0.812,
-        size = config_vars$canvas_legend_size,
-        hjust = 0, vjust = 1, fontfamily = font_legend,
-        fontface = "bold", color = "black", lineheight = 1
+        y = 1 - config_vars$plot_margin - 0.812, bold = TRUE
       ) +
       draw_plot(legends$peak,
         x = config_vars$plot_margin + 0.32,
         y = 0.147,
         height = 0.03, width = 0.1 - config_vars$plot_margin
       ) +
-      draw_label("The                 is correlated to flow percentiles",
+      lbl("The                 is correlated to flow percentiles",
         x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.84,
-        size = config_vars$canvas_legend_size,
-        hjust = 0, vjust = 1, fontfamily = font_legend,
-        color = "black", lineheight = 1
+        y = 1 - config_vars$plot_margin - 0.84
       ) +
-      draw_label("height",
+      lbl("height",
         x = config_vars$plot_margin + 0.0415,
-        y = 1 - config_vars$plot_margin - 0.84,
-        size = config_vars$canvas_legend_size,
-        hjust = 0, vjust = 1, fontfamily = font_legend,
-        fontface = "bold", color = "black", lineheight = 1
+        y = 1 - config_vars$plot_margin - 0.84, bold = TRUE
       ) +
       draw_image(legends$flood_stage,
         x = config_vars$plot_margin + 0.36,
         y = 0.114, width = 0.12, height = 0.12
       ) +
-      draw_label("The              is the severity of the flood",
+      lbl("The              is the severity of the flood",
         x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.867,
-        size = config_vars$canvas_legend_size,
-        hjust = 0, vjust = 1, fontfamily = font_legend,
-        color = "black", lineheight = 1
+        y = 1 - config_vars$plot_margin - 0.867
       ) +
-      draw_label("color",
+      lbl("color",
         x = config_vars$plot_margin + 0.042,
-        y = 1 - config_vars$plot_margin - 0.867,
-        size = config_vars$canvas_legend_size,
-        hjust = 0, vjust = 1, fontfamily = font_legend,
-        fontface = "bold", color = "black", lineheight = 1
+        y = 1 - config_vars$plot_margin - 0.867, bold = TRUE
       ) +
       draw_plot(flood_status_bar,
         x = 0.17, y = 0.026, width = 0.2, height = 0.055)
   } else {
     p <- p +
-      draw_label("Rapid-Deployment gage",
+      lbl("Rapid-Deployment gage",
         x = config_vars$plot_margin + 0.028,
-        y = 1 - config_vars$plot_margin - 0.775 + 0.019,
-        size = config_vars$canvas_legend_size,
-        hjust = 0, vjust = 1, fontfamily = font_legend,
-        color = "black", lineheight = 1
+        y = 1 - config_vars$plot_margin - 0.775 + 0.019
       ) +
       draw_plot(legends$rdg,
         x = config_vars$plot_margin - 0.025,
         y = 0.177 + 0.019,
         height = 0.03, width = 0.1 - config_vars$plot_margin
       ) +
-      draw_label("Out-of-service streamgage",
+      lbl("Out-of-service streamgage",
         x = config_vars$plot_margin + 0.028,
-        y = 1 - config_vars$plot_margin - 0.775 - 0.008,
-        size = config_vars$canvas_legend_size,
-        hjust = 0, vjust = 1, fontfamily = font_legend,
-        color = "black", lineheight = 1
+        y = 1 - config_vars$plot_margin - 0.775 - 0.008
       ) +
       draw_plot(legends$decom,
         x = config_vars$plot_margin - 0.025,
         y = 0.144,
         height = 0.08, width = 0.1 - config_vars$plot_margin
       ) +
-      draw_label("If it floods:",
+      lbl("If it floods:",
         x = config_vars$plot_margin + 0.004,
-        y = 1 - config_vars$plot_margin - 0.810,
-        size = config_vars$canvas_legend_size,
-        hjust = 0, vjust = 1, fontfamily = font_legend,
-        color = "black", lineheight = 1
+        y = 1 - config_vars$plot_margin - 0.810
       ) +
-      draw_label("     The              is the severity of the flood",
+      lbl("     The              is the severity of the flood",
         x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.836,
-        size = config_vars$canvas_legend_size,
-        hjust = 0, vjust = 1, fontfamily = font_legend,
-        color = "black", lineheight = 1
+        y = 1 - config_vars$plot_margin - 0.836
       ) +
-      draw_label("color",
+      lbl("color",
         x = config_vars$plot_margin + 0.062,
-        y = 1 - config_vars$plot_margin - 0.836,
-        size = config_vars$canvas_legend_size,
-        hjust = 0, vjust = 1, fontfamily = font_legend,
-        fontface = "bold", color = "black", lineheight = 1
+        y = 1 - config_vars$plot_margin - 0.836, bold = TRUE
       ) +
       draw_plot(flood_status_bar,
         x = 0.189, y = 0.054, width = 0.2, height = 0.055) +
-      draw_label("      The           is correlated to flow percentiles",
+      lbl("      The           is correlated to flow percentiles",
         x = config_vars$plot_margin - 0.02,
-        y = 1 - config_vars$plot_margin - 0.934,
-        size = config_vars$canvas_legend_size,
-        hjust = 0, vjust = 1, fontfamily = font_legend,
-        color = "black", lineheight = 1
+        y = 1 - config_vars$plot_margin - 0.934
       ) +
-      draw_label("       size",
+      lbl("       size",
         x = config_vars$plot_margin + 0.014,
-        y = 1 - config_vars$plot_margin - 0.934,
-        size = config_vars$canvas_legend_size,
-        hjust = 0, vjust = 1, fontfamily = font_legend,
-        fontface = "bold", color = "black", lineheight = 1
+        y = 1 - config_vars$plot_margin - 0.934, bold = TRUE
       ) +
       draw_image(legends$flood_stage,
         x = config_vars$plot_margin + 0.355,
@@ -368,13 +313,11 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
   }
 
   if (!is.null(title_block$classification)) {
-    p <- p + draw_label(
+    p <- p + lbl(
       title_block$classification,
       x = config_vars$plot_margin + 0.002,
       y = 1 - config_vars$plot_margin - 0.08,
-      size = config_vars$canvas_subtitle_size,
-      hjust = 0, vjust = 1, fontfamily = font_legend,
-      color = "black", lineheight = 1
+      size = config_vars$canvas_subtitle_size
     )
   }
 
