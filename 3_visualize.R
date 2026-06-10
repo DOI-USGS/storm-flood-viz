@@ -8,6 +8,9 @@ source('3_visualize/src/builders/build_cities_layer.R')
 source('3_visualize/src/builders/build_legends.R')
 source('3_visualize/src/builders/build_flood_status_bar.R')
 source('3_visualize/src/builders/build_title_block.R')
+source('3_visualize/src/builders/build_precip_legend_panel.R')
+source('3_visualize/src/builders/build_gage_icons_panel.R')
+source('3_visualize/src/builders/build_flood_explainer_panel.R')
 source('3_visualize/src/builders/compose_frame.R')
 source('3_visualize/src/builders/build_title_end_frame.R')
 source('3_visualize/src/builders/build_video_mp4.R')
@@ -84,6 +87,7 @@ p3_targets <- list(
       precip_cols = p0_viz_precip_config_pal_blue,
       precip_grayscale_cols = p0_viz_precip_config_pal_grayscale,
       config_vars = p0_viz_config_df,
+      anchors = p0_viz_anchors,
       peak_height = 200000,
       y_baseheight = 10000,
       landfall_dtg = p0_landfall_time,
