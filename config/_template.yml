@@ -104,3 +104,14 @@ viz_config:
   plot_shift_y: -0.212
   plot_width: 1.39
   plot_height: 1.6
+  canvas_line_height: 0.027
+
+# Canvas anchor points (0-1 coords, y from bottom). The few layout knobs worth
+# tuning per storm — each cohesive legend block positions its items relative to
+# its anchor; in-block offsets are design constants and live in the panel
+# builders. Omitted anchors fall back to compose_frame()'s default_anchors.
+anchors:
+  precip_legend: [0.027, 0.275]
+  gage_icons: [0.0, 0.246]
+  flood_explain: [0.027, 0.163]
+  flood_bar: [0.17, 0.026]

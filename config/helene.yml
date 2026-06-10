@@ -137,6 +137,7 @@ viz_config:
   storm_title_size: 31
   canvas_subtitle_size: 14
   canvas_legend_size: 12
+  canvas_line_height: 0.027
   ocean_label_text: "Atlantic Ocean"
   ocean_label_x: 0.83
   ocean_label_y_offset: 0.32
@@ -150,3 +151,12 @@ viz_config:
   progress_y: -0.001
   progress_w: 1.1
   progress_h: 0.015
+
+# Canvas anchor points (0-1 coords, y from bottom). The few layout knobs worth
+# tuning per storm, each cohesive legend block positions its items relative to
+# its anchor
+anchors:
+  precip_legend: [0.027, 0.275]
+  gage_icons: [0.0, 0.246]
+  flood_explain: [0.027, 0.163]
+  flood_bar: [0.17, 0.026]
