@@ -1,6 +1,7 @@
 source("2_process/src/process_precip.R")
 source("2_process/src/process_states.R")
 source("2_process/src/process_hourly_max_uv.R")
+source("2_process/src/process_flood_groups.R")
 p2_targets <- list(
 
   # Process flood data -----------------------------------------------------
@@ -178,6 +179,17 @@ p2_targets <- list(
         )
       ),
     pattern = map(p2_all_precip_timestamps),
+    iteration = "list"
+  ),
+  # Pre-split each timestep's gages into the render groups the flood layer
+  # draws, so build_flood_layer() does geometry only, not row selection.
+  tar_target(
+    p2_flood_groups_by_time,
+    process_flood_groups(
+      p2_flow_by_time,
+      perc_filter = c("75-90", "90-95", "high")
+    ),
+    pattern = map(p2_flow_by_time),
     iteration = "list"
   ),
   # Global max flooded gage count and max flood duration.
