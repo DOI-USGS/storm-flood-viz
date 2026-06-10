@@ -44,6 +44,8 @@
 #' @param frame_dir Character. Directory for output PNGs.
 #' @param config_vars Named list of styling options from storm YAML viz_config.
 #' @param precip_grayscale Logical. TRUE for grayscale precip palette.
+#' @param flood_groups_now Named list from [split_flood_groups()]. Pre-split,
+#'   pre-sorted gage render groups for the current timestep.
 #' @param anchors Named list of canvas anchor points from the storm YAML
 #'   `anchors:` block. Each is a length-2 numeric c(x, y) in 0-1 canvas coords.
 #'   Missing anchors fall back to the hardcoded `default_anchors` below. These
@@ -63,8 +65,7 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
                            bbox_coords, progress_fraction,
                            storm_info, timezone_long, landfall_dtg,
                            frame_dir, config_vars, precip_grayscale,
-                           anchors = list()) {
-  
+                           flood_groups_now, anchors = list()) {
   font_legend <- config_vars$load_font
   pm <- config_vars$plot_margin
 
@@ -118,7 +119,7 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
       legend.spacing.x = grid::unit(0, "cm")
     ) +
     build_flood_layer(
-      flow_now, flood_spikes,
+      flood_groups_now, flood_spikes,
       flood_stage_cols_red, peak_height, y_baseheight,
       points_range, font_legend, config_vars
     ) +

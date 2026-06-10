@@ -69,6 +69,7 @@ p3_targets <- list(
       global_max_precip = p3_global_max_precip_in,
       global_max_flood_stages = p2_global_flow_maxes$max_flooded,
       flow_now = p2_flow_by_time,
+      flood_groups_now = p2_flood_groups_by_time,
       storm_now = p3_storm_by_time,
       rdg_now = p3_rdg_by_time,
       storm_info = p0_storm_info,
@@ -99,7 +100,8 @@ p3_targets <- list(
       frame_dir = p3_frame_dir
     ),
     pattern = map(p2_all_precip_timestamps, p3_precip_by_time, p2_flow_by_time,
-                  p3_storm_by_time, p2_progress_fract, p3_rdg_by_time),
+                  p2_flood_groups_by_time, p3_storm_by_time, p2_progress_fract,
+                  p3_rdg_by_time),
     format = "file"
   ),
   tar_target(

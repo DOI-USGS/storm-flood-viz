@@ -1,16 +1,14 @@
-#' Build flood gage and city layers for one animation frame.
+#' Build flood gage layers for one animation frame.
 #'
-#' Handles the full flood visualization: non-flooded gage points, major-city
-#' markers and labels, decommissioned gage markers, and either height-tapered
-#' spikes (flood_spikes = TRUE) or sized circle points (flood_spikes = FALSE)
-#' for flooded and near-flood gages.
+#' Draws the pre-split render groups from [split_flood_groups()]: non-flooded
+#' gage points, decommissioned gage markers, and either height-tapered spikes
+#' (flood_spikes = TRUE) or sized circle points (flood_spikes = FALSE) for
+#' flooded and near-flood gages. Row filtering and draw-order sorting now live
+#' in phase 2; this builder only applies geometry and the percentile-to-
+#' height/size mappings, which are presentation tied to viz params.
 #'
-#' Flooded gages are ordered by sev_rank / above_amt so the most severe ones
-#' render last (on top).
-#'
-#' @param flow_now data.frame. One row per gage at the current timestep; must
-#'   contain columns `above_flood`, `percentile`, `flood_status`, `sev_rank`,
-#'   `above_amt`, `dateTime`, `is_decommissioned`, and an sf `geometry` column.
+#' @param flood_groups Named list from [split_flood_groups()] with `non_flooded`,
+#'   `decom`, `gray`, `flooded`, and `flooded_high` sf data.frames.
 #' @param flood_spikes Logical. TRUE for spike mode; FALSE for sized-point mode.
 #' @param flood_stage_cols_red Named character vector mapping flood-status
 #'   labels to hex colors. Used for fill/color scales and factor levels.
@@ -19,26 +17,18 @@
 #'   spike base, so even the shortest spike is immediately visible.
 #' @param points_range Numeric vector length 2. Min/max point sizes passed to
 #'   `scale_size_continuous()` in point mode, e.g. `c(2, 6)`.
-#' @param font_legend Character. Font family for city labels.
+#' @param font_legend Character. Font family.
 #' @param config_vars Named list of styling options. Must contain `bg_col`,
-#'   `major_cities_col`, `major_cities_text_col`, `x_mark`, `streamgage_col`,
-#'   `font_size`, and `leg_font_size` (set in storm YAML viz_config).
+#'   `x_mark`, `streamgage_col`, `non_flooded_point_size`, `flooded_point_size`,
+#'   `flood_point_alpha`, `flood_legend_key_height_cm`, and `font_size`.
 #' @return A list of ggplot2 layer and scale objects suitable for use with `+`.
-build_flood_layer <- function(flow_now, flood_spikes,
+build_flood_layer <- function(flood_groups, flood_spikes,
                                flood_stage_cols_red, peak_height, y_baseheight,
                                points_range, font_legend, config_vars) {
   base_layers <- list(
     ggnewscale::new_scale_fill(),
     geom_sf(
-      data = flow_now |>
-        filter(above_flood == "FALSE") |>
-        filter(
-          isTRUE(flood_spikes) |
-            !(percentile %in% c("75-90", "90-95", "high"))
-        ) |>
-        mutate(flood_status = factor(
-          flood_status, levels = names(flood_stage_cols_red))) |>
-        filter(!is.na(flood_status)),
+      data = flood_groups$non_flooded,
       aes(geometry = geometry, fill = flood_status),
       shape = 21, size = config_vars$non_flooded_point_size, stroke = 0.3,
       color = config_vars$bg_col, show.legend = FALSE
@@ -47,7 +37,7 @@ build_flood_layer <- function(flow_now, flood_spikes,
       text = element_text(family = font_legend)
     ),
     geom_sf(
-      data = filter(flow_now, is_decommissioned),
+      data = flood_groups$decom,
       aes(geometry = geometry),
       shape = 4, color = config_vars$x_mark,
       size = 1.25, alpha = 0.75, stroke = 1
@@ -71,25 +61,9 @@ build_flood_layer <- function(flow_now, flood_spikes,
         )
     }
 
-    flow_spikes_gray <- flow_now |>
-      filter(
-        !above_flood,
-        !is.na(percentile),
-        percentile %in% c("75-90", "90-95", "high")
-      ) |>
-      pct_spike_transform()
+    flow_spikes_gray <- pct_spike_transform(flood_groups$gray)
 
-    flow_spikes_col <- flow_now |>
-      filter(
-        above_flood,
-        !is.na(percentile),
-        percentile %in% c("75-90", "90-95", "high"),
-        !is.na(flood.stage) | !is.na(moderate.flood.stage) |
-          !is.na(major.flood.stage)
-      ) |>
-      arrange(sev_rank, desc(above_amt),
-                     desc(dateTime)) |>
-      pct_spike_transform()
+    flow_spikes_col <- pct_spike_transform(flood_groups$flooded_high)
 
     gray_spike_layers <- if (nrow(flow_spikes_gray) > 0) {
       list(
@@ -152,11 +126,7 @@ build_flood_layer <- function(flow_now, flood_spikes,
         )
       ),
       geom_sf(
-        data = flow_now |>
-          filter(above_flood) |>
-          mutate(flood_status = factor(
-            flood_status, levels = names(flood_stage_cols_red))) |>
-          filter(!is.na(flood_status)),
+        data = flood_groups$flooded,
         aes(geometry = geometry, fill = flood_status),
         shape = 21, size = config_vars$flooded_point_size, stroke = 0.3,
         color = config_vars$bg_col, show.legend = FALSE
@@ -176,18 +146,10 @@ build_flood_layer <- function(flow_now, flood_spikes,
       "75-90" = 0.30, "90-95" = 0.65, "high" = 1.0
     )
 
-    flow_points_gray <- flow_now |>
-      filter(
-        !above_flood,
-        !is.na(percentile),
-        percentile %in% c("75-90", "90-95", "high")
-      ) |>
+    flow_points_gray <- flood_groups$gray |>
       mutate(index = pct_rank[as.character(percentile)])
 
-    flow_points_col <- flow_now |>
-      filter(above_flood) |>
-      arrange(sev_rank, desc(above_amt),
-                     desc(dateTime)) |>
+    flow_points_col <- flood_groups$flooded |>
       mutate(
         index = coalesce(pct_rank[as.character(percentile)], 0))
 
