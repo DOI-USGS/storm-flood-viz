@@ -44,6 +44,11 @@
 #' @param frame_dir Character. Directory for output PNGs.
 #' @param config_vars Named list of styling options from storm YAML viz_config.
 #' @param precip_grayscale Logical. TRUE for grayscale precip palette.
+#' @param anchors Named list of canvas anchor points from the storm YAML
+#'   `anchors:` block. Each is a length-2 numeric c(x, y) in 0-1 canvas coords.
+#'   Missing anchors fall back to the hardcoded `default_anchors` below. These
+#'   are the few layout knobs worth tuning per storm; in-block offsets are
+#'   design constants and stay in the panel builders.
 #' @return Character file path to the saved PNG, or NULL if `flow_now` is empty.
 compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
                            state_inner_borders, state_outer_lines,
@@ -57,14 +62,33 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
                            flood_stage_point_leg_path,
                            bbox_coords, progress_fraction,
                            storm_info, timezone_long, landfall_dtg,
-                           frame_dir, config_vars, precip_grayscale) {
+                           frame_dir, config_vars, precip_grayscale,
+                           anchors = list()) {
+  
   font_legend <- config_vars$load_font
+  pm <- config_vars$plot_margin
 
-  # Convenience wrapper — captures font/defaults so call sites only vary in
-  # text, position, and the occasional bold or size override.
-  lbl <- function(text, x, y, bold = FALSE,
-                  size = config_vars$canvas_legend_size, color = "black") {
-    draw_label(text, x = x, y = y, size = size,
+  # Named anchor points: the origin of each cohesive block on the 0-1 canvas.
+  # YAML overrides per storm; title/ocean/progress derive from existing config
+  default_anchors <- list(
+    title = c(pm, 1 - pm * 1.2),
+    precip_legend = c(pm + 0.002, 0.275),
+    gage_icons = c(pm - 0.025, 0.246),
+    flood_explain = c(pm + 0.002, 0.163),
+    flood_bar = c(0.170, 0.026),
+    ocean_label = c(config_vars$ocean_label_x,
+                    pm + config_vars$ocean_label_y_offset),
+    progress = c(config_vars$progress_x, config_vars$progress_y)
+  )
+  anchors <- modifyList(default_anchors, anchors)
+
+  # Anchored label helper: dx/dy are offsets from `anchor`, with dy reading
+  # "down from the anchor". Captures font and config so call sites stay terse.
+  lbl <- function(text, anchor = "flood_explain", dx = 0, dy = 0,
+                  bold = FALSE, size = NULL, color = "black") {
+    base <- anchors[[anchor]]
+    draw_label(text, x = base[1] + dx, y = base[2] - dy,
+      size = if (is.null(size)) config_vars$canvas_legend_size else size,
       fontfamily = font_legend, fontface = if (bold) "bold" else "plain",
       hjust = 0, vjust = 1, color = color, lineheight = 1)
   }
@@ -139,6 +163,9 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
   )
 
   # --- Canvas assembly ---
+  # Reads as a table of contents: a base canvas + main map, the title block,
+  # then one call per legend panel. Each panel builder returns a list of
+  # draw_* layers positioned relative to its anchor.
   p <- ggdraw(xlim = c(0, 1), ylim = c(0, 1)) +
     draw_grob(canvas,
       x = 0, y = 1, height = 1, width = 1, hjust = 0, vjust = 1) +
@@ -151,172 +178,30 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
       height = config_vars$plot_height, width = config_vars$plot_width
     ) +
     draw_image(logo,
-      x = 0.9 - config_vars$plot_margin * 2,
-      y = config_vars$plot_margin,
-      width = config_vars$logo_width,
+      x = 0.9 - pm * 2, y = pm, width = config_vars$logo_width,
       hjust = 0, vjust = 0, halign = 0, valign = 0
     ) +
-    lbl(config_vars$ocean_label_text,
-      x = config_vars$ocean_label_x,
-      y = config_vars$plot_margin + config_vars$ocean_label_y_offset,
+    lbl(config_vars$ocean_label_text, "ocean_label",
       size = config_vars$ocean_label_size,
-      color = config_vars$major_cities_text_col
-    ) +
-    lbl(title_block$storm_name,
-      x = config_vars$plot_margin,
-      y = 1 - config_vars$plot_margin * 1.2,
-      size = config_vars$storm_title_size, bold = TRUE
-    ) +
-    lbl(title_block$timestamp,
-      x = config_vars$plot_margin + 0.002,
-      y = 1 - config_vars$plot_margin - 0.055,
-      size = config_vars$canvas_subtitle_size, bold = TRUE
-    ) +
-    lbl(title_block$landfall,
-      x = config_vars$plot_margin + 0.26,
-      y = 1 - config_vars$plot_margin - 0.055,
-      size = config_vars$canvas_subtitle_size
-    ) +
+      color = config_vars$major_cities_text_col) +
+    lbl(title_block$storm_name, "title",
+      size = config_vars$storm_title_size, bold = TRUE) +
+    lbl(title_block$timestamp, "title", dx = 0.002, dy = 0.050,
+      size = config_vars$canvas_subtitle_size, bold = TRUE) +
+    lbl(title_block$landfall, "title", dx = 0.260, dy = 0.050,
+      size = config_vars$canvas_subtitle_size) +
     draw_plot(progress_bar,
-      x = config_vars$progress_x, y = config_vars$progress_y,
-      width = config_vars$progress_w, height = config_vars$progress_h
-    ) +
-    draw_plot(legends$precip,
-      x = config_vars$plot_margin + 0.052,
-      y = 0.227 + 0.011,
-      height = 0.05, width = 0.42 - config_vars$plot_margin
-    ) +
-    lbl("Total rainfall (in)",
-      x = config_vars$plot_margin + 0.002,
-      y = 1 - config_vars$plot_margin - 0.715 + 0.015
-    ) +
-    lbl("1",
-      x = config_vars$plot_margin + 0.158,
-      y = 1 - config_vars$plot_margin - 0.716 + 0.015
-    ) +
-    lbl(paste(global_max_precip),
-      x = config_vars$plot_margin + 0.333,
-      y = 1 - config_vars$plot_margin - 0.716 + 0.015
-    ) +
-    lbl("USGS streamgage",
-      x = config_vars$plot_margin + 0.028,
-      y = 1 - config_vars$plot_margin - 0.746 + 0.017
-    ) +
-    draw_plot(legends$dot,
-      x = config_vars$plot_margin - 0.025,
-      y = 0.208 + 0.017,
-      height = 0.03, width = 0.1 - config_vars$plot_margin
-    )
-
-  if (flood_spikes) {
-    p <- p +
-      lbl("Rapid-Deployment gage",
-        x = config_vars$plot_margin + 0.028,
-        y = 1 - config_vars$plot_margin - 0.775 + 0.019
-      ) +
-      draw_plot(legends$rdg,
-        x = config_vars$plot_margin - 0.025,
-        y = 0.177 + 0.019,
-        height = 0.03, width = 0.1 - config_vars$plot_margin
-      ) +
-      lbl("Out-of-service streamgage",
-        x = config_vars$plot_margin + 0.028,
-        y = 1 - config_vars$plot_margin - 0.775 - 0.008
-      ) +
-      draw_plot(legends$decom,
-        x = config_vars$plot_margin - 0.025,
-        y = 0.144,
-        height = 0.08, width = 0.1 - config_vars$plot_margin
-      ) +
-      lbl("A               appears at the 75th+ percentile",
-        x = config_vars$plot_margin + 0.004,
-        y = 1 - config_vars$plot_margin - 0.812
-      ) +
-      lbl("spike",
-        x = config_vars$plot_margin + 0.023,
-        y = 1 - config_vars$plot_margin - 0.812, bold = TRUE
-      ) +
-      draw_plot(legends$peak,
-        x = config_vars$plot_margin + 0.32,
-        y = 0.147,
-        height = 0.03, width = 0.1 - config_vars$plot_margin
-      ) +
-      lbl("The                 is correlated to flow percentiles",
-        x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.84
-      ) +
-      lbl("height",
-        x = config_vars$plot_margin + 0.0415,
-        y = 1 - config_vars$plot_margin - 0.84, bold = TRUE
-      ) +
-      draw_image(legends$flood_stage,
-        x = config_vars$plot_margin + 0.36,
-        y = 0.114, width = 0.12, height = 0.12
-      ) +
-      lbl("The              is the severity of the flood",
-        x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.867
-      ) +
-      lbl("color",
-        x = config_vars$plot_margin + 0.042,
-        y = 1 - config_vars$plot_margin - 0.867, bold = TRUE
-      ) +
-      draw_plot(flood_status_bar,
-        x = 0.17, y = 0.026, width = 0.2, height = 0.055)
-  } else {
-    p <- p +
-      lbl("Rapid-Deployment gage",
-        x = config_vars$plot_margin + 0.028,
-        y = 1 - config_vars$plot_margin - 0.775 + 0.019
-      ) +
-      draw_plot(legends$rdg,
-        x = config_vars$plot_margin - 0.025,
-        y = 0.177 + 0.019,
-        height = 0.03, width = 0.1 - config_vars$plot_margin
-      ) +
-      lbl("Out-of-service streamgage",
-        x = config_vars$plot_margin + 0.028,
-        y = 1 - config_vars$plot_margin - 0.775 - 0.008
-      ) +
-      draw_plot(legends$decom,
-        x = config_vars$plot_margin - 0.025,
-        y = 0.144,
-        height = 0.08, width = 0.1 - config_vars$plot_margin
-      ) +
-      lbl("If it floods:",
-        x = config_vars$plot_margin + 0.004,
-        y = 1 - config_vars$plot_margin - 0.810
-      ) +
-      lbl("     The              is the severity of the flood",
-        x = config_vars$plot_margin + 0.002,
-        y = 1 - config_vars$plot_margin - 0.836
-      ) +
-      lbl("color",
-        x = config_vars$plot_margin + 0.062,
-        y = 1 - config_vars$plot_margin - 0.836, bold = TRUE
-      ) +
-      draw_plot(flood_status_bar,
-        x = 0.189, y = 0.054, width = 0.2, height = 0.055) +
-      lbl("      The           is correlated to flow percentiles",
-        x = config_vars$plot_margin - 0.02,
-        y = 1 - config_vars$plot_margin - 0.934
-      ) +
-      lbl("       size",
-        x = config_vars$plot_margin + 0.014,
-        y = 1 - config_vars$plot_margin - 0.934, bold = TRUE
-      ) +
-      draw_image(legends$flood_stage,
-        x = config_vars$plot_margin + 0.355,
-        y = 0.011, width = 0.08, height = 0.14,
-        scale = 1.0
-      )
-  }
+      x = anchors$progress[1], y = anchors$progress[2],
+      width = config_vars$progress_w, height = config_vars$progress_h) +
+    build_precip_legend_panel(legends, global_max_precip, lbl, anchors,
+      config_vars) +
+    build_gage_icons_panel(legends, lbl, anchors, config_vars) +
+    build_flood_explainer_panel(legends, flood_spikes, flood_status_bar, lbl,
+      anchors, config_vars)
 
   if (!is.null(title_block$classification)) {
     p <- p + lbl(
-      title_block$classification,
-      x = config_vars$plot_margin + 0.002,
-      y = 1 - config_vars$plot_margin - 0.08,
+      title_block$classification, "title", dx = 0.002, dy = 0.075,
       size = config_vars$canvas_subtitle_size
     )
   }
