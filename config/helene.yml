@@ -152,11 +152,9 @@ viz_config:
   progress_w: 1.1
   progress_h: 0.015
 
-# Canvas anchor points (0-1 coords, y from bottom). The few layout knobs worth
-# tuning per storm, each cohesive legend block positions its items relative to
-# its anchor
+# Canvas anchor points (0-1 coords, y from bottom). legend_box is the single
+# knob for the whole legend stack. Move it to reposition the entire legend
+# panel for a new storm. The internal layout (precip legend, gage icons, flood
+# explainer, status bar) follows it via design-constant offsets defined in R.
 anchors:
-  precip_legend: [0.027, 0.275]
-  gage_icons: [0.0, 0.246]
-  flood_explain: [0.027, 0.163]
-  flood_bar: [0.17, 0.026]
+  legend_box: [0.0, 0.275]

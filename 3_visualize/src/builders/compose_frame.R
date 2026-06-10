@@ -69,19 +69,27 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
   font_legend <- config_vars$load_font
   pm <- config_vars$plot_margin
 
-  # Named anchor points: the origin of each cohesive block on the 0-1 canvas.
-  # YAML overrides per storm; title/ocean/progress derive from existing config
+  # Named anchor points on the 0-1 canvas. `legend_box` is the single knob for
+  # the whole legend stack — move it to reposition the entire panel for a new
+  # storm. title/ocean/progress derive from existing config keys. YAML can
+  # override any of these.
   default_anchors <- list(
     title = c(pm, 1 - pm * 1.2),
-    precip_legend = c(pm + 0.002, 0.275),
-    gage_icons = c(pm - 0.025, 0.246),
-    flood_explain = c(pm + 0.002, 0.163),
-    flood_bar = c(0.170, 0.026),
+    legend_box = c(0, 0.275),
     ocean_label = c(config_vars$ocean_label_x,
                     pm + config_vars$ocean_label_y_offset),
     progress = c(config_vars$progress_x, config_vars$progress_y)
   )
   anchors <- modifyList(default_anchors, anchors)
+
+  # Legend blocks position relative to the legend_box origin (top-left of the
+  # stack). These offsets are design constants — they describe the legend's
+  # internal layout, not the storm — so they stay in R, not YAML.
+  lb <- anchors$legend_box
+  anchors$precip_legend <- lb + c(0.027, 0)
+  anchors$gage_icons <- lb + c(0, -0.029)
+  anchors$flood_explain <- lb + c(0.027, -0.112)
+  anchors$flood_bar <- lb + c(0.17, -0.249)
 
   # Anchored label helper: dx/dy are offsets from `anchor`, with dy reading
   # "down from the anchor". Captures font and config so call sites stay terse.
@@ -197,8 +205,10 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
     build_precip_legend_panel(legends, global_max_precip, lbl, anchors,
       config_vars) +
     build_gage_icons_panel(legends, lbl, anchors, config_vars) +
-    build_flood_explainer_panel(legends, flood_spikes, flood_status_bar, lbl,
-      anchors, config_vars)
+    build_flood_status_bar_panel(flood_status_bar, flood_spikes, anchors,
+      config_vars) +
+    build_flood_explainer_panel(legends, flood_spikes, lbl, anchors,
+      config_vars)
 
   if (!is.null(title_block$classification)) {
     p <- p + lbl(

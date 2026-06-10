@@ -16,7 +16,7 @@ build_precip_legend_panel <- function(legends, global_max_precip, lbl,
   list(
     lbl("Total rainfall (in)", "precip_legend"),
     draw_plot(legends$precip,
-      x = a[1] + 0.050, y = 0.238,
+      x = a[1] + 0.050, y = a[2] - 0.037,
       height = 0.05, width = 0.42 - config_vars$plot_margin),
     lbl("1", "precip_legend", dx = 0.156, dy = 0.001),
     lbl(paste(global_max_precip), "precip_legend", dx = 0.331, dy = 0.001)
