@@ -151,6 +151,9 @@ viz_config:
   progress_y: -0.001
   progress_w: 1.1
   progress_h: 0.015
+  # Flood spike geometry in projected units (meters); depends on proj above
+  peak_height: 200000
+  y_baseheight: 10000
 
 # Canvas anchor points (0-1 coords, y from bottom). legend_box is the single
 # knob for the whole legend stack. Move it to reposition the entire legend

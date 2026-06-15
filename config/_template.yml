@@ -105,6 +105,9 @@ viz_config:
   plot_width: 1.39
   plot_height: 1.6
   canvas_line_height: 0.027
+  # Flood spike geometry in projected units (meters); depends on proj above
+  peak_height: 200000
+  y_baseheight: 10000
 
 # Canvas anchor points (0-1 coords, y from bottom). legend_box is the single
 # knob for the whole legend stack. Move it to reposition the entire legend
