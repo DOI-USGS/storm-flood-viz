@@ -26,6 +26,12 @@ load_storm_config <- function(path) {
 
   cfg$anchors <- lapply(cfg$anchors, function(a) as.numeric(unlist(a)))
 
+  # Optional city override: list of name/state maps -> tibble (NULL if absent).
+  # Use [["cities"]] not $cities: $ partial-matches the `cities_n` key.
+  if (!is.null(cfg[["cities"]])) {
+    cfg$cities <- dplyr::bind_rows(lapply(cfg[["cities"]], tibble::as_tibble))
+  }
+
   # Named-map palettes -> named character vector
   cfg$pal_fs_blue <- unlist(cfg$pal_fs_blue)
   cfg$pal_fs_red <- unlist(cfg$pal_fs_red)
@@ -56,6 +62,8 @@ p0_targets <- list(
   tar_target(p0_landfall_time, p0_storm_cfg$landfall_time),
   tar_target(p0_timezone, p0_storm_cfg$timezone),
   tar_target(p0_timezone_abv, p0_storm_cfg$timezone_abv),
+  tar_target(p0_cities_n, p0_storm_cfg$cities_n),
+  tar_target(p0_cities_override, p0_storm_cfg[["cities"]]),
 
   # Viz leaves
   tar_target(p0_viz_fs_config_pal_blue, p0_storm_cfg$pal_fs_blue),

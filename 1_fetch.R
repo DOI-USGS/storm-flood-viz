@@ -128,7 +128,8 @@ p1_targets <- list(
     get_major_cities(
       bbox_sf = p0_bbox_sf,
       proj = p0_proj,
-      n = 12
+      n = p0_cities_n,
+      override = p0_cities_override
     )
   ),
 
