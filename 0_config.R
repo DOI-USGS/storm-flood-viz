@@ -24,6 +24,8 @@ load_storm_config <- function(path) {
   cfg$storm_info <- tibble::as_tibble(cfg$storm_info)
   cfg$viz_config <- tibble::as_tibble(cfg$viz_config)
 
+  cfg$anchors <- lapply(cfg$anchors, function(a) as.numeric(unlist(a)))
+
   # Named-map palettes -> named character vector
   cfg$pal_fs_blue <- unlist(cfg$pal_fs_blue)
   cfg$pal_fs_red <- unlist(cfg$pal_fs_red)
@@ -64,6 +66,7 @@ p0_targets <- list(
   tar_target(p0_precip_grayscale_var, p0_storm_cfg$precip_grayscale),
   tar_target(p0_flood_spike_var, p0_storm_cfg$flood_spike),
   tar_target(p0_viz_config_df, p0_storm_cfg$viz_config),
+  tar_target(p0_viz_anchors, p0_storm_cfg$anchors),
 
   # Derived from per-storm values (precip/NWIS times in UTC to match precip)
   tar_target(p0_precip_bbox, unname(as.list(p0_bbox_sf))),

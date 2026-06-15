@@ -1,6 +1,20 @@
-source('3_visualize/src/mapping_utils.R')
-source('3_visualize/src/title_end_frame.R')
-source('3_visualize/src/video_utils.R')
+source('3_visualize/src/builders/build_progress_bar.R')
+source('3_visualize/src/builders/build_basemap.R')
+source('3_visualize/src/builders/build_storm_track.R')
+source('3_visualize/src/builders/build_rdg_layer.R')
+source('3_visualize/src/builders/build_precip_layer.R')
+source('3_visualize/src/builders/build_flood_layer.R')
+source('3_visualize/src/builders/build_cities_layer.R')
+source('3_visualize/src/builders/build_legends.R')
+source('3_visualize/src/builders/build_flood_status_bar.R')
+source('3_visualize/src/builders/build_title_block.R')
+source('3_visualize/src/builders/build_precip_legend_panel.R')
+source('3_visualize/src/builders/build_gage_icons_panel.R')
+source('3_visualize/src/builders/build_flood_status_bar_panel.R')
+source('3_visualize/src/builders/build_flood_explainer_panel.R')
+source('3_visualize/src/builders/compose_frame.R')
+source('3_visualize/src/builders/build_title_end_frame.R')
+source('3_visualize/src/builders/build_video_mp4.R')
 
 p3_targets <- list(
   # One symbolic name for the layer style ("spike" or "point")
@@ -50,18 +64,18 @@ p3_targets <- list(
   # Build flood stage animation frames
   tar_target(
     p3_flood_stage_frames,
-    hurricane_flood_stage_frames(
+    compose_frame(
       dtg = p2_all_precip_timestamps,
       precip_now = p3_precip_by_time,
       global_max_precip = p3_global_max_precip_in,
       global_max_flood_stages = p2_global_flow_maxes$max_flooded,
       flow_now = p2_flow_by_time,
+      flood_groups_now = p2_flood_groups_by_time,
       storm_now = p3_storm_by_time,
       rdg_now = p3_rdg_by_time,
       storm_info = p0_storm_info,
       progress_fraction = p2_progress_fract,
       bbox_coords = p1_bbox_coords,
-      state_borders = p1_conus_bbox_crop_sf,
       state_inner_borders = p2_state_inner_lines,
       state_outer_lines = p2_bbox_outer_lines,
       major_cities = p1_major_cities_sf,
@@ -70,14 +84,12 @@ p3_targets <- list(
       precip_grayscale = p0_precip_grayscale_var,
       # points vs spikes viz
       flood_spikes = p0_flood_spike_var,
-      points_range = c(2, 6),
+      points_range = c(1.5, 4.5),
       timezone_long = p0_timezone,
       precip_cols = p0_viz_precip_config_pal_blue,
       precip_grayscale_cols = p0_viz_precip_config_pal_grayscale,
       config_vars = p0_viz_config_df,
-      peak_height = 200000,
-      y_baseheight = 10000,
-      global_max_duration = p2_global_flow_maxes$max_duration,
+      anchors = p0_viz_anchors,
       landfall_dtg = p0_landfall_time,
       target_rdg_icon = "3_visualize/in/bullseye.png",
       logo_path = '3_visualize/in/usgs_logo_black.png',
@@ -87,7 +99,8 @@ p3_targets <- list(
       frame_dir = p3_frame_dir
     ),
     pattern = map(p2_all_precip_timestamps, p3_precip_by_time, p2_flow_by_time,
-                  p3_storm_by_time, p2_progress_fract, p3_rdg_by_time),
+                  p2_flood_groups_by_time, p3_storm_by_time, p2_progress_fract,
+                  p3_rdg_by_time),
     format = "file"
   ),
   tar_target(

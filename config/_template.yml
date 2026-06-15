@@ -104,3 +104,15 @@ viz_config:
   plot_shift_y: -0.212
   plot_width: 1.39
   plot_height: 1.6
+  canvas_line_height: 0.027
+  # Flood spike geometry in projected units (meters); depends on proj above
+  peak_height: 200000
+  y_baseheight: 10000
+
+# Canvas anchor points (0-1 coords, y from bottom). legend_box is the single
+# knob for the whole legend stack. Move it to reposition the entire legend
+# panel for a new storm. The internal layout (precip legend, gage icons, flood
+# explainer, status bar) follows it via design-constant offsets defined in R.
+# Omitted anchors fall back to compose_frame()'s default_anchors.
+anchors:
+  legend_box: [0.0, 0.275]
