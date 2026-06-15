@@ -12,19 +12,20 @@
 #' @param flood_spikes Logical. TRUE for spike mode; FALSE for sized-point mode.
 #' @param flood_stage_cols_red Named character vector mapping flood-status
 #'   labels to hex colors. Used for fill/color scales and factor levels.
-#' @param peak_height Numeric. Maximum spike height in projected units.
-#' @param y_baseheight Numeric. Offset added to a gage's y position to form the
-#'   spike base, so even the shortest spike is immediately visible.
 #' @param points_range Numeric vector length 2. Min/max point sizes passed to
 #'   `scale_size_continuous()` in point mode, e.g. `c(2, 6)`.
 #' @param font_legend Character. Font family.
 #' @param config_vars Named list of styling options. Must contain `bg_col`,
 #'   `x_mark`, `streamgage_col`, `non_flooded_point_size`, `flooded_point_size`,
-#'   `flood_point_alpha`, `flood_legend_key_height_cm`, and `font_size`.
+#'   `flood_point_alpha`, `flood_legend_key_height_cm`, `font_size`, and the
+#'   projected-unit spike geometry `peak_height` (max spike height) and
+#'   `y_baseheight` (spike base offset, so the shortest spike stays visible).
 #' @return A list of ggplot2 layer and scale objects suitable for use with `+`.
 build_flood_layer <- function(flood_groups, flood_spikes,
-                               flood_stage_cols_red, peak_height, y_baseheight,
-                               points_range, font_legend, config_vars) {
+                              flood_stage_cols_red,
+                              points_range, font_legend, config_vars) {
+  peak_height <- config_vars$peak_height
+  y_baseheight <- config_vars$y_baseheight
   base_layers <- list(
     ggnewscale::new_scale_fill(),
     geom_sf(
@@ -71,7 +72,7 @@ build_flood_layer <- function(flood_groups, flood_spikes,
           data = flow_spikes_gray,
           aes(
             x = .data$x, xend = .data$xend,
-            y = .data$y + 10000, yend = .data$yend,
+            y = .data$y + y_baseheight, yend = .data$yend,
             alpha = after_stat(I(0.6 + index)),
             linewidth = after_stat(I((1 - index) * 1.4))
           ),

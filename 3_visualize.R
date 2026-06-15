@@ -90,8 +90,6 @@ p3_targets <- list(
       precip_grayscale_cols = p0_viz_precip_config_pal_grayscale,
       config_vars = p0_viz_config_df,
       anchors = p0_viz_anchors,
-      peak_height = 200000,
-      y_baseheight = 10000,
       landfall_dtg = p0_landfall_time,
       target_rdg_icon = "3_visualize/in/bullseye.png",
       logo_path = '3_visualize/in/usgs_logo_black.png',

@@ -28,8 +28,6 @@
 #' @param global_max_precip Numeric. Global max precip (inches) for scale limit.
 #' @param global_max_flood_stages Numeric. Max flooded gage count across all
 #'   timesteps; sets the flood-status barplot x-axis limit.
-#' @param peak_height Numeric. Max spike height in projected units.
-#' @param y_baseheight Numeric. Spike base offset in projected units.
 #' @param points_range Numeric length-2. Min/max point sizes for point mode.
 #' @param logo_path Character. Path to USGS logo PNG.
 #' @param hurricane_symbol_path Character. Path to hurricane symbol PNG.
@@ -58,7 +56,7 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
                            flood_stage_cols_red, precip_cols,
                            precip_grayscale_cols, flood_spikes,
                            global_max_precip, global_max_flood_stages,
-                           peak_height, y_baseheight, points_range,
+                           points_range,
                            logo_path, hurricane_symbol_path, target_rdg_icon,
                            flood_stage_spike_leg_path,
                            flood_stage_point_leg_path,
@@ -128,7 +126,7 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
     ) +
     build_flood_layer(
       flood_groups_now, flood_spikes,
-      flood_stage_cols_red, peak_height, y_baseheight,
+      flood_stage_cols_red,
       points_range, font_legend, config_vars
     ) +
     build_cities_layer(major_cities, font_legend, config_vars) +
