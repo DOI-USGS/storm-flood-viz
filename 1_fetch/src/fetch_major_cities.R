@@ -2,12 +2,10 @@
 #'
 #' Auto-selects the most populous incorporated places intersecting `bbox_sf`,
 #' using ACS total population from the Census API (via tidycensus), with an
-#' optional per-storm override to force-include specific cities. Replaces the
-#' hand-curated SE-US city list so labeling works for any CONUS bbox without
-#' code edits.
+#' optional per-storm override to force-include specific cities.
 #'
 #' Requires a Census API key in the `CENSUS_API_KEY` env var (see
-#' `tidycensus::census_api_key()`).
+#' `tidycensus::census_api_key()`or README.md).
 #'
 #' @param bbox_sf An `sf::st_bbox` (or object coercible via `st_as_sfc`) in
 #'   EPSG:4269 (NAD83) decimal degrees — the storm bbox from `p0_bbox_sf`.
