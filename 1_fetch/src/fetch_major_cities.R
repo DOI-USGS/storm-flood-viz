@@ -45,8 +45,19 @@ get_major_cities <- function(bbox_sf, proj, n = 12, override = NULL,
     rename(pop = estimate) |>
     mutate(
       # ACS NAME is e.g. "Miami city, Florida"; keep the bare city name.
+      # Consolidated city-counties read e.g. "Indianapolis city (balance),
+      # Indiana", "Louisville/Jefferson County metro government (balance),
+      # Kentucky", or "Athens-Clarke County unified government (balance),
+      # Georgia". Drop the state, the "(balance)" tag, the place-type /
+      # government designator, then the county tail (slash- or "County"-form).
       city = sub(",.*$", "", NAME),
-      city = sub(" (city|town|village|borough|municipality|CDP)$", "", city),
+      city = sub(" \\(balance\\)$", "", city),
+      city = sub(paste0(" (city|town|village|borough|municipality|CDP|",
+                        "((urban |metropolitan |metro )?county |consolidated |",
+                        "unified |metropolitan |metro )?government)$"),
+                 "", city),
+      city = sub("/.*$", "", city),
+      city = sub("-[A-Za-z]+ County$", "", city),
       state = sub("^.*, ", "", NAME)
     ) |>
     sf::st_transform(proj) |>
@@ -71,7 +82,16 @@ get_major_cities <- function(bbox_sf, proj, n = 12, override = NULL,
     inner_join(places, wanted, by = c("city", "state"))
   }
 
+  # Friendlier labels for hyphen-merger city-counties whose county tail has no
+  # "County" word for the rules above to catch (and which we can't strip
+  # generically without breaking real hyphenated names like "Winston-Salem").
+  # Anything not listed passes through unchanged.
+  display_aliases <- c(
+    "Nashville-Davidson" = "Nashville",
+    "Lexington-Fayette" = "Lexington"
+  )
+
   bind_rows(auto, forced) |>
     distinct(GEOID, .keep_all = TRUE) |>
-    transmute(NAME = city)
+    transmute(NAME = coalesce(display_aliases[city], city))
 }
