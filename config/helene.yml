@@ -38,6 +38,23 @@ proj: "+proj=aea +lat_0=23 +lon_0=-84 +lat_1=30 +lat_2=37 +x_0=0 +y_0=0 +ellps=G
 timezone: "America/New_York"
 timezone_abv: "ET"
 
+# City labels
+# The cities_n most populous places within the bbox are auto-labeled. Add a
+# `cities` list of name/state pairs to force-include specific cities (e.g. ones
+# below the population cutoff) regardless of the cutoff or bbox.
+cities_n: 10
+cities:
+  - name: "Atlanta"
+    state: "GA"
+  - name: "Columbia"
+    state: "SC"
+  - name: "Memphis"
+    state: "TN" 
+  - name: "Tallahassee"
+    state: "FL"
+  - name: "Louisville"
+    state: "KY"
+    
 # Viz toggles
 # precip_grayscale: "FALSE" = colorized precip, "TRUE" = grayscale precip
 # flood_spike: "FALSE" = sized flooded points, "TRUE" = sized flooded spikes
@@ -46,13 +63,13 @@ flood_spike: "TRUE"
 
 # Color palettes
 pal_fs_blue:
-  "Not flooded": "#dcdcdc"
+  "Not flooded": "#d5d5d5"
   "Flood": "#4ecad7"
   "Moderate": "#17718E"
   "Major": "#003e6a"
 
 pal_fs_red:
-  "Not flooded": "#dcdcdc"
+  "Not flooded": "#d5d5d5"
   "Flood": "#e5a000"
   "Moderate": "#F7513B"
   "Major": "#C917E8"

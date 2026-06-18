@@ -52,6 +52,12 @@ Map frames are rendered using `ragg` as the graphics device, which resolves font
 
 If you change `load_font` to a different font family, install that font on your system using the same steps above.
 
+## API keys
+
+> **TODO (next branch):** Document required API keys and how to set them in `.Renviron`:
+> - **Census API key** for `tidycensus` (used by `get_major_cities()` to pull ACS population). Request at <https://api.census.gov/data/key_signup.html> and set `CENSUS_API_KEY`.
+> - **dataRetrieval API key** for USGS water data services. Document the env var and signup steps.
+
 ## Running the code
 
 This code has been organized into a data pipeline using the [targets](https://books.ropensci.org/targets/) package. Targets is a pipeline building tool that automatically tracks the status (i.e., up-to-date vs. out-of-date) and builds intermediate objects only as needed. To run the entire pipeline, you can run the command [`targets::tar_make()`](https://docs.ropensci.org/targets/reference/tar_make.html), after the steps (above) have been completed. For more information on targets, the package author has written [a walkthrough to get started](https://books.ropensci.org/targets/walkthrough.html) and there is an [Introduction to targets](https://carpentries-incubator.github.io/targets-workshop/) training that is currently in development but still may be useful in its current state.
