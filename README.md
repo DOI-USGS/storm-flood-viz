@@ -249,17 +249,6 @@ The pipeline runs in four phases. Each phase has a top-level script (`N_*.R`) th
 **Project files**
 
 -   `.gitignore`, `code.json` ([USGS metadata template](https://www.usgs.gov/products/software/software-management/distribution-usgs-code)), `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `DISCLAIMER.md`, `LICENSE.md`, `README.md`, `USGS_ID_black.png`, and the `hurricane-revamp.Rproj` [RStudio project file](https://r4ds.hadley.nz/workflow-scripts#projects).
--   `REFACTOR.md`, `AGENTS.md`, and the `TASKS/` directory are development references (not part of the pipeline) — see [Development notes](#development-notes).
-
-## Development notes
-
-This repository was refactored from an earlier single-storm version through a series of small, individually reviewed pull requests, with assistance from an AI coding agent (see [Acknowledgments](#acknowledgments)). For transparency, the planning and guidance documents used during that work are kept in the repository:
-
--   `REFACTOR.md` — high-level refactor goals, constraints, and code-style conventions.
--   `TASKS/` — per-task plans (`01`–`05`) that broke the refactor into scoped, reviewable steps (config consolidation, percentile speedup, phase separation, builder decomposition, and city generalization), each with its goal, rationale, affected files, and test plan.
--   `AGENTS.md` — the guardrails given to the AI coding agent (e.g. think before coding, prefer simplicity, make minimal reviewed changes, and do not add dependencies without approval).
-
-These are development references, not part of the pipeline, and can be ignored when simply running the code.
 
 ## Expertise required
 
