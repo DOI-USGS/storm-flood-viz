@@ -92,11 +92,15 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
   # Anchored label helper: dx/dy are offsets from `anchor`, with dy reading
   # "down from the anchor". Captures font and config so call sites stay terse.
   lbl <- function(text, anchor = "flood_explain", dx = 0, dy = 0,
-                  bold = FALSE, size = NULL, color = "black") {
+                  bold = FALSE, italic = FALSE, size = NULL, color = "black") {
     base <- anchors[[anchor]]
+    face <- if (bold && italic) "bold.italic"
+      else if (bold) "bold"
+      else if (italic) "italic"
+      else "plain"
     draw_label(text, x = base[1] + dx, y = base[2] - dy,
       size = if (is.null(size)) config_vars$canvas_legend_size else size,
-      fontfamily = font_legend, fontface = if (bold) "bold" else "plain",
+      fontfamily = font_legend, fontface = face,
       hjust = 0, vjust = 1, color = color, lineheight = 1)
   }
 
@@ -189,7 +193,7 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
       hjust = 0, vjust = 0, halign = 0, valign = 0
     ) +
     lbl(config_vars$ocean_label_text, "ocean_label",
-      size = config_vars$ocean_label_size,
+      size = config_vars$ocean_label_size, italic = TRUE,
       color = config_vars$major_cities_text_col) +
     lbl(title_block$storm_name, "title",
       size = config_vars$storm_title_size, bold = TRUE) +
