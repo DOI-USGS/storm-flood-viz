@@ -2,7 +2,9 @@ library(targets)
 library(tarchetypes)
 library(reticulate)
 
-options(tidyverse.quiet = TRUE, timeout = 800)
+# tigris_use_cache: cache downloaded Census/TIGER layers (states, places) to
+# disk so they are not re-downloaded on every pipeline run.
+options(tidyverse.quiet = TRUE, timeout = 800, tigris_use_cache = TRUE)
 tar_option_set(packages = c('tidyverse',
                             'sf',
                             'reticulate',
