@@ -240,7 +240,7 @@ Per-storm and visualization settings live in `config/<storm>.yml`, **not** in R 
     -   `peak_height` — max spike height.
     -   `y_baseheight` — spike base offset above the gage.
 
-**`anchors`** — `legend_box` sets the position of the entire legend stack on the canvas; move it to reposition the legend panel for a new storm.
+**`anchors`** — `legend_box` sets the position of the entire legend stack on the canvas; move it to reposition the legend panel for a new storm. The defaults work for most CONUS bboxes; see `default_anchors` in [`compose_frame.R`](3_visualize/src/builders/compose_frame.R) for the full list of anchor points and how they are derived.
 
 > **Regional note:** For storms outside the contiguous U.S. (Puerto Rico, Alaska, Hawaii, etc.), you may also need to adjust `p1_conus_bbox_crop_sf`, which downloads [tigris](https://github.com/walkerke/tigris) state borders and crops to the bbox.
 
