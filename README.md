@@ -24,13 +24,15 @@
 
 ## Citation
 
-Azadpour E, Hinman ED, Kwang JS, Vaarre-Lamoureux K, Nell C, Corson-Dosch HR. 2025. Visualizing Hurricane Impacts Using Flood Stage and Streamgage Data. U.S. Geological Survey software release. Reston, Va. <https://doi.org/10.5066/P1CGKFTD>. This repository creates a series of hurricane/storm track related maps using NOAA flood data from [water.noaa.gov](https://water.noaa.gov/resources/downloads/reports/) and hurricane track data is from NOAA National Hurricane Center [nhc.noaa.gov](https://www.nhc.noaa.gov/gis/best_track/)
+Azadpour E, Hinman ED, Kwang JS, Vaarre-Lamoureux K, Nell C, Corson-Dosch HR. 2025. Visualizing Hurricane Impacts Using Flood Stage and Streamgage Data. U.S. Geological Survey software release. Reston, Va. <https://doi.org/10.5066/P1CGKFTD>.
 
-# Running the pipeline
+## Setup {#setup}
 
-This repository is organized as a data pipeline built with the [`targets`](https://github.com/ropensci/targets) package, which tracks each step's status (up-to-date vs. out-of-date) and rebuilds only what is needed. After completing the setup steps below (R packages, Python environment, fonts, and API keys), run [`targets::tar_make()`](https://docs.ropensci.org/targets/reference/tar_make.html) in the console to build the entire pipeline.
+Complete these one-time steps before running the pipeline.
 
-If packages are missing you will see an error like `Error : could not find packages terra, ggimage in library paths`. Install everything the pipeline needs up front, then re-run `tar_make()`:
+### R packages
+
+Install the required R packages:
 
 ``` r
 install.packages(c(
@@ -48,9 +50,9 @@ install.packages(c(
 remotes::install_github("DOI-USGS/dataRetrieval")
 ```
 
-For more information on `targets`, see the [getting-started walkthrough](https://books.ropensci.org/targets/walkthrough.html) and the [Introduction to targets](https://carpentries-incubator.github.io/targets-workshop/) training.
+If a package is still missing when you run the pipeline, you will see an error like `Error : could not find packages terra, ggimage in library paths`; install it and re-run.
 
-## Python environment setup
+### Python environment setup
 
 The pipeline uses Python only for precipitation data retrieval (`get_precip.py`). Its dependencies are defined in the included [`environment.yml`](environment.yml).
 
@@ -74,7 +76,7 @@ You can find the correct path by activating your Python environment in the termi
 
     If you already have the environment, update it with `conda env update -f environment.yml`.
 
-## Font setup
+### Font setup
 
 Map frames are rendered using `ragg` as the graphics device, which resolves fonts through `systemfonts` from your system's installed font files. The pipeline uses **Source Sans 3** (configured via `load_font` in `config/helene.yml`). To set it up:
 
@@ -84,15 +86,15 @@ Map frames are rendered using `ragg` as the graphics device, which resolves font
 
 If you change `load_font` to a different font family, install that font on your system using the same steps above.
 
-## API keys
+### API keys
 
 The pipeline requires two API keys, read from the `CENSUS_API_KEY` and `API_USGS_PAT` environment variables. The pipeline will fail at the fetch step without them. To avoid pasting tokens into scripts or other potentially shared files, store them as user-level environment variables on your computer (see the per-OS steps under [USGS API token](#usgs-api-token) below).
 
-### Census API key
+#### Census API key
 
 Required by `tidycensus`, which `fetch_major_cities()` uses to pull American Community Survey population for city labeling. Request a free key at <https://api.census.gov/data/key_signup.html>, then store it as `CENSUS_API_KEY` (the same way as the USGS token below, or via `usethis::edit_r_environ()` followed by an R restart).
 
-### USGS API token {#usgs-api-token}
+#### USGS API token {#usgs-api-token}
 
 Required by the USGS Water Data APIs queried through `dataRetrieval` (in `fetch_uv_peaks_data()` and `fetch_site_stats()`). If you do not already have a USGS API token, you can request one here:
 
@@ -100,7 +102,7 @@ Required by the USGS Water Data APIs queried through `dataRetrieval` (in `fetch_
 
 The pipeline looks for a token in the `API_USGS_PAT` environment variable. To avoid pasting a token into scripts or other potentially shared files, store it as a user-level environment variable on your computer instead.
 
-#### Mac
+**Mac**
 
 Add this line to your shell profile such as `~/.zshrc`:
 
@@ -114,7 +116,7 @@ Then restart Terminal, or reload your shell:
 source ~/.zshrc
 ```
 
-#### Windows
+**Windows**
 
 In PowerShell, set a user-level environment variable with:
 
@@ -132,7 +134,13 @@ setx API_USGS_PAT "your-token-here"
 
 After you set the token globally, you should not need to paste it again into your terminal each time you use this repo. See the [dataRetrieval API tokens guide](https://doi-usgs.github.io/dataRetrieval/articles/read_waterdata_functions.html#api-tokens) for more information.
 
-## Verify your setup
+## Running the pipeline
+
+This repository is organized as a data pipeline built with the [`targets`](https://github.com/ropensci/targets) package, which tracks each step's status (up-to-date vs. out-of-date) and rebuilds only what is needed. Once the [Setup](#setup) steps above are complete, run [`targets::tar_make()`](https://docs.ropensci.org/targets/reference/tar_make.html) in the console to build the entire pipeline.
+
+For more information on `targets`, see the [getting-started walkthrough](https://books.ropensci.org/targets/walkthrough.html) and the [Introduction to targets](https://carpentries-incubator.github.io/targets-workshop/) training.
+
+### Verify your setup
 
 Before running the full pipeline, which can take several hours, confirm your installation by building a single lightweight target:
 
@@ -142,7 +150,7 @@ targets::tar_make(p1_flood_stage_file)
 
 This downloads one CSV and should complete in under 30 seconds. A successful build confirms that `targets` and the required R packages are installed correctly. To also confirm your API keys are configured, build a key-dependent target such as `targets::tar_make(p1_major_cities_sf)` (which uses the Census key) before running the full `targets::tar_make()`.
 
-## Code runtime
+### Code runtime
 
 The full pipeline run-time varies with the configured date range (`date_start` / `date_end`) and the size of the `bbox`, i.e. a larger area and longer window mean more precipitation rasters and gage queries. A first run, which downloads all source data, can take a few hours on a high-end laptop (e.g. Apple M1 Max); after that, `tar_make()` only rebuilds the targets affected by your changes.
 
