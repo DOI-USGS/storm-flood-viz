@@ -1,10 +1,15 @@
 # Per-storm and viz configuration for Hurricane Helene (Sept 2024).
 #
+# For a new storm, fill in date_start, date_end, landfall_time,
+# storm_info, bbox, and proj. Everything below those (palettes, viz_config,
+# anchors) has working defaults and usually does not need to change. 
+# See README.md for more details on each config component. 
+#
 # To configure a new storm: copy config/_template.yml, fill in values,
 # then update p0_storm_cfg_file in 0_config.R to point at the new file.
 #
 # Times are UTC. Display timezone is applied only in the final mapping
-# step (see 3_visualize/src/mapping_utils.R).
+# step (see 3_visualize/src/builders/).
 
 # Storm metadata
 date_start: "2024-09-24"
