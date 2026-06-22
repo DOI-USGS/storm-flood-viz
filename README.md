@@ -359,6 +359,8 @@ National Oceanic and Atmospheric Administration. NWPS all gauges report [Data se
 
 National Hurricane Center. Best track data (HURDAT2) [Data set]. National Oceanic and Atmospheric Administration. Retrieved June 23, 2025, from <https://www.nhc.noaa.gov/gis/best_track/>
 
+NOAA National Centers for Environmental Prediction (NCEP). Stage IV quantitative precipitation estimate (QPE) [Data set]. Accessed as a cloud-optimized Zarr store via the USGS Geo Data Portal: <https://api.water.usgs.gov/gdp/pygeoapi/stac/stac-collection/stageiv_combined>
+
 USGS Short-Term Network Portal. U.S. Geological Survey. *Short-Term Network Data Portal*. Accessed via: <https://stn.wim.usgs.gov/STNDataPortal/>
 
 U.S. Census Bureau. American Community Survey 5-year estimates [Data set]. Accessed via the `tidycensus` R package and the U.S. Census Bureau Data API: <https://www.census.gov/data/developers/data-sets/acs-5year.html>
