@@ -26,7 +26,16 @@ This repository creates a series of hurricane/storm track related maps using NOA
 
 This repository is organized as a data pipeline built with the [`targets`](https://github.com/ropensci/targets) package, which tracks each step's status (up-to-date vs. out-of-date) and rebuilds only what is needed. After completing the setup steps below (R packages, Python environment, fonts, and API keys), run [`targets::tar_make()`](https://docs.ropensci.org/targets/reference/tar_make.html) in the console to build the entire pipeline.
 
-If packages are missing you will see an error like `Error : could not find packages terra, ggimage in library paths`; install them with `install.packages("[packageName]")` and re-run `tar_make()`, repeating as needed. You will need the following packages installed: `tidyverse`, `sf`, `reticulate`, `janitor`, `sbtools`, `tigris`, `tidycensus`, `readr`, `cowplot`, `rmapshaper`, `terra`, `raster`, `tidyterra`, `rvest`, `httr`, `fs`, `glue`, `dataRetrieval`, `arrow`, `purrr`, `ggimage`, `ggtext`, `ggforce`, `ragg`, `av`, `yaml`.
+If packages are missing you will see an error like `Error : could not find packages terra, ggimage in library paths`. Install everything the pipeline needs up front, then re-run `tar_make()`:
+
+```r
+install.packages(c(
+  "tidyverse", "sf", "reticulate", "janitor", "sbtools", "tigris",
+  "tidycensus", "cowplot", "rmapshaper", "terra", "raster", "tidyterra",
+  "rvest", "httr", "fs", "glue", "dataRetrieval", "arrow", "ggimage",
+  "ggtext", "ggforce", "ragg", "av", "yaml"
+))
+```
 
 For more information on `targets`, see the [getting-started walkthrough](https://books.ropensci.org/targets/walkthrough.html) and the [Introduction to targets](https://carpentries-incubator.github.io/targets-workshop/) training.
 
