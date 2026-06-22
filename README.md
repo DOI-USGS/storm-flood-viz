@@ -32,9 +32,16 @@ If packages are missing you will see an error like `Error : could not find packa
 install.packages(c(
   "tidyverse", "sf", "reticulate", "janitor", "sbtools", "tigris",
   "tidycensus", "cowplot", "rmapshaper", "terra", "raster", "tidyterra",
-  "rvest", "httr", "fs", "glue", "dataRetrieval", "arrow", "ggimage",
+  "rvest", "httr", "fs", "glue", "arrow", "ggimage",
   "ggtext", "ggforce", "ragg", "av", "yaml"
 ))
+```
+
+`dataRetrieval` is installed separately: the pipeline relies on functions only available in its **development version** — notably `read_waterdata_stats_por()` (used in `fetch_site_stats()`), which is not yet on CRAN. Install the development version from GitHub:
+
+```r
+# install.packages("remotes")
+remotes::install_github("DOI-USGS/dataRetrieval")
 ```
 
 For more information on `targets`, see the [getting-started walkthrough](https://books.ropensci.org/targets/walkthrough.html) and the [Introduction to targets](https://carpentries-incubator.github.io/targets-workshop/) training.
