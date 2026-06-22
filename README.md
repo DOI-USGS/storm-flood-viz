@@ -20,7 +20,11 @@
 
 ------------------------------------------------------------------------
 
-This repository creates a series of hurricane/storm track related maps using NOAA flood data from [water.noaa.gov](https://water.noaa.gov/resources/downloads/reports/) and hurricane track data is from NOAA National Hurricane Center [nhc.noaa.gov](https://www.nhc.noaa.gov/gis/best_track/)
+> *A newer version of the software may be available. See <https://code.usgs.gov/wma/vizlab/hurricane-revamp/-/releases> to view all releases.*
+
+## Citation
+
+Azadpour E, Hinman ED, Kwang JS, Vaarre-Lamoureux K, Nell C, Corson-Dosch HR. 2025. Visualizing Hurricane Impacts Using Flood Stage and Streamgage Data. U.S. Geological Survey software release. Reston, Va. <https://doi.org/10.5066/P1CGKFTD>. This repository creates a series of hurricane/storm track related maps using NOAA flood data from [water.noaa.gov](https://water.noaa.gov/resources/downloads/reports/) and hurricane track data is from NOAA National Hurricane Center [nhc.noaa.gov](https://www.nhc.noaa.gov/gis/best_track/)
 
 # Running the pipeline
 
@@ -132,7 +136,7 @@ After you set the token globally, you should not need to paste it again into you
 
 Before running the full pipeline, which can take several hours, confirm your installation by building a single lightweight target:
 
-```r
+``` r
 targets::tar_make(p1_flood_stage_file)
 ```
 
@@ -347,6 +351,14 @@ This project is licensed under the Creative Commons CC0 1.0 Universal License - 
 In the spirit of open source, please cite any re-use of the source code stored in this repository. Below is the suggested citation:
 
 > Azadpour E, Hinman ED, Kwang JS, Vaarre-Lamoureux K, Nell C, Corson-Dosch HR. 2025. Visualizing Hurricane Impacts Using Flood Stage and Streamgage Data. U.S. Geological Survey software release. Reston, Va. <https://doi.org/10.5066/P1CGKFTD>.
+
+## Contact Information
+
+If you have questions about this software, please contact Elmera Azadpour at [eazadpour\@usgs.gov](mailto:eazadpour@usgs.gov){.email}.
+
+## Disclaimer
+
+This software has been approved for release by the U.S. Geological Survey (USGS). Although the software has been subjected to rigorous review, the USGS reserves the right to update the software as needed pursuant to further analysis and review. No warranty, expressed or implied, is made by the USGS or the U.S. Government as to the functionality of the software and related material nor shall the fact of release constitute any such warranty. Furthermore, the software is released on condition that neither the USGS nor the U.S. Government shall be held liable for any damages resulting from its authorized or unauthorized use.
 
 ## Acknowledgments
 
