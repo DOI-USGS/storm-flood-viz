@@ -238,6 +238,8 @@ Per-storm and visualization settings live in `config/<storm>.yml`, **not** in R 
 
 The pipeline runs in four phases. Each phase has a top-level script (`N_*.R`) that defines its `targets`, and a `N_*/src/` directory holding the functions those targets call.
 
+**Phase 0** loads the per-storm config. **Phase 1** fetches raw source data (precipitation rasters, storm track shapes, streamgages, flood-stage and rapid-deployment sites, city labels) into `1_fetch/out/`. **Phase 2** processes that data per timestep — computing hourly maximum streamflow, joining percentile thresholds, classifying flood status, and splitting gages into render groups. **Phase 3** renders one PNG per timestep and encodes them into the final MP4 in `3_visualize/out/`.
+
 **Top-level pipeline scripts**
 
 -   `_targets.R` defines the [targets pipeline](https://docs.ropensci.org/targets/index.html) and the global package/options setup.
