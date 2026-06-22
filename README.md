@@ -128,6 +128,16 @@ setx API_USGS_PAT "your-token-here"
 
 After you set the token globally, you should not need to paste it again into your terminal each time you use this repo. See the [dataRetrieval API tokens guide](https://doi-usgs.github.io/dataRetrieval/articles/read_waterdata_functions.html#api-tokens) for more information.
 
+## Verify your setup
+
+Before running the full pipeline, which can take several hours, confirm your installation by building a single lightweight target:
+
+```r
+targets::tar_make(p1_flood_stage_file)
+```
+
+This downloads one CSV and should complete in under 30 seconds. A successful build confirms that `targets` and the required R packages are installed correctly. To also confirm your API keys are configured, build a key-dependent target such as `targets::tar_make(p1_major_cities_sf)` (which uses the Census key) before running the full `targets::tar_make()`.
+
 ## Code runtime
 
 The full pipeline run-time varies with the configured date range (`date_start` / `date_end`) and the size of the `bbox`, i.e. a larger area and longer window mean more precipitation rasters and gage queries. A first run, which downloads all source data, can take a few hours on a high-end laptop (e.g. Apple M1 Max); after that, `tar_make()` only rebuilds the targets affected by your changes.
