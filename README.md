@@ -67,21 +67,51 @@ If you change `load_font` to a different font family, install that font on your 
 
 ## API keys
 
-The pipeline requires two API keys. Set both in your `.Renviron` file (run `usethis::edit_r_environ()` to open it, add the lines below, then restart R). The pipeline will fail at the fetch step without them.
+The pipeline requires two API keys, read from the `CENSUS_API_KEY` and `API_USGS_PAT` environment variables. The pipeline will fail at the fetch step without them. To avoid pasting tokens into scripts or other potentially shared files, store them as user-level environment variables on your computer (see the per-OS steps under [USGS API token](#usgs-api-token) below).
 
--   **Census API key** — required by `tidycensus`, which `fetch_major_cities()` uses to pull American Community Survey population for city labeling. Request a free key at <https://api.census.gov/data/key_signup.html>, then add:
+### Census API key
 
-    ```         
-    CENSUS_API_KEY=your_key_here
-    ```
+Required by `tidycensus`, which `fetch_major_cities()` uses to pull American Community Survey population for city labeling. Request a free key at <https://api.census.gov/data/key_signup.html>, then store it as `CENSUS_API_KEY` (the same way as the USGS token below, or via `usethis::edit_r_environ()` followed by an R restart).
 
--   **USGS Water Data API key** — required by the USGS Water Data APIs queried through `dataRetrieval` (in `fetch_uv_peaks_data()` and `fetch_site_stats()`). Request a token at <https://api.waterdata.usgs.gov/signup/>, then add:
+### USGS API token
 
-    ```         
-    API_USGS_PAT=your_token_here
-    ```
+Required by the USGS Water Data APIs queried through `dataRetrieval` (in `fetch_uv_peaks_data()` and `fetch_site_stats()`). If you do not already have a USGS API token, you can request one here:
 
-    See the [dataRetrieval API tokens guide](https://doi-usgs.github.io/dataRetrieval/articles/read_waterdata_functions.html#api-tokens) for more information.
+<https://api.waterdata.usgs.gov/signup/>
+
+The pipeline looks for a token in the `API_USGS_PAT` environment variable. To avoid pasting a token into scripts or other potentially shared files, store it as a user-level environment variable on your computer instead.
+
+#### Mac
+
+Add this line to your shell profile such as `~/.zshrc`:
+
+```bash
+export API_USGS_PAT="your-token-here"
+```
+
+Then restart Terminal, or reload your shell:
+
+```bash
+source ~/.zshrc
+```
+
+#### Windows
+
+In PowerShell, set a user-level environment variable with:
+
+```powershell
+[System.Environment]::SetEnvironmentVariable("API_USGS_PAT", "your-token-here", "User")
+```
+
+Then close and reopen PowerShell, Command Prompt, RStudio, or your IDE so the new variable is available.
+
+You can also set the same user-level variable from Command Prompt with:
+
+```bat
+setx API_USGS_PAT "your-token-here"
+```
+
+After you set the token globally, you should not need to paste it again into your terminal each time you use this repo. See the [dataRetrieval API tokens guide](https://doi-usgs.github.io/dataRetrieval/articles/read_waterdata_functions.html#api-tokens) for more information.
 
 ## Code runtime
 
