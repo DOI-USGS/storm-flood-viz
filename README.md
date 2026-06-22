@@ -48,9 +48,9 @@ For more information on `targets`, see the [getting-started walkthrough](https:/
 
 ## Python environment setup
 
-The pipeline uses Python only for precipitation data retrieval (`get_precip.py`). The required packages (`xarray`, `fsspec`, `numpy`, `pandas`, `scipy`, `gdal`) are pinned in the included `environment.yml`.
+The pipeline uses Python only for precipitation data retrieval (`get_precip.py`). Its dependencies are defined in the included [`environment.yml`](environment.yml).
 
-You will need Python available on your machine: either an existing Python interpreter with the packages above (option 1 below), or [conda](https://docs.conda.io/projects/conda/en/stable/) (via [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or Anaconda) to create the environment from `environment.yml` (option 2 below).
+You will need Python available on your machine: either an existing Python interpreter with the dependencies from [`environment.yml`](environment.yml) installed (option 1 below), or [conda](https://docs.conda.io/projects/conda/en/stable/) (via [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or Anaconda) to create the environment from that file (option 2 below).
 
 The pipeline resolves the Python environment in the following order:
 
@@ -62,7 +62,7 @@ RETICULATE_PYTHON=/path/to/your/python
 
 You can find the correct path by activating your Python environment in the terminal and running `which python`.
 
-2.  If `RETICULATE_PYTHON` is not set, the pipeline falls back to a conda environment named `hurricane-precip`. Create it from the included `environment.yml` (which installs the packages above):
+2.  If `RETICULATE_PYTHON` is not set, the pipeline falls back to a conda environment named `hurricane-precip`. Create it from the included `environment.yml` (which installs all required dependencies):
 
     ``` bash
     conda env create -f environment.yml
