@@ -28,7 +28,7 @@ This repository is organized as a data pipeline built with the [`targets`](https
 
 If packages are missing you will see an error like `Error : could not find packages terra, ggimage in library paths`. Install everything the pipeline needs up front, then re-run `tar_make()`:
 
-```r
+``` r
 install.packages(c(
   "tidyverse", "sf", "reticulate", "janitor", "sbtools", "tigris",
   "tidycensus", "cowplot", "rmapshaper", "terra", "raster", "tidyterra",
@@ -39,7 +39,7 @@ install.packages(c(
 
 `dataRetrieval` is installed separately: the pipeline relies on functions only available in its **development version** — notably `read_waterdata_stats_por()` (used in `fetch_site_stats()`), which is not yet on CRAN. Install the development version from GitHub:
 
-```r
+``` r
 # install.packages("remotes")
 remotes::install_github("DOI-USGS/dataRetrieval")
 ```
@@ -48,7 +48,9 @@ For more information on `targets`, see the [getting-started walkthrough](https:/
 
 ## Python environment setup
 
-The pipeline uses Python only for precipitation data retrieval (`get_precip.py`). The following Python packages are required: `xarray`, `fsspec`, `numpy`, `pandas`, `scipy`, `gdal`.
+The pipeline uses Python only for precipitation data retrieval (`get_precip.py`). The required packages (`xarray`, `fsspec`, `numpy`, `pandas`, `scipy`, `gdal`) are pinned in the included `environment.yml`.
+
+You will need Python available on your machine: either an existing Python interpreter with the packages above (option 1 below), or [conda](https://docs.conda.io/projects/conda/en/stable/) (via [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or Anaconda) to create the environment from `environment.yml` (option 2 below).
 
 The pipeline resolves the Python environment in the following order:
 
@@ -60,7 +62,13 @@ RETICULATE_PYTHON=/path/to/your/python
 
 You can find the correct path by activating your Python environment in the terminal and running `which python`.
 
-2.  If `RETICULATE_PYTHON` is not set, the pipeline falls back to a conda environment named `hurricane-precip`. Ensure this environment exists and has the required dependencies installed.
+2.  If `RETICULATE_PYTHON` is not set, the pipeline falls back to a conda environment named `hurricane-precip`. Create it from the included `environment.yml` (which installs the packages above):
+
+    ``` bash
+    conda env create -f environment.yml
+    ```
+
+    If you already have the environment, update it with `conda env update -f environment.yml`.
 
 ## Font setup
 
@@ -80,7 +88,7 @@ The pipeline requires two API keys, read from the `CENSUS_API_KEY` and `API_USGS
 
 Required by `tidycensus`, which `fetch_major_cities()` uses to pull American Community Survey population for city labeling. Request a free key at <https://api.census.gov/data/key_signup.html>, then store it as `CENSUS_API_KEY` (the same way as the USGS token below, or via `usethis::edit_r_environ()` followed by an R restart).
 
-### USGS API token
+### USGS API token {#usgs-api-token}
 
 Required by the USGS Water Data APIs queried through `dataRetrieval` (in `fetch_uv_peaks_data()` and `fetch_site_stats()`). If you do not already have a USGS API token, you can request one here:
 
@@ -92,13 +100,13 @@ The pipeline looks for a token in the `API_USGS_PAT` environment variable. To av
 
 Add this line to your shell profile such as `~/.zshrc`:
 
-```bash
+``` bash
 export API_USGS_PAT="your-token-here"
 ```
 
 Then restart Terminal, or reload your shell:
 
-```bash
+``` bash
 source ~/.zshrc
 ```
 
@@ -106,7 +114,7 @@ source ~/.zshrc
 
 In PowerShell, set a user-level environment variable with:
 
-```powershell
+``` powershell
 [System.Environment]::SetEnvironmentVariable("API_USGS_PAT", "your-token-here", "User")
 ```
 
@@ -114,7 +122,7 @@ Then close and reopen PowerShell, Command Prompt, RStudio, or your IDE so the ne
 
 You can also set the same user-level variable from Command Prompt with:
 
-```bat
+``` bat
 setx API_USGS_PAT "your-token-here"
 ```
 
