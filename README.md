@@ -2,7 +2,7 @@
 
 # Visualizing Hurricane Impacts Using Flood Stage and Streamgage Data
 
-> *A newer version of the software may be available. See <https://code.usgs.gov/wma/vizlab/hurricane-revamp/-/releases> to view all releases.*
+*A data pipeline that creates an animated map visualizing a hurricane's hourly precipitation, streamgage percentiles & flood status, and storm track from NOAA and USGS data.*
 
 **Authors**: Elmera Azadpour, Elise Hinman, Jeffrey Kwang, Kaysa Vaarre-Lamoureux, Cee Nell, Hayley Corson-Dosch
 
