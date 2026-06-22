@@ -254,7 +254,11 @@ Per-storm and visualization settings live in `config/<storm>.yml`, **not** in R 
 
 **`anchors`** — `legend_box` sets the position of the entire legend stack on the canvas; move it to reposition the legend panel for a new storm. The defaults work for most CONUS bboxes; see `default_anchors` in [`compose_frame.R`](3_visualize/src/builders/compose_frame.R) for the full list of anchor points and how they are derived.
 
-> **Regional note:** For storms outside the contiguous U.S. (Puerto Rico, Alaska, Hawaii, etc.), you may also need to adjust `p1_conus_bbox_crop_sf`, which downloads [tigris](https://github.com/walkerke/tigris) state borders and crops to the bbox.
+> **Regional note:** For storms outside the contiguous U.S. (Puerto Rico, Alaska, Hawaii, etc.), you may also need to adjust `p1_conus_bbox_crop_sf`, which downloads [tigris](https://github.com/walkerke/tigris) state borders and crops to the bbox. For a non-CONUS region, swap `tigris::states(cb = TRUE)` for the appropriate geography, e.g. `tigris::counties(state = "PR")`.
+
+## Limitations
+
+-   **Precipitation is CONUS-only.** The precipitation source ([NOAA Stage IV QPE](https://api.water.usgs.gov/gdp/pygeoapi/stac/stac-collection/stageiv_combined)) covers only the contiguous United States. A bbox over Puerto Rico, Alaska, Hawaii, or other territories will return no precipitation data; covering those regions requires a different QPE product and a corresponding change to `get_precip.py`.
 
 ## Repository organization
 
