@@ -4,6 +4,10 @@
 
 *A data pipeline that creates an animated map visualizing a hurricane's hourly precipitation, streamgage percentiles & flood status, and storm track from NOAA and USGS data.*
 
+![](https://labs.waterdata.usgs.gov/visualizations/images/hurricane_helene_spike_frame_20240929T1600.png)
+
+*Example frame from the Hurricane Helene animation (09-29-2024 19:00 EDT).*
+
 **Authors**: Elmera Azadpour, Elise Hinman, Jeffrey Kwang, Kaysa Vaarre-Lamoureux, Cee Nell, Hayley Corson-Dosch
 
 **Point of contact**: Elmera Azadpour ([eazadpour\@usgs.gov](mailto:eazadpour@usgs.gov){.email})
