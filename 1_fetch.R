@@ -3,7 +3,7 @@ py <- Sys.getenv("RETICULATE_PYTHON", unset = "")
 if (nzchar(py)) {
   reticulate::use_python(py, required = TRUE)
 } else {
-  reticulate::use_condaenv("hurricane-precip", required = TRUE)
+  reticulate::use_condaenv("storm-precip", required = TRUE)
 }
 reticulate::source_python("1_fetch/src/get_precip.py")
 

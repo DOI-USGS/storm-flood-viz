@@ -1,4 +1,4 @@
-name: hurricane-precip
+name: storm-precip
 channels:
   - conda-forge
   - bioconda
