@@ -1,8 +1,8 @@
 ![](USGS_ID_black.png)
 
-# Visualizing Hurricane Impacts Using Flood Stage and Streamgage Data
+# Visualizing Storm Impacts Using Flood Stage and Streamgage Data
 
-*A data pipeline that creates an animated map visualizing a hurricane's hourly precipitation, streamgage percentiles & flood status, and storm track from NOAA and USGS data.*
+*A data pipeline that creates an animated map visualizing a storm's hourly precipitation, streamgage percentiles & flood status, and storm track from NOAA and USGS data.*
 
 ![](https://labs.waterdata.usgs.gov/visualizations/images/hurricane_helene_spike_frame_20240929T1600.png)
 
@@ -10,13 +10,13 @@
 
 **Authors**: Elmera Azadpour, Elise Hinman, Jeffrey Kwang, Kaysa Vaarre-Lamoureux, Cee Nell, Hayley Corson-Dosch
 
-**Point of contact**: Elmera Azadpour ([eazadpour\@usgs.gov](mailto:eazadpour@usgs.gov){.email})
+**Point of contact**: Elmera Azadpour (eazadpour@usgs.gov)
 
 **Repository Type**: *R* script supporting publication
 
 **Year of Origin**: 2025 (original publication)
 
-**Year of Version**: 2025
+**Year of Version**: 2026
 
 **Digital Object Identifier (DOI)**: <https://doi.org/10.5066/P1CGKFTD>
 
@@ -24,11 +24,11 @@
 
 ------------------------------------------------------------------------
 
-> *A newer version of the software may be available. See <https://code.usgs.gov/wma/vizlab/hurricane-revamp/-/releases> to view all releases.*
+> *A newer version of the software may be available. See <https://code.usgs.gov/wma/vizlab/storm-flood-viz/-/releases> to view all releases.*
 
 ## Citation
 
-Azadpour E, Hinman ED, Kwang JS, Vaarre-Lamoureux K, Nell C, Corson-Dosch HR. 2025. Visualizing Hurricane Impacts Using Flood Stage and Streamgage Data. U.S. Geological Survey software release. Reston, Va. <https://doi.org/10.5066/P1CGKFTD>.
+Azadpour E, Hinman ED, Kwang JS, Vaarre-Lamoureux K, Nell C, Corson-Dosch HR. 2025. Visualizing Storm Impacts Using Flood Stage and Streamgage Data. U.S. Geological Survey software release. Reston, Va. <https://doi.org/10.5066/P1CGKFTD>.
 
 ## Setup {#setup}
 
@@ -72,7 +72,7 @@ RETICULATE_PYTHON=/path/to/your/python
 
 You can find the correct path by activating your Python environment in the terminal and running `which python`.
 
-2.  If `RETICULATE_PYTHON` is not set, the pipeline falls back to a conda environment named `hurricane-precip`. Create it from the included `environment.yml` (which installs all required dependencies):
+2.  If `RETICULATE_PYTHON` is not set, the pipeline falls back to a conda environment named `storm-precip`. Create it from the included `environment.yml` (which installs all required dependencies):
 
     ``` bash
     conda env create -f environment.yml
@@ -334,7 +334,7 @@ The pipeline runs in four phases. Each phase has a top-level script (`N_*.R`) th
 
 **Project files**
 
--   `.gitignore`, `code.json` ([USGS metadata template](https://www.usgs.gov/products/software/software-management/distribution-usgs-code)), `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `DISCLAIMER.md`, `LICENSE.md`, `README.md`, `USGS_ID_black.png`, and the `hurricane-revamp.Rproj` [RStudio project file](https://r4ds.hadley.nz/workflow-scripts#projects).
+-   `.gitignore`, `code.json` ([USGS metadata template](https://www.usgs.gov/products/software/software-management/distribution-usgs-code)), `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `DISCLAIMER.md`, `LICENSE.md`, `README.md`, `USGS_ID_black.png`, and the `storm-flood-viz.Rproj` [RStudio project file](https://r4ds.hadley.nz/workflow-scripts#projects).
 
 ## Expertise required
 
@@ -366,7 +366,7 @@ This project is licensed under the Creative Commons CC0 1.0 Universal License - 
 
 In the spirit of open source, please cite any re-use of the source code stored in this repository. Below is the suggested citation:
 
-> Azadpour E, Hinman ED, Kwang JS, Vaarre-Lamoureux K, Nell C, Corson-Dosch HR. 2025. Visualizing Hurricane Impacts Using Flood Stage and Streamgage Data. U.S. Geological Survey software release. Reston, Va. <https://doi.org/10.5066/P1CGKFTD>.
+> Azadpour E, Hinman ED, Kwang JS, Vaarre-Lamoureux K, Nell C, Corson-Dosch HR. 2025. Visualizing Storm Impacts Using Flood Stage and Streamgage Data. U.S. Geological Survey software release. Reston, Va. <https://doi.org/10.5066/P1CGKFTD>.
 
 ## Contact Information
 
