@@ -15,21 +15,21 @@
 #' @param path Path to the storm YAML file.
 #' @return A named list ready for downstream `p0_storm_cfg$<field>` access.
 load_storm_config <- function(path) {
-  cfg <- yaml::read_yaml(path)
+  cfg <- read_yaml(path)
 
   cfg$landfall_time <- as.POSIXct(cfg$landfall_time, tz = "UTC")
 
-  cfg$bbox <- sf::st_bbox(c(xmin = cfg$bbox$xmin, xmax = cfg$bbox$xmax, ymin = cfg$bbox$ymin, ymax = cfg$bbox$ymax))
+  cfg$bbox <- st_bbox(c(xmin = cfg$bbox$xmin, xmax = cfg$bbox$xmax, ymin = cfg$bbox$ymin, ymax = cfg$bbox$ymax))
 
-  cfg$storm_info <- tibble::as_tibble(cfg$storm_info)
-  cfg$viz_config <- tibble::as_tibble(cfg$viz_config)
+  cfg$storm_info <- as_tibble(cfg$storm_info)
+  cfg$viz_config <- as_tibble(cfg$viz_config)
 
   cfg$anchors <- lapply(cfg$anchors, function(a) as.numeric(unlist(a)))
 
   # Optional city override: list of name/state maps -> tibble (NULL if absent).
   # Use [["cities"]] not $cities: $ partial-matches the `cities_n` key.
   if (!is.null(cfg[["cities"]])) {
-    cfg$cities <- dplyr::bind_rows(lapply(cfg[["cities"]], tibble::as_tibble))
+    cfg$cities <- bind_rows(lapply(cfg[["cities"]], as_tibble))
   }
 
   # Named-map palettes -> named character vector
