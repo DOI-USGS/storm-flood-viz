@@ -43,7 +43,7 @@ install.packages(c(
   "tidyverse", "sf", "reticulate", "janitor", "sbtools", "tigris",
   "tidycensus", "cowplot", "rmapshaper", "terra", "raster", "tidyterra",
   "rvest", "httr", "fs", "glue", "arrow", "ggimage",
-  "ggtext", "ggforce", "ragg", "av", "yaml"
+  "ggtext", "ggforce", "ragg", "av", "yaml", "crew"
 ))
 ```
 
@@ -79,6 +79,12 @@ You can find the correct path by activating your Python environment in the termi
     ```
 
     If you already have the environment, update it with `conda env update -f environment.yml`.
+
+    Alternatively, you can create the environment from R with `reticulate`:
+
+    ``` r
+    reticulate::conda_create("storm-precip", environment = "environment.yml")
+    ```
 
 ### Font setup
 
@@ -142,6 +148,8 @@ After you set the token globally, you should not need to paste it again into you
 
 This repository is organized as a data pipeline built with the [`targets`](https://github.com/ropensci/targets) package, which tracks each step's status (up-to-date vs. out-of-date) and rebuilds only what is needed. Once the [Setup](#setup) steps above are complete, run [`targets::tar_make()`](https://docs.ropensci.org/targets/reference/tar_make.html) in the console to build the entire pipeline.
 
+The pipeline runs whichever storm config is set by the `p0_storm_cfg_file` target in [`0_config.R`](0_config.R) (it defaults to `config/helene.yml`). To run a different storm, change that path — see [Configuring a new storm](#configuring-a-new-storm) for how to create a config file.
+
 For more information on `targets`, see the [getting-started walkthrough](https://books.ropensci.org/targets/walkthrough.html) and the [Introduction to targets](https://carpentries-incubator.github.io/targets-workshop/) training.
 
 ### Verify your setup
@@ -156,7 +164,9 @@ This downloads one CSV and should complete in under 30 seconds. A successful bui
 
 ### Code runtime
 
-The full pipeline run-time varies with the configured date range (`date_start` / `date_end`) and the size of the `bbox`, i.e. a larger area and longer window mean more precipitation rasters and gage queries. A first run, which downloads all source data, can take a few hours on a high-end laptop (e.g. Apple M1 Max); after that, `tar_make()` only rebuilds the targets affected by your changes.
+The full pipeline run-time varies with the configured date range (`date_start` / `date_end`) and the size of the `bbox`, i.e. a larger area and longer window mean more precipitation rasters and gage queries. A first run downloads all source data; after that, `tar_make()` only rebuilds the targets affected by your changes.
+
+To speed up that first run, the pipeline uses the [`crew`](https://books.ropensci.org/targets/crew.html#example) package to run independent targets in parallel across local worker processes. This is configured via the `controller` argument to `tar_option_set()` in [`_targets.R`](_targets.R); adjust `workers` to match your machine's core count (lower it if you hit API rate limits during the fetch step). No change to how you run the pipeline is needed — `tar_make()` uses the workers automatically. The precipitation-download target runs on the main process (`deployment = "main"`) because it calls Python through `reticulate`, which cannot be shipped to a worker.
 
 ## Configuring a new storm
 
