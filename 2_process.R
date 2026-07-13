@@ -8,7 +8,9 @@ p2_targets <- list(
   # Load in uv data df
   tar_target(
     p2_uv_data_df,
-    arrow::read_parquet(p1_uv_data_pqt)
+    read_parquet(p1_uv_data_pqt),
+    # Large UV frame; run on main so crew workers don't crash
+    deployment = "main"
   ),
   # Join USGS day-of-year percentile thresholds to uv data and derive a
   # category string. Sites absent from p1_site_stats_pqt (< 20 yr POR)
@@ -16,7 +18,7 @@ p2_targets <- list(
   tar_target(
     p2_uv_data_percentiles_df,
     {
-      thresholds <- arrow::read_parquet(p1_site_stats_pqt)
+      thresholds <- read_parquet(p1_site_stats_pqt)
       p2_uv_data_df |>
         mutate(time_of_year = format(dateTime, "%m-%d")) |>
         left_join(thresholds, by = c("site_no", "time_of_year")) |>
@@ -31,14 +33,15 @@ p2_targets <- list(
           TRUE ~ "low"
         )) |>
         select(-time_of_year, -any_of(c("p05","p10","p25","p50","p75","p90","p95")))
-    }
+    },
+    deployment = "main"
   ),
   # Read in peak data and grab max peak value per site, with ties
   # broken using the latest date in the dataset - makes more sense to compare
   # to the most recent peak than an earlier peak that was tied more recently.
   tar_target(
     p2_peak_data_max_df,
-    arrow::read_parquet(p1_peak_data_pqt) |>
+    read_parquet(p1_peak_data_pqt) |>
       group_by(site_no) |>
       slice_max(peak_va) |>
       filter(peak_dt == max(peak_dt)) |>
@@ -52,7 +55,8 @@ p2_targets <- list(
       value_cols_regex = "^X_",
       hour_unit = "hour",
       pcode_param_map = c("00060" = "discharge", "00065" = "gage_height")
-    )
+    ),
+    deployment = "main"
   ),
   # Merge together uv percentiles with flood stages and peak data
   tar_target(
@@ -63,9 +67,9 @@ p2_targets <- list(
       
       out <- p2_uv_data_percentiles_df |>
         mutate(
-          date = lubridate::date(dateTime),
-          hour = lubridate::hour(dateTime),
-          dateTime = lubridate::floor_date(dateTime, "hour"),
+          date = date(dateTime),
+          hour = hour(dateTime),
+          dateTime = floor_date(dateTime, "hour"),
           .after = "dateTime"
         ) |> 
         group_by(site_no, date, hour) |> 
@@ -81,18 +85,18 @@ p2_targets <- list(
         fill(agency_cd, .direction = "downup") |>
         ungroup() |>
         # Add flood stage thresholds (drop geometry — we attach it from all-gage sf below)
-        left_join(sf::st_drop_geometry(p1_usgs_flood_stage_gages), by = "site_no") |>
+        left_join(st_drop_geometry(p1_usgs_flood_stage_gages), by = "site_no") |>
         # Add peaks data
         left_join(p2_peak_data_max_df, by = c("site_no", "agency_cd")) |>
         # Attach geometry for all bbox stream gages (not just flood-stage sites)
         left_join(
-          tibble::tibble(
+          tibble(
             site_no = p1_bbox_stream_sites_sf$site_no,
-            geometry = sf::st_geometry(p1_bbox_stream_sites_sf)
+            geometry = st_geometry(p1_bbox_stream_sites_sf)
           ),
           by = "site_no"
         ) |>
-        sf::st_as_sf(sf_column_name = "geometry") |>
+        st_as_sf(sf_column_name = "geometry") |>
         select(
           site_no, dateTime, X_00060_00000, X_00065_00000,
           percentile, action.stage, flood.stage, moderate.flood.stage, major.flood.stage,
@@ -107,14 +111,15 @@ p2_targets <- list(
           na_flag = is.na(X_00065_00000),
           has_data_elsewhere = any(!na_flag),
           # unique identifier that increments every time a variable changes
-          run_id  = dplyr::consecutive_id(na_flag)      
+          run_id  = consecutive_id(na_flag)      
         ) |> 
         group_by(site_no, run_id) |> 
-        mutate(run_length = dplyr::n()) |> 
+        mutate(run_length = n()) |> 
         ungroup() |> 
-        mutate(is_decommissioned = has_data_elsewhere & na_flag & run_length >= 4) |> 
+        mutate(is_decommissioned = has_data_elsewhere & na_flag & run_length >= 4) |>
         select(-na_flag, -run_id, -run_length, -has_data_elsewhere)
-    }
+    },
+    deployment = "main"
   ),
   # Process precipitation data ----------------------------------------------
   tar_target(
@@ -171,7 +176,7 @@ p2_targets <- list(
         ),
         flood_status = factor(flood_status, levels = c("Not flooded", "Flood", "Moderate", "Major")),
         sev_rank = c("Not flooded" = 0L, "Flood" = 1L, "Moderate" = 2L, "Major" = 3L)[as.character(flood_status)],
-        above_amt = dplyr::case_when(
+        above_amt = case_when(
           flood_status == "Major" ~ X_00065_00000 - major.flood.stage,
           flood_status == "Moderate" ~ X_00065_00000 - moderate.flood.stage,
           flood_status == "Flood" ~ X_00065_00000 - flood.stage,
