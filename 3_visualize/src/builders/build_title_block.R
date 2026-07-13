@@ -27,10 +27,10 @@ build_title_block <- function(storm_info, dtg, timezone_long,
                                landfall_dtg, storm_now) {
   storm_name <- paste(
     storm_info$storm_type_label,
-    stringr::str_to_sentence(storm_info$storm_name))
+    str_to_sentence(storm_info$storm_name))
 
   timestamp <- format(
-    lubridate::with_tz(dtg, timezone_long), "%b. %d, %Y %H:%M %Z")
+    with_tz(dtg, timezone_long), "%b. %d, %Y %H:%M %Z")
 
   time_to_landfall <- difftime(landfall_dtg, dtg, units = "hours")
   landfall <- if (time_to_landfall > -2 && time_to_landfall > 0) {

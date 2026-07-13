@@ -18,17 +18,17 @@ title_frame <- function(title_text_line1, title_text_line2, start_date,
   font_legend <- config_vars$load_font
   # systemfonts resolves the font from system-installed files via ragg device
 
-  logo <- magick::image_read(logo_path) |>
-    magick::image_resize('x100') |>
-    magick::image_colorize(100, "black")
+  logo <- image_read(logo_path) |>
+    image_resize('x100') |>
+    image_colorize(100, "black")
 
-  bg_frame <- magick::image_read(frame_bg_path) |>
-    magick::image_colorize(opacity = 40, color = config_vars$bg_col)
+  bg_frame <- image_read(frame_bg_path) |>
+    image_colorize(opacity = 40, color = config_vars$bg_col)
 
-  canvas <- grid::rectGrob(
+  canvas <- rectGrob(
     x = 0, y = 0,
     width = 16, height = 9,
-    gp = grid::gpar(fill = config_vars$bg_col, alpha = 1, col = config_vars$bg_col)
+    gp = gpar(fill = config_vars$bg_col, alpha = 1, col = config_vars$bg_col)
   )
 
   p <- ggdraw(xlim = c(0, 1), ylim = c(0,1)) +
@@ -81,7 +81,7 @@ title_frame <- function(title_text_line1, title_text_line2, start_date,
   ggsave(filename = out_path, plot = p,
          width = config_vars$width, height = config_vars$height,
          dpi = config_vars$dpi, bg = config_vars$bg_col,
-         device = ragg::agg_png)
+         device = agg_png)
 
   return(out_path)
 
@@ -105,14 +105,14 @@ end_frame <- function(end_text_line1, end_text_line2, end_text_line3,
   font_legend <- config_vars$load_font
   # systemfonts resolves the font from system-installed files via ragg device
 
-  logo <- magick::image_read(logo_path) |>
-    magick::image_resize('x100') |>
-    magick::image_colorize(100, "black")
+  logo <- image_read(logo_path) |>
+    image_resize('x100') |>
+    image_colorize(100, "black")
 
-  canvas <- grid::rectGrob(
+  canvas <- rectGrob(
     x = 0, y = 0,
     width = 16, height = 9,
-    gp = grid::gpar(fill = bg_col, alpha = 1, col = bg_col)
+    gp = gpar(fill = bg_col, alpha = 1, col = bg_col)
   )
 
   p <- ggdraw(xlim = c(0, 1), ylim = c(0,1)) +
@@ -155,7 +155,7 @@ end_frame <- function(end_text_line1, end_text_line2, end_text_line3,
   ggsave(filename = out_path, plot = p,
          width = config_vars$width, height = config_vars$height,
          dpi = config_vars$dpi, bg = bg_col,
-         device = ragg::agg_png)
+         device = agg_png)
 
   return(out_path)
 

@@ -1,7 +1,7 @@
 #' Encode animation frames to MP4.
 #'
 #' Assembles title, flood, crossfade, and end frames into a single MP4 using
-#' av::av_encode_video. Crossfade frames are morphed with magick and written
+#' av_encode_video. Crossfade frames are morphed with magick and written
 #' to a temp directory since av takes file paths, not in-memory images.
 #'
 #' @param title_frame_path Character. Path to the title/opening PNG.
@@ -20,11 +20,11 @@ encode_flood_mp4 <- function(title_frame_path, flood_frame_paths, end_frame_path
   # Frame filenames are timestamp-based so string sort gives chronological order.
   flood_frame_paths <- sort(flood_frame_paths)
 
-  last_flood_img <- magick::image_read(
+  last_flood_img <- image_read(
     flood_frame_paths[length(flood_frame_paths)]
   )
-  end_img   <- magick::image_read(end_frame_path)
-  crossfade <- magick::image_morph(
+  end_img   <- image_read(end_frame_path)
+  crossfade <- image_morph(
     c(last_flood_img, end_img),
     frames = fade_frames
   )
@@ -35,7 +35,7 @@ encode_flood_mp4 <- function(title_frame_path, flood_frame_paths, end_frame_path
     tmp_dir, sprintf("crossfade_%04d.png", seq_len(fade_frames))
   )
   for (i in seq_len(fade_frames)) {
-    magick::image_write(crossfade[i], crossfade_paths[i])
+    image_write(crossfade[i], crossfade_paths[i])
   }
 
   # Encode at 10 fps (repeating each display frame 5x) so that the output
@@ -50,7 +50,7 @@ encode_flood_mp4 <- function(title_frame_path, flood_frame_paths, end_frame_path
     rep(end_frame_path, end_hold * reps)
   )
 
-  av::av_encode_video(
+  av_encode_video(
     input = all_frame_paths,
     output = output_path,
     framerate = encode_fps,

@@ -30,7 +30,7 @@ build_storm_track <- function(storm_now, dtg, hurricane_symbol_path,
       color = "black",
       size = config_vars$storm_track_dot_size
     ),
-    ggimage::geom_image(
+    geom_image(
       data = latest_point,
       aes(x = X, y = Y),
       image = hurricane_symbol_path,

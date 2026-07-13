@@ -65,17 +65,17 @@ build_legends <- function(precip_fill_scale, global_max_precip,
     theme_void()
 
   flood_stage_img <- if (flood_spikes) {
-    magick::image_read(flood_stage_spike_leg_path)
+    image_read(flood_stage_spike_leg_path)
   } else {
-    magick::image_read(flood_stage_point_leg_path)
+    image_read(flood_stage_point_leg_path)
   }
-  flood_stage_img <- magick::image_resize(flood_stage_img, "x200")
+  flood_stage_img <- image_resize(flood_stage_img, "x200")
 
   p_rdg <- ggplot(
     data.frame(X = 0.5, Y = 0.5),
     aes(x = X, y = Y)
   ) +
-    ggimage::geom_image(image = target_rdg_icon,
+    geom_image(image = target_rdg_icon,
                         size = config_vars$rdg_legend_icon_size) +
     theme_void()
 

@@ -43,9 +43,9 @@ build_precip_layer <- function(precip_now, precip_cols, precip_grayscale_cols,
     theme = theme(
       legend.direction = "horizontal",
       legend.title.position = "left",
-      legend.key.width = grid::unit(
+      legend.key.width = unit(
         config_vars$precip_legend_key_width_cm, "cm"),
-      legend.key.height = grid::unit(
+      legend.key.height = unit(
         config_vars$precip_legend_key_height_cm, "cm"),
       legend.text.position = "bottom",
       legend.text = element_text(size = 0, color = "transparent"),
@@ -57,7 +57,7 @@ build_precip_layer <- function(precip_now, precip_cols, precip_grayscale_cols,
   cols <- if (precip_grayscale) {
     precip_grayscale_cols
   } else {
-    scales::alpha(precip_cols, config_vars$precip_col_alpha)
+    alpha(precip_cols, config_vars$precip_col_alpha)
   }
 
   scale <- scale_fill_stepsn(
@@ -65,7 +65,7 @@ build_precip_layer <- function(precip_now, precip_cols, precip_grayscale_cols,
     breaks = get_precip_breaks(global_max_precip),
     limits = c(1, global_max_precip),
     name = NULL,
-    na.value = scales::alpha("white", 0),
+    na.value = alpha("white", 0),
     guide = precip_guide
   )
 

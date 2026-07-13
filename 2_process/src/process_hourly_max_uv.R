@@ -27,19 +27,19 @@ get_hourly_max_uv <- function(inst_data, value_cols_regex, hour_unit,
       across(all_of(value_columns), as.numeric),
       across(all_of(code_columns), as.character)
     ) |>
-    tidyr::pivot_longer(
+    pivot_longer(
       cols = all_of(value_columns),
       names_to = "pcode_col",
       values_to = "value",
       values_drop_na = TRUE
     ) |>
     mutate(
-      parameter = dplyr::case_when(
+      parameter = case_when(
         grepl("00060", pcode_col) ~ pcode_param_map[["00060"]],
         grepl("00065", pcode_col) ~ pcode_param_map[["00065"]],
         TRUE ~ NA_character_
       ),
-      utc_hour = lubridate::floor_date(dateTime, unit = hour_unit)
+      utc_hour = floor_date(dateTime, unit = hour_unit)
     ) |>
     select(site_no, agency_cd, dateTime, utc_hour, parameter, value)
   
@@ -65,18 +65,18 @@ get_hourly_max_uv <- function(inst_data, value_cols_regex, hour_unit,
   
   # wide and join percentile
   inst_data_wide <- inst_data_max |>
-    tidyr::pivot_wider(
+    pivot_wider(
       id_cols = c(site_no, dateTime),
       names_from = parameter,
       values_from = value,
       values_fill = list(value = NA)
     ) |>
     left_join(
-      inst_data |> dplyr::select(site_no, agency_cd, dateTime, percentile),
+      inst_data |> select(site_no, agency_cd, dateTime, percentile),
       by = c("site_no", "dateTime")
     ) |>
     mutate(
-      utc_hour = lubridate::floor_date(dateTime, unit = hour_unit)
+      utc_hour = floor_date(dateTime, unit = hour_unit)
     ) |>
     select(
       site_no, agency_cd, dateTime, utc_hour,

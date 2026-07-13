@@ -27,7 +27,7 @@ build_flood_layer <- function(flood_groups, flood_spikes,
   peak_height <- config_vars$peak_height
   y_baseheight <- config_vars$y_baseheight
   base_layers <- list(
-    ggnewscale::new_scale_fill(),
+    new_scale_fill(),
     geom_sf(
       data = flood_groups$non_flooded,
       aes(geometry = geometry, fill = flood_status),
@@ -53,7 +53,7 @@ build_flood_layer <- function(flood_groups, flood_spikes,
         mutate(
           pct_rescaled = coalesce(
             pct_spike_height[as.character(percentile)], 0),
-          xy = sf::st_coordinates(geometry),
+          xy = st_coordinates(geometry),
           x = xy[, 1],
           y = xy[, 2],
           y_base = y + y_baseheight,
@@ -68,7 +68,7 @@ build_flood_layer <- function(flood_groups, flood_spikes,
 
     gray_spike_layers <- if (nrow(flow_spikes_gray) > 0) {
       list(
-        ggforce::geom_link(
+        geom_link(
           data = flow_spikes_gray,
           aes(
             x = .data$x, xend = .data$xend,
@@ -93,7 +93,7 @@ build_flood_layer <- function(flood_groups, flood_spikes,
     }
 
     spike_layers <- list(
-      ggforce::geom_link(
+      geom_link(
         data = flow_spikes_col,
         aes(
           x = .data$x, xend = .data$xend,
@@ -123,7 +123,7 @@ build_flood_layer <- function(flood_groups, flood_spikes,
             size = config_vars$font_size, family = font_legend),
           title.theme = element_text(
             size = config_vars$font_size, family = font_legend),
-          keyheight = grid::unit(config_vars$flood_legend_key_height_cm, "cm")
+          keyheight = unit(config_vars$flood_legend_key_height_cm, "cm")
         )
       ),
       geom_sf(
@@ -198,7 +198,7 @@ build_flood_layer <- function(flood_groups, flood_spikes,
             size = config_vars$font_size, family = font_legend),
           title.theme = element_text(
             size = config_vars$font_size, family = font_legend),
-          keyheight = grid::unit(config_vars$flood_legend_key_height_cm, "cm")
+          keyheight = unit(config_vars$flood_legend_key_height_cm, "cm")
         )
       )
     )
