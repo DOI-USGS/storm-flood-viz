@@ -173,7 +173,7 @@ Per-storm and visualization settings live in `config/<storm>.yml`, **not** in R 
     -   `storm_buffer` — distance (meters) to buffer around the storm track for spatial filtering.
     -   `shape_type` — spatial-filter method (e.g. `"buffered_storm_track"`).
     -   `storm_best_track_url` — source of storm track shapefiles ([NHC GIS archive](https://www.nhc.noaa.gov/gis/best_track/)).
-    -   `stn_event` — STN rapid-deployment event id (e.g. `346` for Helene; look up at the [STN Data Portal](https://stn.wim.usgs.gov/STNDataPortal/#)).
+    -   `stn_event` — STN rapid-deployment event id (e.g. `346` for Helene; look up at the [STN Data Portal](https://apps.usgs.gov/fev/data-download-portal)).
 
 **Spatial**
 
@@ -342,7 +342,7 @@ This code assumes the user is familiar with R and familiar with the [targets](ht
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on the process for submitting pull requests to us. Please read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for details on adhering by the [USGS Code of Scientific Conduct](https://www2.usgs.gov/fsp/fsp_code_of_scientific_conduct.asp).
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on the process for submitting pull requests to us. Please read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for details on adhering by the [USGS Code of Scientific Conduct](https://d9-wret.s3.us-west-2.amazonaws.com/assets/palladium/production/s3fs-public/atoms/files/USGSCodeOfScientificConduc1.pdf).
 
 ## Built With
 
