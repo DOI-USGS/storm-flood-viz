@@ -19,7 +19,3 @@ _targets/
 !3_visualize/in/custom_flood_stage_spike_leg_percentile.png
 !3_visualize/in/custom_flood_stage_point_leg_percentile.png
 
-# Development planning artifacts (kept local, not published)
-AGENTS.md
-TASKS/
-REFACTOR.md
