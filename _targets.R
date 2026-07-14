@@ -12,6 +12,15 @@ stopifnot(
     Sys.getenv("API_USGS_PAT") != ""
 )
 
+# Set Python environment and load the precipitation data processing script.
+py <- Sys.getenv("RETICULATE_PYTHON", unset = "")
+if (nzchar(py)) {
+  use_python(py, required = TRUE)
+} else {
+  use_condaenv("storm-precip", required = TRUE)
+}
+source_python("1_fetch/src/get_precip.py")
+
 # tigris_use_cache: cache downloaded Census/TIGER layers (states, places) to
 # disk so they are not re-downloaded on every pipeline run.
 options(tidyverse.quiet = TRUE, timeout = 800, tigris_use_cache = TRUE)

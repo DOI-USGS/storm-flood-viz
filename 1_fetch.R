@@ -1,12 +1,3 @@
-# Set Python environment and run precipitation data processing script
-py <- Sys.getenv("RETICULATE_PYTHON", unset = "")
-if (nzchar(py)) {
-  use_python(py, required = TRUE)
-} else {
-  use_condaenv("storm-precip", required = TRUE)
-}
-source_python("1_fetch/src/get_precip.py")
-
 # Source functions
 source("1_fetch/src/storm_shape_functions.R")
 source("1_fetch/src/clip_flood_stage_gages.R")
