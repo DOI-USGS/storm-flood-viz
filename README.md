@@ -273,7 +273,16 @@ Per-storm and visualization settings live in `config/<storm>.yml`, **not** in R 
 ## Limitations
 
 -   **Precipitation is CONUS-only.** The precipitation source ([NOAA Stage IV QPE](https://api.water.usgs.gov/gdp/pygeoapi/stac/stac-collection/stageiv_combined)) covers only the contiguous United States. A bbox over Puerto Rico, Alaska, Hawaii, or other territories will return no precipitation data; covering those regions requires a different QPE product and a corresponding change to `get_precip.py`.
--   **For those in office: `p1_precip_tifs/download_precip()` does not run if `VPN` is on or if user is on `IGSWLAN` network. I'd recommend obtaining `IGSVisitor` login or use external WiFi network, as pre-filtering on `VPN` and `IGSWLAN` blocks the data download.
+-   **For those in office:** `p1_precip_tifs/download_precip()` does not run if `VPN` is on or if user is on `IGSWLAN` network. I'd recommend obtaining `IGSVisitor` login or use external WiFi network, as pre-filtering on `VPN` and `IGSWLAN` blocks the data download and will lead to error message:
+
+```         
+> targets::tar_make(p1_precip_tifs)
+Error:
+! Error in tar_make():
+  KeyError: '.zmetadata'
+Run `reticulate::py_last_error()` for details.
+  See https://books.ropensci.org/targets/debugging.html
+```
 
 ## Repository organization
 
