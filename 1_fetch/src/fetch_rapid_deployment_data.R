@@ -18,7 +18,7 @@ fetch_rapid_dep_sites <- function(event, proj, start_day, end_day) {
       
       url <- sprintf('https://stn.wim.usgs.gov/STNServices/Instruments/FilteredInstruments.json?Event=%d&EventType=&EventStatus=&States=&County=&CurrentStatus=&CollectionCondition=&SensorType=5&DeploymentType=', event)
       
-    rdgs <- jsonlite::fromJSON(url)
+    rdgs <- fromJSON(url)
     
     if(length(rdgs) > 0) {
       rdgs <- rdgs %>%

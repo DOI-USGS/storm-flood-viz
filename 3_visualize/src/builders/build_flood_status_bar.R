@@ -24,7 +24,7 @@ build_flood_status_bar <- function(flow_now, flood_stage_cols_blue,
     count(flood_status) |>
     mutate(flood_status = factor(
       flood_status, levels = c("Flood", "Moderate", "Major"))) |>
-    tidyr::complete(flood_status, fill = list(n = 0)) |>
+    complete(flood_status, fill = list(n = 0)) |>
     mutate(
       label_right = paste(n, "gages"),
       label_left = case_when(

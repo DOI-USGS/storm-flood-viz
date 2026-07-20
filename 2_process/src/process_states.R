@@ -21,7 +21,7 @@ get_inner_lines <- function(in_sf) {
   touching_pairs <- touching_pairs[touching_pairs[,1] < touching_pairs[,2], ]
   
   # Get shared boundaries
-  inner_borders <- purrr::map_dfr(1:nrow(touching_pairs), function(i) {
+  inner_borders <- map_dfr(1:nrow(touching_pairs), function(i) {
     i1 <- touching_pairs[i, 1]
     i2 <- touching_pairs[i, 2]
     
@@ -30,7 +30,7 @@ get_inner_lines <- function(in_sf) {
     
     shared <- st_intersection(st_geometry(g1), st_geometry(g2))
     
-    tibble::tibble(geometry = shared)
+    tibble(geometry = shared)
   }) |> 
     st_as_sf()
   

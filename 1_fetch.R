@@ -1,12 +1,3 @@
-# Set Python environment and run precipitation data processing script
-py <- Sys.getenv("RETICULATE_PYTHON", unset = "")
-if (nzchar(py)) {
-  reticulate::use_python(py, required = TRUE)
-} else {
-  reticulate::use_condaenv("storm-precip", required = TRUE)
-}
-reticulate::source_python("1_fetch/src/get_precip.py")
-
 # Source functions
 source("1_fetch/src/storm_shape_functions.R")
 source("1_fetch/src/clip_flood_stage_gages.R")
@@ -31,16 +22,17 @@ p1_targets <- list(
                                summed = "cumulative",
                                output_path = "1_fetch/out/")
              },
+             deployment = "main",
              format = 'file'),
   # Convert projection
   tar_target(
     p1_bbox_proj,
     {
-      if (!identical(sf::st_crs(p0_proj), sf::st_crs("EPSG:4269"))) {
-        sf::st_as_sfc(p0_bbox_sf) |> 
-          sf::st_as_sf(crs = "EPSG:4269") |>
-          sf::st_transform(crs = p0_proj) |>
-          sf::st_bbox()
+      if (!identical(st_crs(p0_proj), st_crs("EPSG:4269"))) {
+        st_as_sfc(p0_bbox_sf) |> 
+          st_as_sf(crs = "EPSG:4269") |>
+          st_transform(crs = p0_proj) |>
+          st_bbox()
       }else{
         p0_bbox_sf
       }
@@ -62,10 +54,10 @@ p1_targets <- list(
     p1_storm_path_buffered_sf,
     {
       lin_file <- p1_storm_track_files[grepl("_lin\\.shp$", p1_storm_track_files)]
-      sf::read_sf(lin_file) |>
-        sf::st_transform(crs = p0_proj) |>
-        sf::st_crop(p1_bbox_proj) |>
-        sf::st_buffer(dist = p0_storm_info |> pull(storm_buffer))
+      read_sf(lin_file) |>
+        st_transform(crs = p0_proj) |>
+        st_crop(p1_bbox_proj) |>
+        st_buffer(dist = p0_storm_info |> pull(storm_buffer))
     }
   ),
   tar_target(
@@ -73,25 +65,24 @@ p1_targets <- list(
     {
       pts_file <- p1_storm_track_files[grepl("_pts\\.shp$", p1_storm_track_files)]
       
-      sf_data <- sf::read_sf(pts_file) |>
-        sf::st_transform(crs = p0_proj) |>
-        filter(STORMNAME %in% dplyr::pull(p0_storm_info, storm_name)) |>
+      sf_data <- read_sf(pts_file) |>
+        st_transform(crs = p0_proj) |>
+        filter(STORMNAME %in% pull(p0_storm_info, storm_name)) |>
         mutate(
           DTG = as.POSIXct(as.character(DTG), format = "%Y%m%d%H", tz = "UTC"),
-          storm_type_full = dplyr::case_when(
+          storm_type_full = case_when(
             STORMTYPE == "TS" ~ "Tropical storm",
             STORMTYPE == "HU" ~ "Hurricane",
             STORMTYPE == "LO" ~ "Low pressure system",
             TRUE ~ NA_character_  # Keep unknowns explicit
           )
         ) |> 
-        tidyr::fill(storm_type_full, .direction = "down")
+        fill(storm_type_full, .direction = "down")
   
       # now bind coordinates
       bind_cols(
         sf_data,
-        sf::st_coordinates(sf_data) |> tibble::as_tibble() |> 
-          rename(X = X, Y = Y)
+        st_coordinates(sf_data) |> as_tibble()
       )
     }
   ),
@@ -100,14 +91,14 @@ p1_targets <- list(
   # Download state borders and crop to bbox
   tar_target(
     p1_conus_bbox_crop_sf, 
-    tigris::states(cb = TRUE) |>
+    states(cb = TRUE) |>
       filter(!STUSPS %in% c("AK", "HI", "MP", "VI", "AS", "GU")) |>
       st_transform(p0_proj) |>
-      rmapshaper::ms_simplify(keep = 0.2) |> 
+      ms_simplify(keep = 0.2) |> 
       st_crop(
         p0_bbox_sf |>
           st_as_sfc() |>
-          sf::st_as_sf(crs = "EPSG:4269") |>
+          st_as_sf(crs = "EPSG:4269") |>
           st_transform(p0_proj)
       )
   ),
@@ -115,7 +106,7 @@ p1_targets <- list(
   tar_target(
     p1_bbox_coords,
     {
-      bbox <- sf::st_bbox(p1_conus_bbox_crop_sf)
+      bbox <- st_bbox(p1_conus_bbox_crop_sf)
       list(
         xlim = c(bbox["xmin"], bbox["xmax"]),
         ylim = c(bbox["ymin"], bbox["ymax"])
@@ -177,7 +168,7 @@ p1_targets <- list(
       pcodes = p0_pcodes,
       time_range = paste0(p0_nwis_start, "/", p0_nwis_end)
     ) |>
-      sf::st_transform(p0_proj)
+      st_transform(p0_proj)
   ),
   # Character vector of site numbers for UV/stats fetching
   tar_target(

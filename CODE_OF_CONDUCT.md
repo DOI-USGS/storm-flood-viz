@@ -6,4 +6,4 @@ the [USGS Code of Scientific Conduct][1].
 
 
 
-[1]: https://www2.usgs.gov/fsp/fsp_code_of_scientific_conduct.asp
+[1]: https://d9-wret.s3.us-west-2.amazonaws.com/assets/palladium/production/s3fs-public/atoms/files/USGSCodeOfScientificConduc1.pdf

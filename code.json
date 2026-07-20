@@ -2,7 +2,7 @@
   {
     "name": "storm-flood-viz",
     "organization": "U.S. Geological Survey",
-    "description": "The software combines USGS streamgage data and NOAA precipitaion and storm track data to create a flood stage animation that highlight where floods occurred, how long they lasted, and how storm intensity evolved",
+    "description": "The software combines USGS streamgage data and NOAA precipitation and storm track data to create a flood stage animation that highlights where floods occurred, how long they lasted, and how storm intensity evolved",
     "version": "main",
     "status": "Development",
     "permissions": {
@@ -25,7 +25,8 @@
       "USGS"
     ],
     "languages": [
-      "R"
+      "R",
+      "Python"
     ],
     "contact": {
       "name": "Elmera Azadpour",

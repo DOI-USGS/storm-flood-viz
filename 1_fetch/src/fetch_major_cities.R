@@ -5,9 +5,9 @@
 #' optional per-storm override to force-include specific cities.
 #'
 #' Requires a Census API key in the `CENSUS_API_KEY` env var (see
-#' `tidycensus::census_api_key()`or README.md).
+#' `census_api_key()`or README.md).
 #'
-#' @param bbox_sf An `sf::st_bbox` (or object coercible via `st_as_sfc`) in
+#' @param bbox_sf An `st_bbox` (or object coercible via `st_as_sfc`) in
 #'   EPSG:4269 (NAD83) decimal degrees — the storm bbox from `p0_bbox_sf`.
 #' @param proj Target CRS (PROJ string or EPSG) for the returned geometry,
 #'   i.e. `p0_proj`.
@@ -23,18 +23,18 @@
 get_major_cities <- function(bbox_sf, proj, n = 12, override = NULL,
                              year = 2024) {
   bbox_4269 <- bbox_sf |>
-    sf::st_as_sfc() |>
-    sf::st_as_sf(crs = "EPSG:4269")
+    st_as_sfc() |>
+    st_as_sf(crs = "EPSG:4269")
 
   # States intersecting the bbox, plus any states named in the override, so
   # the ACS pull covers every place we might return.
-  bbox_states <- tigris::states(cb = TRUE) |>
-    sf::st_filter(bbox_4269) |>
+  bbox_states <- states(cb = TRUE) |>
+    st_filter(bbox_4269) |>
     pull(STUSPS)
   states <- union(bbox_states, override$state)
 
   # Total population (B01003_001) for every place in those states.
-  places <- tidycensus::get_acs(
+  places <- get_acs(
     geography = "place",
     variables = "B01003_001",
     state = states,
@@ -60,21 +60,21 @@ get_major_cities <- function(bbox_sf, proj, n = 12, override = NULL,
       city = sub("-[A-Za-z]+ County$", "", city),
       state = sub("^.*, ", "", NAME)
     ) |>
-    sf::st_transform(proj) |>
-    sf::st_centroid()
+    st_transform(proj) |>
+    st_centroid()
 
   # Auto pick: most populous places whose centroid falls in the bbox.
-  bbox_proj <- sf::st_transform(bbox_4269, proj)
+  bbox_proj <- st_transform(bbox_4269, proj)
   auto <- places |>
-    sf::st_filter(bbox_proj) |>
+    st_filter(bbox_proj) |>
     slice_max(pop, n = n)
 
   # Forced picks: rows matching the override name/state, regardless of bbox.
   forced <- if (is.null(override)) {
     places[0, ]
   } else {
-    state_names <- setNames(tigris::fips_codes$state_name,
-                            tigris::fips_codes$state)
+    state_names <- setNames(fips_codes$state_name,
+                            fips_codes$state)
     wanted <- tibble(
       city = override$name,
       state = unname(state_names[override$state])

@@ -25,24 +25,24 @@
 #'   `end_dateTime`, and `precip_mm`
 get_precip_df <- function(tif_files, proj, precip_summ, states) {
   # Convert sf to terra SpatVector
-  state_vect <- terra::vect(states)
+  state_vect <- vect(states)
   
   # extract datetimes from filename
   # Note: file timestamps are in UTC.
   extract_datetimes <- function(file) {
     fname <- basename(file)
-    parts <- stringr::str_match(fname, "(\\d{4}-\\d{2}-\\d{2}T\\d{2})_to_(\\d{4}-\\d{2}-\\d{2}T\\d{2})")
+    parts <- str_match(fname, "(\\d{4}-\\d{2}-\\d{2}T\\d{2})_to_(\\d{4}-\\d{2}-\\d{2}T\\d{2})")
     list(
-      start = lubridate::with_tz(as.POSIXct(parts[2], format = "%Y-%m-%dT%H", tz = "UTC")),
-      end   = lubridate::with_tz(as.POSIXct(parts[3], format = "%Y-%m-%dT%H", tz = "UTC"))
+      start = with_tz(as.POSIXct(parts[2], format = "%Y-%m-%dT%H", tz = "UTC")),
+      end   = with_tz(as.POSIXct(parts[3], format = "%Y-%m-%dT%H", tz = "UTC"))
     )
   }
   
   # project, crop, and mask a raster
   process_raster <- function(file) {
-    r <- terra::rast(file)
-    r_proj <- terra::project(r, proj)
-    # terra::mask(terra::crop(r_proj, state_vect), state_vect)
+    r <- rast(file)
+    r_proj <- project(r, proj)
+    # mask(crop(r_proj, state_vect), state_vect)
   }
   
   # none --------------------------------------------------------------------
@@ -54,13 +54,13 @@ get_precip_df <- function(tif_files, proj, precip_summ, states) {
     # Read, project, crop, and mask each file
     precip_rasters <- tif_files |>
       set_names(names_vec) |>
-      purrr::map(~ process_raster(.x))
+      map(~ process_raster(.x))
     
-    stacked_rasters <- terra::rast(precip_rasters)
+    stacked_rasters <- rast(precip_rasters)
     names(stacked_rasters) <- format(times, "%Y-%m-%dT%H")
     
     precip_df <- as.data.frame(stacked_rasters, xy = TRUE) |>
-      tidyr::pivot_longer(
+      pivot_longer(
         cols = -c(x, y),
         names_to = "dateTime",
         values_to = "precip_mm"
@@ -75,13 +75,13 @@ get_precip_df <- function(tif_files, proj, precip_summ, states) {
 # total or cumulative -----------------------------------------------------
   } else if (precip_summ %in% c("total", "cumulative")) {
     precip_df <- tif_files |>
-      purrr::map_dfr(function(file) {
+      map_dfr(function(file) {
         times <- extract_datetimes(file)
         r_crop <- process_raster(file)
         
         as.data.frame(r_crop, xy = TRUE, na.rm = TRUE) |>
-          dplyr::rename(precip_mm = 3) |>
-          dplyr::mutate(
+          rename(precip_mm = 3) |>
+          mutate(
             start_dateTime = times$start,
             end_dateTime = times$end,
             dateTime = times$end,  # for compatibility with "none"

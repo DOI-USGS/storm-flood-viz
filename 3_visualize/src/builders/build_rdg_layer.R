@@ -18,12 +18,12 @@ build_rdg_layer <- function(rdg_now, target_rdg_icon, config_vars) {
 
   rdg_coords <- rdg_now |>
     mutate(
-      X = sf::st_coordinates(geometry)[, 1],
-      Y = sf::st_coordinates(geometry)[, 2]
+      X = st_coordinates(geometry)[, 1],
+      Y = st_coordinates(geometry)[, 2]
     )
 
   list(
-    ggimage::geom_image(
+    geom_image(
       data = rdg_coords,
       aes(x = X, y = Y),
       image = target_rdg_icon,

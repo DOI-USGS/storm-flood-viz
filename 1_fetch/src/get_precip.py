@@ -18,7 +18,19 @@ def create_raster(
     gdal_data_type,
     driver,
 ):
-    """returns gdal data source raster object"""
+    """Create an empty GDAL raster dataset to write bands into.
+
+    Args:
+        output_path (str): Path where the raster file will be written.
+        columns (int): Number of columns (pixels in the x direction).
+        rows (int): Number of rows (pixels in the y direction).
+        nband (int): Number of bands to allocate.
+        gdal_data_type (int): GDAL pixel data type 
+        driver (str): GDAL driver short name
+
+    Returns:
+        osgeo.gdal.Dataset: The newly created, empty raster dataset.
+    """
     # create driver
     driver = gdal.GetDriverByName(driver)
 
@@ -39,7 +51,33 @@ def numpy_array_to_raster(
     spatial_reference_system_wkid,
     driver,
 ):
+    """Write a 2D NumPy array to a single-band, georeferenced raster.
 
+    Builds the geotransform from the upper-left corner and cell resolution,
+    assigns the given projection, writes the array to band 1, sets the
+    no-data value, and computes band statistics.
+
+    Args:
+        output_path (str): Path where the raster file will be written.
+        numpy_array (numpy.ndarray): 2D array of pixel values, shaped
+            ``(rows, columns)``.
+        upper_left_tuple (tuple): ``(x, y)`` map coordinates of the upper-left
+            corner of the raster.
+        cell_resolution (float): Pixel size in map units; applied as positive
+            in x and negative in y.
+        nband (int): Number of bands to allocate (values are written to band 1).
+        no_data (float): Value used to flag missing pixels.
+        gdal_data_type (int): GDAL pixel data type .
+        spatial_reference_system_wkid (int): EPSG code of the raster's
+            coordinate reference system.
+        driver (str): GDAL driver short name.
+
+    Returns:
+        osgeo.gdal.Dataset: The written raster dataset.
+
+    Raises:
+        Exception: If the output file was not created on disk.
+    """
     # get raster shape
     rows, columns = numpy_array.shape
 
@@ -85,6 +123,29 @@ def download_precip(
     NO_DATA=-9999.0,
     SPATIAL_REFERENCE_SYSTEM_WKID=4269,
 ):
+    """Download Stage IV hourly precip and write it as GeoTIFFs.
+
+    Reads the Stage IV Zarr store on S3 for the requested UTC window,
+    interpolates each hourly field onto a regular grid over ``bBox``, and
+    writes GeoTIFFs. Existing files are skipped.
+
+    Args:
+        bBox (list): Bounding box ``[xmin, ymin, xmax, ymax]`` in the output CRS.
+        start_time_str (str): Inclusive window start (UTC), parsed by
+            ``pandas.to_datetime``.
+        end_time_str (str): Inclusive window end (UTC), same format.
+        output_path (str): Output directory; created if missing.
+        summed (str): ``"none"`` (one file per hour), ``"cumulative"``
+            (running sum per hour), or ``"total"`` (one summed file).
+        cells_x (int): Grid cells along x; cell size and y cells derive from it.
+        zarr_url (str): S3 URL of the Stage IV Zarr store.
+        GEOTIFF_DRIVER_NAME (str): GDAL driver short name.
+        NO_DATA (float): No-data value for each raster.
+        SPATIAL_REFERENCE_SYSTEM_WKID (int): EPSG code for the output rasters.
+
+    Returns:
+        list[str]: Paths of the GeoTIFFs, including any that already existed.
+    """
     if os.path.exists(output_path) == False:
         os.makedirs(output_path)
 

@@ -126,7 +126,7 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
     build_basemap(state_inner_borders, state_outer_lines, config_vars) +
     theme(
       text = element_text(family = font_legend),
-      legend.spacing.x = grid::unit(0, "cm")
+      legend.spacing.x = unit(0, "cm")
     ) +
     build_flood_layer(
       flood_groups_now, flood_spikes,
@@ -160,16 +160,16 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
     flood_stage_point_leg_path, target_rdg_icon, config_vars
   )
 
-  logo <- magick::image_read(logo_path) |>
-    magick::image_resize("x100") |>
-    magick::image_colorize(100, "black")
+  logo <- image_read(logo_path) |>
+    image_resize("x100") |>
+    image_colorize(100, "black")
 
   progress_bar <- build_progress_bar(progress_fraction, config_vars)
 
-  canvas <- grid::rectGrob(
+  canvas <- rectGrob(
     x = 0, y = 0, width = config_vars$canvas_width,
     height = config_vars$canvas_height,
-    gp = grid::gpar(
+    gp = gpar(
       fill = config_vars$bg_col, alpha = 1, col = config_vars$bg_col)
   )
 
@@ -221,7 +221,7 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
 
   # --- Save ---
   timestamp_str <- format(dtg, "%Y%m%dT%H%M")
-  fs::dir_create(frame_dir)
+  dir_create(frame_dir)
   frame_path <- file.path(frame_dir, paste0("frame_", timestamp_str, ".png"))
   ggsave(
     filename = frame_path, plot = p,

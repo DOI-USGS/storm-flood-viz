@@ -6,6 +6,55 @@
 # Each per-storm/viz value is exposed as its own leaf target so downstream
 # targets only re-run when their specific input changes.
 
+#' Parse a config field that must be TRUE or FALSE.
+#'
+#' Accepts an actual logical or the strings "TRUE"/"FALSE" (any case) and
+#' errors on anything else (e.g. a typo like "FASLE"), so the mistake surfaces
+#' at config load rather than as a cryptic `if (NA)` error downstream.
+parse_config_logical <- function(x, field) {
+  if (is.logical(x) && length(x) == 1 && !is.na(x)) return(x)
+  if (is.character(x) && length(x) == 1) {
+    v <- toupper(trimws(x))
+    if (v == "TRUE") return(TRUE)
+    if (v == "FALSE") return(FALSE)
+  }
+  stop(sprintf("Config field '%s' must be TRUE or FALSE, got: %s",
+               field, dQuote(x)), call. = FALSE)
+}
+
+#' Validate required storm-config fields before the pipeline uses them.
+#'
+#' Checks required keys are present and applies basic sanity rules so typos
+#' fail fast with a clear message.
+validate_storm_config <- function(cfg) {
+  required <- c("date_start", "date_end", "landfall_time", "proj",
+                "storm_info", "cities_n", "flood_spike", "precip_grayscale")
+  missing <- setdiff(required, names(cfg))
+  if (length(missing) > 0) {
+    stop("Config is missing required field(s): ",
+         paste(missing, collapse = ", "), call. = FALSE)
+  }
+
+  for (f in c("date_start", "date_end")) {
+    if (is.na(as.Date(cfg[[f]], format = "%Y-%m-%d"))) {
+      stop(sprintf("Config '%s' must be a date 'YYYY-MM-DD', got: %s",
+                   f, dQuote(cfg[[f]])), call. = FALSE)
+    }
+  }
+  if (as.Date(cfg$date_end) < as.Date(cfg$date_start)) {
+    stop("Config 'date_end' must not be before 'date_start'.", call. = FALSE)
+  }
+  if (is.na(as.POSIXct(cfg$landfall_time, tz = "UTC"))) {
+    stop("Config 'landfall_time' must parse as 'YYYY-MM-DD HH:MM:SS'.",
+         call. = FALSE)
+  }
+  if (!is.numeric(cfg$cities_n)) {
+    stop("Config 'cities_n' must be numeric.", call. = FALSE)
+  }
+
+  invisible(TRUE)
+}
+
 #' Load and type-coerce a per-storm YAML config.
 #'
 #' YAML scalars/maps don't preserve R types like POSIXct, sf bbox, or tibble,
@@ -15,21 +64,27 @@
 #' @param path Path to the storm YAML file.
 #' @return A named list ready for downstream `p0_storm_cfg$<field>` access.
 load_storm_config <- function(path) {
-  cfg <- yaml::read_yaml(path)
+  cfg <- read_yaml(path)
+  validate_storm_config(cfg)
+
+  # Coerce logical fields strictly so a typo errors here, not in the viz phase.
+  cfg$flood_spike <- parse_config_logical(cfg$flood_spike, "flood_spike")
+  cfg$precip_grayscale <- parse_config_logical(cfg$precip_grayscale,
+                                               "precip_grayscale")
 
   cfg$landfall_time <- as.POSIXct(cfg$landfall_time, tz = "UTC")
 
-  cfg$bbox <- sf::st_bbox(c(xmin = cfg$bbox$xmin, xmax = cfg$bbox$xmax, ymin = cfg$bbox$ymin, ymax = cfg$bbox$ymax))
+  cfg$bbox <- st_bbox(c(xmin = cfg$bbox$xmin, xmax = cfg$bbox$xmax, ymin = cfg$bbox$ymin, ymax = cfg$bbox$ymax))
 
-  cfg$storm_info <- tibble::as_tibble(cfg$storm_info)
-  cfg$viz_config <- tibble::as_tibble(cfg$viz_config)
+  cfg$storm_info <- as_tibble(cfg$storm_info)
+  cfg$viz_config <- as_tibble(cfg$viz_config)
 
   cfg$anchors <- lapply(cfg$anchors, function(a) as.numeric(unlist(a)))
 
   # Optional city override: list of name/state maps -> tibble (NULL if absent).
   # Use [["cities"]] not $cities: $ partial-matches the `cities_n` key.
   if (!is.null(cfg[["cities"]])) {
-    cfg$cities <- dplyr::bind_rows(lapply(cfg[["cities"]], tibble::as_tibble))
+    cfg$cities <- bind_rows(lapply(cfg[["cities"]], as_tibble))
   }
 
   # Named-map palettes -> named character vector
