@@ -22,7 +22,9 @@
     "laborHours": 200,
     "tags": [
       "R",
-      "USGS"
+      "USGS",
+      "visualization",
+      "usgs-artificial-intelligence"
     ],
     "languages": [
       "R",
@@ -34,6 +36,45 @@
     },
     "date": {
       "metadataLastUpdated": "2026-06-23"
+    }
+  },
+  {
+    "name": "storm-flood-viz",
+    "organization": "U.S. Geological Survey",
+    "description": "The software combines USGS streamgage data and NOAA precipitation and storm track data to create a flood stage animation that highlights where floods occurred, how long they lasted, and how storm intensity evolved",
+    "version": "1.0.0",
+    "status": "Release Candidate",
+    "permissions": {
+      "usageType": "openSource",
+      "licenses": [
+        {
+          "name": "Public Domain, CC0-1.0",
+          "URL": "https://code.usgs.gov/wma/vizlab/storm-flood-viz/-/raw/1.0.0/LICENSE.md"
+        }
+      ]
+    },
+    "homepageURL": "https://labs.waterdata.usgs.gov/visualizations/index.html#/",
+    "downloadURL": "https://code.usgs.gov/wma/vizlab/storm-flood-viz/-/archive/1.0.0/storm-flood-viz-1.0.0.zip",
+    "disclaimerURL":  "https://code.usgs.gov/wma/vizlab/storm-flood-viz/-/raw/1.0.0/DISCLAIMER.md",
+    "repositoryURL": "https://code.usgs.gov/wma/vizlab/storm-flood-viz.git",
+    "vcs": "git",
+    "laborHours": 200,
+    "tags": [
+      "R",
+      "USGS",
+      "visualization",
+      "usgs-artificial-intelligence"
+    ],
+    "languages": [
+      "R",
+      "Python"
+    ],
+    "contact": {
+      "name": "Elmera Azadpour",
+      "email": "eazadpour@usgs.gov"
+    },
+    "date": {
+      "metadataLastUpdated": "2026-07-20"
     }
   }
 ]
