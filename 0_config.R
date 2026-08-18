@@ -101,7 +101,7 @@ load_storm_config <- function(path) {
 p0_targets <- list(
 
   # Storm config dispatch
-  tar_target(p0_storm_cfg_file, "config/helene.yml", format = "file"),
+  tar_target(p0_storm_cfg_file, "config/matthew.yml", format = "file"),
   tar_target(p0_storm_cfg, load_storm_config(p0_storm_cfg_file)),
 
   # Pipeline-constant data sources

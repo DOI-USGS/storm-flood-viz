@@ -33,7 +33,10 @@ fetch_site_stats <- function(site_nos, parameter_code = "00060", out_path,
         computation_type = "percentile",
         normal_type = "DOY"
       ) |>
-        st_drop_geometry()
+        st_drop_geometry() |>
+        # Keep only the columns used downstream
+        select(monitoring_location_id, parent_time_series_id,
+               time_of_year, percentile, value, sample_count)
       write_parquet(result, cache_file)
       result
     },

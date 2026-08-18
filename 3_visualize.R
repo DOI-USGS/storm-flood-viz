@@ -112,7 +112,7 @@ p3_targets <- list(
       end_date = p0_date_end,
       logo_path = '3_visualize/in/usgs_logo_black.png',
       frame_bg_path = as.character(p3_flood_stage_frames)[
-        grepl("frame_20240928T0800.png$", p3_flood_stage_frames)
+        grepl("frame_20161008T0700.png$", p3_flood_stage_frames)
       ],
       config_vars = p0_viz_config_df,
       out_path = file.path(p3_frame_dir, "frame_00000000000.png")
@@ -125,7 +125,7 @@ p3_targets <- list(
       end_text_line1 = "STAY SAFE DURING FLOODS",
       end_text_line2 = sprintf("Learn more about the USGS response to %s at",
                                str_to_sentence(p3_storm_slug)),
-      end_text_line3 = sprintf("www.usgs.gov/%s", str_to_sentence(p3_storm_slug)),
+      end_text_line3 = sprintf("www.usgs.gov/special-topics/hurricane-%s", str_to_lower(p3_storm_slug)),
       logo_path = '3_visualize/in/usgs_logo_black.png',
       config_vars = p0_viz_config_df,
       out_path = file.path(p3_frame_dir, "frame_99999999999.png"),

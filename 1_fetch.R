@@ -190,6 +190,7 @@ p1_targets <- list(
       startDate = p0_nwis_start,
       endDate = p0_nwis_end
     ),
+    deployment = "main",
     format = "file"
   ),
   # Download peaks data to parquet
@@ -206,6 +207,7 @@ p1_targets <- list(
     fetch_site_stats(site_nos = p1_bbox_stream_sites,
                      out_path = "1_fetch/out/site_stats.parquet",
                      min_por_years = 10),
+    deployment = "main",
     format = "file"
   )
 )

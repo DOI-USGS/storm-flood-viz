@@ -30,7 +30,7 @@ options(tidyverse.quiet = TRUE, timeout = 800, tigris_use_cache = TRUE)
 # machine's core count. Run the pipeline as usual with tar_make().
 tar_option_set(controller = crew_controller_local(
                               workers = 4,
-                              seconds_idle = 30),
+                              seconds_idle = 900),
                packages = c('tidyverse',
                             'sf',
                             'reticulate',
