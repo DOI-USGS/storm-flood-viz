@@ -132,7 +132,7 @@ viz_config:
   font_size: 14
   leg_font_size: 12
   plot_margin: 0.025
-  plot_shift_x: -0.18
+  plot_shift_x: -0.1
   plot_shift_y: -0.212
   plot_width: 1.39
   plot_height: 1.6
