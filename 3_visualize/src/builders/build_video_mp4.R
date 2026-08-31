@@ -38,9 +38,8 @@ encode_flood_mp4 <- function(title_frame_path, flood_frame_paths, end_frame_path
     image_write(crossfade[i], crossfade_paths[i])
   }
 
-  # Encode at 10 fps (repeating each display frame 5x) so that the output
-  # plays correctly in QuickTime and other players that mis-handle <5 fps H.264.
-  encode_fps <- 10L
+  # Encode at 24 fps for socials
+  encode_fps <- 24L
   reps <- encode_fps / fps
 
   all_frame_paths <- c(
