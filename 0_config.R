@@ -78,8 +78,10 @@ load_storm_config <- function(path) {
 
   cfg$storm_info <- as_tibble(cfg$storm_info)
   cfg$viz_config <- as_tibble(cfg$viz_config)
+  cfg$viz_config_social <- as_tibble(cfg$viz_config_social)
 
   cfg$anchors <- lapply(cfg$anchors, function(a) as.numeric(unlist(a)))
+  cfg$anchors_social <- lapply(cfg$anchors_social, function(a) as.numeric(unlist(a)))
 
   # Optional city override: list of name/state maps -> tibble (NULL if absent).
   # Use [["cities"]] not $cities: $ partial-matches the `cities_n` key.
@@ -130,6 +132,8 @@ p0_targets <- list(
   tar_target(p0_flood_spike_var, p0_storm_cfg$flood_spike),
   tar_target(p0_viz_config_df, p0_storm_cfg$viz_config),
   tar_target(p0_viz_anchors, p0_storm_cfg$anchors),
+  tar_target(p0_viz_config_social_df, p0_storm_cfg$viz_config_social),
+  tar_target(p0_viz_anchors_social, p0_storm_cfg$anchors_social),
 
   # Derived from per-storm values (precip/NWIS times in UTC to match precip)
   tar_target(p0_precip_bbox, unname(as.list(p0_bbox_sf))),
