@@ -109,8 +109,9 @@ p3_targets <- list(
       title_text_line1 = sprintf("%s %s", p0_storm_info$storm_type_label,
                                  str_to_sentence(p3_storm_slug)),
       title_text_line2 = "Flooding",
-      start_date = p0_date_start,
-      end_date = p0_date_end,
+      # actual trimmed range, not the raw config dates
+      start_date = format(min(p2_all_precip_timestamps), "%Y-%m-%d"),
+      end_date = format(max(p2_all_precip_timestamps), "%Y-%m-%d"),
       logo_path = '3_visualize/in/usgs_logo_black.png',
       frame_bg_path = as.character(p3_flood_stage_frames)[
         grepl("frame_20260901T1600.png$", p3_flood_stage_frames)
