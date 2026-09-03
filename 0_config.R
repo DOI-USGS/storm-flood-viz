@@ -76,7 +76,10 @@ load_storm_config <- function(path) {
 
   cfg$bbox <- st_bbox(c(xmin = cfg$bbox$xmin, xmax = cfg$bbox$xmax, ymin = cfg$bbox$ymin, ymax = cfg$bbox$ymax))
 
-  cfg$storm_info <- as_tibble(cfg$storm_info)
+  # as_tibble() rejects NULL columns, but the template allows e.g.
+  # stn_event: ~ for storms with no STN rapid-deployment gage data.
+  cfg$storm_info <- as_tibble(lapply(cfg$storm_info,
+                                     function(x) if (is.null(x)) NA else x))
   cfg$viz_config <- as_tibble(cfg$viz_config)
 
   cfg$anchors <- lapply(cfg$anchors, function(a) as.numeric(unlist(a)))
@@ -101,7 +104,7 @@ load_storm_config <- function(path) {
 p0_targets <- list(
 
   # Storm config dispatch
-  tar_target(p0_storm_cfg_file, "config/helene.yml", format = "file"),
+  tar_target(p0_storm_cfg_file, "config/edouard.yml", format = "file"),
   tar_target(p0_storm_cfg, load_storm_config(p0_storm_cfg_file)),
 
   # Pipeline-constant data sources

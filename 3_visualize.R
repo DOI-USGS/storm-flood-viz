@@ -106,13 +106,14 @@ p3_targets <- list(
   tar_target(
     p3_title_frame_png,
     title_frame(
-      title_text_line1 = sprintf("Hurricane %s", str_to_sentence(p3_storm_slug)),
+      title_text_line1 = sprintf("%s %s", p0_storm_info$storm_type_label,
+                                 str_to_sentence(p3_storm_slug)),
       title_text_line2 = "Flooding",
       start_date = p0_date_start,
       end_date = p0_date_end,
       logo_path = '3_visualize/in/usgs_logo_black.png',
       frame_bg_path = as.character(p3_flood_stage_frames)[
-        grepl("frame_20240928T0800.png$", p3_flood_stage_frames)
+        grepl("frame_20260901T1600.png$", p3_flood_stage_frames)
       ],
       config_vars = p0_viz_config_df,
       out_path = file.path(p3_frame_dir, "frame_00000000000.png")
@@ -123,9 +124,8 @@ p3_targets <- list(
     p3_end_frame_png,
     end_frame(
       end_text_line1 = "STAY SAFE DURING FLOODS",
-      end_text_line2 = sprintf("Learn more about the USGS response to %s at",
-                               str_to_sentence(p3_storm_slug)),
-      end_text_line3 = sprintf("www.usgs.gov/%s", str_to_sentence(p3_storm_slug)),
+      end_text_line2 = "Learn more about emergency management at",
+      end_text_line3 = "www.usgs.gov/programs/emergency-management",
       logo_path = '3_visualize/in/usgs_logo_black.png',
       config_vars = p0_viz_config_df,
       out_path = file.path(p3_frame_dir, "frame_99999999999.png"),

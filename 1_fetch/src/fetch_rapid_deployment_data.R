@@ -10,22 +10,28 @@
 #' @return A data frame of RDG site information, including sensor type, event name, 
 #' timestamp, site number, latitude, longitude, and site description.
 fetch_rapid_dep_sites <- function(event, proj, start_day, end_day) {
-  
-  if(is.null(event)) {
-    
-    rdgs <- data.frame()
-    } else {    # fetch the rapid deployment gages (RDGs) from the STN web services
-      
-      url <- sprintf('https://stn.wim.usgs.gov/STNServices/Instruments/FilteredInstruments.json?Event=%d&EventType=&EventStatus=&States=&County=&CurrentStatus=&CollectionCondition=&SensorType=5&DeploymentType=', event)
-      
-    rdgs <- fromJSON(url)
-    
-    if(length(rdgs) > 0) {
-      rdgs <- rdgs %>%
-        select(sensorType, eventName, timeStamp, site_no, latitude, longitude, siteDescription)
-    }
-    }    
-  
+
+  # No STN event for this storm: return an empty sf with the same schema
+  # downstream code expects (a `dateTime` column for p3_rdg_by_time's
+  # filter(), and a geometry column for build_rdg_layer()), instead of
+  # running the fetch/reproject pipeline below on a bare data.frame().
+  if (is.null(event) || is.na(event)) {
+    return(st_sf(
+      dateTime = as.POSIXct(character(), tz = "UTC"),
+      geometry = st_sfc(crs = proj)
+    ))
+  }
+
+  # fetch the rapid deployment gages (RDGs) from the STN web services
+  url <- sprintf('https://stn.wim.usgs.gov/STNServices/Instruments/FilteredInstruments.json?Event=%d&EventType=&EventStatus=&States=&County=&CurrentStatus=&CollectionCondition=&SensorType=5&DeploymentType=', event)
+
+  rdgs <- fromJSON(url)
+
+  if(length(rdgs) > 0) {
+    rdgs <- rdgs %>%
+      select(sensorType, eventName, timeStamp, site_no, latitude, longitude, siteDescription)
+  }
+
   # reproject
   rdgs_proj <- st_as_sf(
     rdgs,

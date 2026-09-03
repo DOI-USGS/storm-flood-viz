@@ -33,7 +33,10 @@ build_flood_status_bar <- function(flow_now, flood_stage_cols_blue,
       )
     )
 
-  x_buffer <- global_max_flood_stages * 0.03
+  # Floor at 1 so label spacing and the x-axis don't collapse to zero width
+  # when no gage ever reaches flood stage across the whole storm.
+  axis_max_stages <- max(global_max_flood_stages, 1)
+  x_buffer <- axis_max_stages * 0.03
 
   ggplot(
     flood_status_summary,
@@ -57,7 +60,7 @@ build_flood_status_bar <- function(flow_now, flood_stage_cols_blue,
     ) +
     scale_fill_manual(values = flood_cols, drop = FALSE) +
     scale_x_continuous(
-      limits = c(0, global_max_flood_stages * config_vars$x_axis_buffer),
+      limits = c(0, axis_max_stages * config_vars$x_axis_buffer),
       expand = c(0, 0)
     ) +
     scale_y_discrete(expand = expansion(add = 0.2)) +

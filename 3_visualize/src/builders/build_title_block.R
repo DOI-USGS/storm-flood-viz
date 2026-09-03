@@ -33,8 +33,9 @@ build_title_block <- function(storm_info, dtg, timezone_long,
     with_tz(dtg, timezone_long), "%b. %d, %Y %H:%M %Z")
 
   time_to_landfall <- difftime(landfall_dtg, dtg, units = "hours")
-  landfall <- if (time_to_landfall > -2 && time_to_landfall > 0) {
-    paste0(round(as.numeric(time_to_landfall), 1), " hours to landfall")
+  landfall_hours <- round(as.numeric(time_to_landfall))
+  landfall <- if (time_to_landfall > -2 && landfall_hours > 0) {
+    paste0(landfall_hours, " hours to landfall")
   } else {
     NULL
   }
