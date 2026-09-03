@@ -14,6 +14,7 @@
 date_start: "2026-08-30"
 date_end: "2026-09-02"
 landfall_time: "2026-09-01 19:20:00"   # UTC
+before_landfall_time: 19   # hours before landfall to start the video at
 
 storm_info:
   storm_name: "EDOUARD"

@@ -143,10 +143,17 @@ p2_targets <- list(
       in_sf = p1_conus_bbox_crop_sf
     )
   ),
-  # Unique precipitation timestamps that drive all per-frame targets
+  # Unique precipitation timestamps that drive all per-frame targets;
+  # optionally trimmed to start before_landfall_time hours before landfall.
   tar_target(
     p2_all_precip_timestamps,
-    sort(unique(p2_process_precip_rast$dateTime))
+    {
+      ts <- sort(unique(p2_process_precip_rast$dateTime))
+      if (!is.null(p0_before_landfall_time)) {
+        ts <- ts[ts >= p0_landfall_time - hours(p0_before_landfall_time)]
+      }
+      ts
+    }
   ),
   # Compute above_flood flag and cumulative flood duration once over the full
   # time series. 

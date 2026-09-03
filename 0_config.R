@@ -118,6 +118,8 @@ p0_targets <- list(
   tar_target(p0_date_end, p0_storm_cfg$date_end),
   tar_target(p0_storm_info, p0_storm_cfg$storm_info),
   tar_target(p0_landfall_time, p0_storm_cfg$landfall_time),
+  # Optional: hours before landfall to start the video at.
+  tar_target(p0_before_landfall_time, p0_storm_cfg[["before_landfall_time"]]),
   tar_target(p0_timezone, p0_storm_cfg$timezone),
   tar_target(p0_timezone_abv, p0_storm_cfg$timezone_abv),
   tar_target(p0_cities_n, p0_storm_cfg$cities_n),

@@ -14,6 +14,10 @@
 date_start: "YYYY-MM-DD"
 date_end: "YYYY-MM-DD"
 landfall_time: "YYYY-MM-DD HH:MM:SS"   # UTC
+# Optional: trims the video to start this many hours before landfall_time,
+# instead of the full date_start-date_end window fetched above. Omit to keep
+# the full window.
+# before_landfall_time: 18
 
 storm_info:
   storm_name: "STORMNAME"
