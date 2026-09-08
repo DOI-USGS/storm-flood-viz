@@ -52,6 +52,9 @@
 #' @param include_legend Logical. TRUE (default) draws the legend stack
 #'   (precip legend, gage icons, flood explainer, flood status bar). FALSE
 #'   omits it, e.g. for a social-media crop with a separate static legend.
+#' @param flood_bar_only Logical. TRUE draws only a bigger flood-status
+#'   barplot (no precip legend, gage icons, or explainer text) instead of the
+#'   full legend stack; overrides include_legend.
 #' @return Character file path to the saved PNG, or NULL if `flow_now` is empty.
 compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
                            state_inner_borders, state_outer_lines,
@@ -67,7 +70,8 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
                            storm_info, timezone_long, landfall_dtg,
                            frame_dir, config_vars, precip_grayscale,
                            flood_groups_now, anchors = list(),
-                           include_legend = TRUE, frame_prefix = "frame") {
+                           include_legend = TRUE, frame_prefix = "frame",
+                           flood_bar_only = FALSE) {
   font_legend <- config_vars$load_font
   pm <- config_vars$plot_margin
 
@@ -126,18 +130,16 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
     family = font_legend, weight = "bold",
     size = config_vars$canvas_subtitle_size, res = 72
   )$lineheight
-  classification_dy <- 0.050 +
+  classification_dy <- 0.055 +
     (timestamp_lineheight_pt * line_tighten) / (config_vars$height * 72)
 
   if (nrow(flow_now) == 0) return(NULL)
 
   # --- Flood status barplot ---
-  if (include_legend) {
-    flood_status_bar <- build_flood_status_bar(
-      flow_now, flood_stage_cols_blue, flood_stage_cols_red,
-      global_max_flood_stages, precip_grayscale, font_legend, config_vars
-    )
-  }
+  flood_status_bar <- build_flood_status_bar(
+    flow_now, flood_stage_cols_blue, flood_stage_cols_red,
+    global_max_flood_stages, precip_grayscale, font_legend, config_vars
+  )
 
   # --- Main map ---
   precip <- build_precip_layer(
@@ -145,7 +147,7 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
     global_max_precip, precip_grayscale, font_legend, config_vars
   )
 
-  p <- ggplot() +
+  map_plot <- ggplot() +
     precip$layers +
     build_basemap(state_inner_borders, state_outer_lines, config_vars) +
     theme(
@@ -178,7 +180,7 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
     )
 
   # --- Panels ---
-  if (include_legend) {
+  if (include_legend && !flood_bar_only) {
     legends <- build_legends(
       precip$scale, global_max_precip,
       flood_spikes, flood_stage_spike_leg_path,
@@ -207,7 +209,7 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
     draw_grob(canvas,
       x = 0, y = 1, height = 1, width = 1, hjust = 0, vjust = 1) +
     draw_plot(
-      p + theme(
+      map_plot + theme(
         legend.position = "none",
         plot.title = element_blank()
       ),
@@ -223,15 +225,20 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
       color = config_vars$major_cities_text_col) +
     lbl(title_block$storm_name, "title",
       size = config_vars$storm_title_size, bold = TRUE) +
-    lbl(title_block$timestamp, "title", dx = 0.002, dy = 0.050,
+    lbl(title_block$timestamp, "title", dx = 0.002, dy = 0.055,
       size = config_vars$canvas_subtitle_size, bold = TRUE) +
-    lbl(title_block$landfall, "title", dx = landfall_dx, dy = 0.050,
+    lbl(title_block$landfall, "title", dx = landfall_dx, dy = 0.055,
       size = config_vars$canvas_subtitle_size) +
     draw_plot(progress_bar,
       x = anchors$progress[1], y = anchors$progress[2],
       width = config_vars$progress_w, height = config_vars$progress_h)
 
-  if (include_legend) {
+  if (flood_bar_only) {
+    p <- p +
+      draw_plot(flood_status_bar,
+        x = anchors$flood_bar[1], y = anchors$flood_bar[2],
+        width = 0.25, height = 0.115)
+  } else if (include_legend) {
     p <- p +
       build_precip_legend_panel(legends, global_max_precip, lbl, anchors,
         config_vars) +

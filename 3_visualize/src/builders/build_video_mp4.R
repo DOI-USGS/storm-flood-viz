@@ -58,3 +58,26 @@ encode_flood_mp4 <- function(title_frame_path, flood_frame_paths, end_frame_path
 
   output_path
 }
+
+#' Encode animation frames to MP4 with no title/end bookend frames — just
+#' the frames back to back, each repeated to hit encode_fps.
+#'
+#' @param frame_paths Character vector. Ordered paths to animation frame PNGs.
+#' @param output_path Character. Output .mp4 file path.
+#' @param fps Numeric. Display frames per second (default 2).
+#' @return Character. The output file path.
+encode_barplot_mp4 <- function(frame_paths, output_path, fps = 2) {
+  frame_paths <- sort(frame_paths)
+
+  encode_fps <- 24L
+  reps <- encode_fps / fps
+
+  av_encode_video(
+    input = rep(frame_paths, each = reps),
+    output = output_path,
+    framerate = encode_fps,
+    vfilter = "scale=trunc(iw/2)*2:trunc(ih/2)*2"
+  )
+
+  output_path
+}

@@ -15,6 +15,7 @@ source('3_visualize/src/builders/build_flood_explainer_panel.R')
 source('3_visualize/src/builders/compose_frame.R')
 source('3_visualize/src/builders/build_title_end_frame.R')
 source('3_visualize/src/builders/build_video_mp4.R')
+source('3_visualize/src/builders/build_legend_card.R')
 
 p3_targets <- list(
   # One symbolic name for the layer style ("spike" or "point")
@@ -150,17 +151,42 @@ p3_targets <- list(
     format = "file"
   ),
 
-  # 4:5 Instagram variant: no legend stack, separate frame set/mp4 
+  # 4:5 Instagram carousel: cover card, map-less barplot video, legend card.
   tar_target(
-    p3_frame_dir_ig,
+    p3_ig_cover_png,
+    title_frame(
+      title_text_line1 = sprintf("%s %s", p0_storm_info$storm_type_label,
+                                 str_to_sentence(p3_storm_slug)),
+      title_text_line2 = NULL,
+      start_date = p0_landfall_time,
+      end_date = NULL,
+      logo_path = '3_visualize/in/usgs_logo_black.png',
+      frame_bg_path = if (!is.null(p0_cover_image_path)) {
+        p0_cover_image_path
+      } else {
+        sort(as.character(p3_flood_stage_frames))[length(p3_flood_stage_frames)]
+      },
+      config_vars = p0_viz_config_social_df,
+      out_path = sprintf("3_visualize/out/instagram_%s_flood_stage_%s_cover.png",
+                         p3_storm_slug, p3_layer),
+      layout = "cover",
+      pretitle = "Visualizing"
+    ),
+    format = "file"
+  ),
+
+  tar_target(
+    p3_ig_barplot_dir,
     sprintf("3_visualize/out/instagram_flood_stage_%s_%s_frames", p3_storm_slug, p3_layer)
   ),
+
   tar_target(
-    p3_mp4_path_ig,
-    sprintf("3_visualize/out/instagram_%s_flood_stage_%s_animation.mp4", p3_storm_slug, p3_layer)
+    p3_ig_barplot_mp4_path,
+    sprintf("3_visualize/out/instagram_%s_flood_stage_%s.mp4", p3_storm_slug, p3_layer)
   ),
+
   tar_target(
-    p3_flood_stage_frames_ig,
+    p3_ig_barplot_frames,
     compose_frame(
       dtg = p2_all_precip_timestamps,
       precip_now = p3_precip_by_time,
@@ -192,8 +218,8 @@ p3_targets <- list(
       hurricane_symbol_path = "3_visualize/in/hurricane_symbol.png",
       flood_stage_spike_leg_path = "3_visualize/in/custom_flood_stage_spike_leg_percentile.png",
       flood_stage_point_leg_path = "3_visualize/in/custom_flood_stage_point_leg_percentile.png",
-      frame_dir = p3_frame_dir_ig,
-      include_legend = TRUE,
+      frame_dir = p3_ig_barplot_dir,
+      flood_bar_only = TRUE,
       frame_prefix = "ig_frame"
     ),
     pattern = map(p2_all_precip_timestamps, p3_precip_by_time, p2_flow_by_time,
@@ -201,49 +227,34 @@ p3_targets <- list(
                   p3_rdg_by_time),
     format = "file"
   ),
+
   tar_target(
-    p3_title_frame_png_ig,
-    title_frame(
-      title_text_line1 = sprintf("Hurricane %s", str_to_sentence(p3_storm_slug)),
-      title_text_line2 = "Flooding",
-      start_date = p0_date_start,
-      end_date = p0_date_end,
-      logo_path = '3_visualize/in/usgs_logo_black.png',
-      frame_bg_path = as.character(p3_flood_stage_frames_ig)[
-        grepl("ig_frame_20240928T0800.png$", p3_flood_stage_frames_ig)
-      ],
-      config_vars = p0_viz_config_social_df,
-      out_path = file.path(p3_frame_dir_ig, "ig_frame_00000000000.png")
+    p3_ig_barplot_mp4,
+    encode_barplot_mp4(
+      frame_paths = p3_ig_barplot_frames[!is.na(p3_ig_barplot_frames)],
+      output_path = p3_ig_barplot_mp4_path,
+      fps = 2
     ),
     format = "file"
   ),
+
   tar_target(
-    p3_end_frame_png_ig,
-    end_frame(
-      end_text_line1 = "STAY SAFE DURING FLOODS",
-      end_text_line2 = sprintf("Learn more about the USGS response to %s at",
-                               str_to_sentence(p3_storm_slug)),
-      end_text_line3 = sprintf("www.usgs.gov/%s", str_to_sentence(p3_storm_slug)),
-      logo_path = '3_visualize/in/usgs_logo_black.png',
+    p3_ig_legend_png,
+    build_legend_card(
+      global_max_precip = p3_global_max_precip_in,
+      precip_cols = p0_viz_precip_config_pal_blue,
+      precip_grayscale_cols = p0_viz_precip_config_pal_grayscale,
+      precip_grayscale = p0_precip_grayscale_var,
+      flood_spikes = p0_flood_spike_var,
+      flood_stage_spike_leg_path = "3_visualize/in/custom_flood_stage_spike_leg_percentile.png",
+      flood_stage_point_leg_path = "3_visualize/in/custom_flood_stage_point_leg_percentile.png",
+      flood_stage_cols_blue = p0_viz_fs_config_pal_blue,
+      flood_stage_cols_red = p0_viz_fs_config_pal_red,
+      target_rdg_icon = "3_visualize/in/bullseye.png",
       config_vars = p0_viz_config_social_df,
-      out_path = file.path(p3_frame_dir_ig, "ig_frame_99999999999.png"),
-      bg_col = p0_viz_precip_config_pal_blue[1]
-    ),
-    format = "file"
-  ),
-  tar_target(
-    p3_flood_stage_hourly_mp4_ig,
-    encode_flood_mp4(
-      title_frame_path = p3_title_frame_png_ig,
-      flood_frame_paths = p3_flood_stage_frames_ig[!is.na(p3_flood_stage_frames_ig) &
-                                                  p3_flood_stage_frames_ig != p3_title_frame_png_ig &
-                                                  p3_flood_stage_frames_ig != p3_end_frame_png_ig],
-      end_frame_path = p3_end_frame_png_ig,
-      output_path = p3_mp4_path_ig,
-      fps = 2,
-      title_hold = 10L,
-      fade_frames = 8L,
-      end_hold = 4L
+      card_cfg = p0_legend_card_cfg,
+      out_path = sprintf("3_visualize/out/instagram_%s_flood_stage_%s_legend.png",
+                         p3_storm_slug, p3_layer)
     ),
     format = "file"
   )
