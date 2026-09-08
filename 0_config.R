@@ -121,6 +121,10 @@ p0_targets <- list(
   tar_target(p0_timezone_abv, p0_storm_cfg$timezone_abv),
   tar_target(p0_cities_n, p0_storm_cfg$cities_n),
   tar_target(p0_cities_override, p0_storm_cfg[["cities"]]),
+  # Optional: overrides the auto-picked Instagram cover image.
+  tar_target(p0_cover_image_path, p0_storm_cfg[["cover_image_path"]]),
+  # Optional: Instagram legend card row positions/sizing.
+  tar_target(p0_legend_card_cfg, p0_storm_cfg[["legend_card"]]),
 
   # Viz leaves
   tar_target(p0_viz_fs_config_pal_blue, p0_storm_cfg$pal_fs_blue),
