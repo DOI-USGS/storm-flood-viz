@@ -15,6 +15,8 @@
 date_start: "2024-09-24"
 date_end: "2024-09-29"
 landfall_time: "2024-09-27 03:00:00"   # UTC
+# Optional: overrides the Instagram cover image (defaults to the last 1:1 frame).
+cover_image_path: "3_visualize/out/instagram_flood_stage_helene_spike_frames/ig_frame_20240929T0100.png"
 
 storm_info:
   storm_name: "HELENE"
@@ -183,3 +185,113 @@ viz_config:
 # explainer, status bar) follows it via design-constant offsets defined in R.
 anchors:
   legend_box: [0.0, 0.275]
+
+#### 4:5 social-media variant #### 
+viz_config_social:
+  width: 8
+  height: 10
+  dpi: 300
+  state_outline_col: "white"
+  major_cities_col: "gray60"
+  major_cities_text_col: "gray50"
+  streamgage_col: "gray30"
+  storm_path_col: "black"
+  state_inner_borders_col: "gray85"
+  state_outer_lines_col: "gray80"
+  bg_col: "white"
+  ocean_col: "#f8fcfc"
+  progress_bar_bg_col: "gray80"
+  progress_bar_col: "gray45"
+  x_mark: "black"
+  load_font: "Source Sans 3"
+  font_size_title: 20
+  font_size: 18
+  leg_font_size: 12
+  plot_margin: 0.025
+  plot_shift_x: -0.3
+  plot_shift_y: -1.242
+  plot_width: 1.62
+  plot_height: 3.5
+  rdg_icon_size: 0.014
+  precip_raster_alpha: 0.6
+  precip_col_alpha: 0.7
+  precip_legend_key_width_cm: 3
+  precip_legend_key_height_cm: 0.4
+  state_inner_border_lw: 0.27
+  state_outer_border_lw: 0.3
+  storm_track_lw: 0.8
+  storm_track_dot_size: 2
+  hurricane_symbol_size: 0.035
+  non_flooded_point_size: 1.25
+  flooded_point_size: 2
+  city_symbol_size: 1.75
+  city_text_size: 4
+  city_label_nudge_y: 45000
+  flood_point_alpha: 0.75
+  flood_legend_key_height_cm: 0.7
+  dot_legend_size: 5
+  rdg_legend_icon_size: 0.6
+  decom_legend_size: 2
+  legend_icon_col: "#aaaaaa"
+  logo_width: 0.125
+  storm_title_size: 39
+  canvas_subtitle_size: 23
+  canvas_legend_size: 12
+  canvas_line_height: 0.027
+  ocean_label_text: "Atlantic Ocean"
+  ocean_label_x: 0.83
+  ocean_label_y_offset: 0.32
+  ocean_label_size: 12
+  canvas_width: 16
+  canvas_height: 9
+  bar_width: 0.3
+  bar_text_size: 5.5
+  bar_y_expand: 0
+  x_axis_buffer: 1.15
+  progress_x: -0.05
+  progress_y: -0.001
+  progress_w: 1.1
+  progress_h: 0.015
+  peak_height: 200000
+  y_baseheight: 10000
+  flood_stage_leg_x_nudge: 0.008
+  cover_zoom: 1.58
+  cover_pan_y: -0.1
+
+anchors_social:
+  legend_box: [0.045, 0.315]
+
+# Instagram legend card (slide 3) row positions and sizing.
+legend_card:
+  text_size: 26
+  dot_scale: 3
+  rdg_scale: 0.55
+  decom_scale: 3
+  decom_stroke_scale: 3
+  colorbar_scale: 2.5
+  indent: 0.04
+  rainfall_y: 0.94
+  usgs_y: 0.84
+  rdg_y: 0.75
+  oos_y: 0.66
+  spike_y: 0.58
+  height_y: 0.51
+  percentiles_y: 0.45
+  color_y: 0.38
+  flood_y: 0.32
+  bottom_y: 0.25
+  # row x-positions
+  rainfall_label_x: 0.07
+  rainfall_tick1_x: 0.425
+  rainfall_colorbar_x: 0.46
+  rainfall_tick2_x: 0.855
+  icon_x: 0.10
+  icon_label_x: 0.17
+  explainer_x: 0.075
+  bottom_image_x: 0.15
+  bottom_image_width: 0.18
+  bottom_image_height: 0.22
+  bottom_key_x: 0.42
+  bottom_key_y: 0.03
+  bottom_key_width: 0.55
+  bottom_key_height: 0.2

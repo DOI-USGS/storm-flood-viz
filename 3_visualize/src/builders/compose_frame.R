@@ -49,6 +49,12 @@
 #'   Missing anchors fall back to the hardcoded `default_anchors` below. These
 #'   are the few layout knobs worth tuning per storm; in-block offsets are
 #'   design constants and stay in the panel builders.
+#' @param include_legend Logical. TRUE (default) draws the legend stack
+#'   (precip legend, gage icons, flood explainer, flood status bar). FALSE
+#'   omits it, e.g. for a social-media crop with a separate static legend.
+#' @param flood_bar_only Logical. TRUE draws only a bigger flood-status
+#'   barplot (no precip legend, gage icons, or explainer text) instead of the
+#'   full legend stack; overrides include_legend.
 #' @return Character file path to the saved PNG, or NULL if `flow_now` is empty.
 compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
                            state_inner_borders, state_outer_lines,
@@ -63,7 +69,9 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
                            bbox_coords, progress_fraction,
                            storm_info, timezone_long, landfall_dtg,
                            frame_dir, config_vars, precip_grayscale,
-                           flood_groups_now, anchors = list()) {
+                           flood_groups_now, anchors = list(),
+                           include_legend = TRUE, frame_prefix = "frame",
+                           flood_bar_only = FALSE) {
   font_legend <- config_vars$load_font
   pm <- config_vars$plot_margin
 
@@ -107,6 +115,24 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
   title_block <- build_title_block(
     storm_info, dtg, timezone_long, landfall_dtg, storm_now)
 
+  # Landfall countdown sits right after the timestamp label
+  landfall_gap <- 0.01
+  timestamp_width_pt <- systemfonts::string_width(
+    title_block$timestamp, family = font_legend, weight = "bold",
+    size = config_vars$canvas_subtitle_size, res = 72
+  )
+  landfall_dx <- 0.002 + timestamp_width_pt / (config_vars$width * 72) +
+    landfall_gap
+
+  # Classification sits below the timestamp/landfall row
+  line_tighten <- 0.8
+  timestamp_lineheight_pt <- systemfonts::font_info(
+    family = font_legend, weight = "bold",
+    size = config_vars$canvas_subtitle_size, res = 72
+  )$lineheight
+  classification_dy <- 0.055 +
+    (timestamp_lineheight_pt * line_tighten) / (config_vars$height * 72)
+
   if (nrow(flow_now) == 0) return(NULL)
 
   # --- Flood status barplot ---
@@ -121,7 +147,7 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
     global_max_precip, precip_grayscale, font_legend, config_vars
   )
 
-  p <- ggplot() +
+  map_plot <- ggplot() +
     precip$layers +
     build_basemap(state_inner_borders, state_outer_lines, config_vars) +
     theme(
@@ -154,11 +180,13 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
     )
 
   # --- Panels ---
-  legends <- build_legends(
-    precip$scale, global_max_precip,
-    flood_spikes, flood_stage_spike_leg_path,
-    flood_stage_point_leg_path, target_rdg_icon, config_vars
-  )
+  if (include_legend && !flood_bar_only) {
+    legends <- build_legends(
+      precip$scale, global_max_precip,
+      flood_spikes, flood_stage_spike_leg_path,
+      flood_stage_point_leg_path, target_rdg_icon, config_vars
+    )
+  }
 
   logo <- image_read(logo_path) |>
     image_resize("x100") |>
@@ -181,7 +209,7 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
     draw_grob(canvas,
       x = 0, y = 1, height = 1, width = 1, hjust = 0, vjust = 1) +
     draw_plot(
-      p + theme(
+      map_plot + theme(
         legend.position = "none",
         plot.title = element_blank()
       ),
@@ -197,24 +225,33 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
       color = config_vars$major_cities_text_col) +
     lbl(title_block$storm_name, "title",
       size = config_vars$storm_title_size, bold = TRUE) +
-    lbl(title_block$timestamp, "title", dx = 0.002, dy = 0.050,
+    lbl(title_block$timestamp, "title", dx = 0.002, dy = 0.055,
       size = config_vars$canvas_subtitle_size, bold = TRUE) +
-    lbl(title_block$landfall, "title", dx = 0.260, dy = 0.050,
+    lbl(title_block$landfall, "title", dx = landfall_dx, dy = 0.055,
       size = config_vars$canvas_subtitle_size) +
     draw_plot(progress_bar,
       x = anchors$progress[1], y = anchors$progress[2],
-      width = config_vars$progress_w, height = config_vars$progress_h) +
-    build_precip_legend_panel(legends, global_max_precip, lbl, anchors,
-      config_vars) +
-    build_gage_icons_panel(legends, lbl, anchors, config_vars) +
-    build_flood_status_bar_panel(flood_status_bar, flood_spikes, anchors,
-      config_vars) +
-    build_flood_explainer_panel(legends, flood_spikes, lbl, anchors,
-      config_vars)
+      width = config_vars$progress_w, height = config_vars$progress_h)
+
+  if (flood_bar_only) {
+    p <- p +
+      draw_plot(flood_status_bar,
+        x = anchors$flood_bar[1], y = anchors$flood_bar[2],
+        width = 0.25, height = 0.115)
+  } else if (include_legend) {
+    p <- p +
+      build_precip_legend_panel(legends, global_max_precip, lbl, anchors,
+        config_vars) +
+      build_gage_icons_panel(legends, lbl, anchors, config_vars) +
+      build_flood_status_bar_panel(flood_status_bar, flood_spikes, anchors,
+        config_vars) +
+      build_flood_explainer_panel(legends, flood_spikes, lbl, anchors,
+        config_vars)
+  }
 
   if (!is.null(title_block$classification)) {
     p <- p + lbl(
-      title_block$classification, "title", dx = 0.002, dy = 0.075,
+      title_block$classification, "title", dx = 0.002, dy = classification_dy,
       size = config_vars$canvas_subtitle_size
     )
   }
@@ -222,7 +259,7 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
   # --- Save ---
   timestamp_str <- format(dtg, "%Y%m%dT%H%M")
   dir_create(frame_dir)
-  frame_path <- file.path(frame_dir, paste0("frame_", timestamp_str, ".png"))
+  frame_path <- file.path(frame_dir, paste0(frame_prefix, "_", timestamp_str, ".png"))
   ggsave(
     filename = frame_path, plot = p,
     width = config_vars$width, height = config_vars$height,
