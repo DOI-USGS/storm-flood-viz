@@ -18,6 +18,11 @@ build_flood_explainer_panel <- function(legends, flood_spikes,
   lh <- config_vars$canvas_line_height
   fx <- anchors$flood_explain[1]
   fy <- anchors$flood_explain[2]
+  # Nudges the spike-mode flood-stage legend image right, independent of the
+  # 1:1 layout, when it sits too close to the preceding line's text (e.g. on
+  # the taller 4:5 social canvas). Defaults to 0 (no change) when unset.
+  flood_stage_leg_x_nudge <- config_vars$flood_stage_leg_x_nudge
+  if (is.null(flood_stage_leg_x_nudge)) flood_stage_leg_x_nudge <- 0
   if (flood_spikes) {
     list(
       lbl("A               appears at the 75th+ percentile", "flood_explain"),
@@ -27,7 +32,8 @@ build_flood_explainer_panel <- function(legends, flood_spikes,
       lbl("The                 is correlated to flow percentiles",
         "flood_explain", dy = lh),
       lbl("height", "flood_explain", dx = 0.0395, dy = lh, bold = TRUE),
-      draw_image(legends$flood_stage, x = fx + 0.358, y = fy - 0.049,
+      draw_image(legends$flood_stage,
+        x = fx + 0.358 + flood_stage_leg_x_nudge, y = fy - 0.049,
         width = 0.12, height = 0.12),
       lbl("The              is the severity of the flood",
         "flood_explain", dy = 2 * lh),

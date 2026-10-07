@@ -79,6 +79,8 @@ build_legends <- function(precip_fill_scale, global_max_precip,
                         size = config_vars$rdg_legend_icon_size) +
     theme_void()
 
+  decom_stroke <- config_vars$decom_stroke
+  if (is.null(decom_stroke)) decom_stroke <- 1
   p_decom <- ggplot(
     data.frame(x = 0, y = 0),
     aes(x = x, y = y)
@@ -86,7 +88,7 @@ build_legends <- function(precip_fill_scale, global_max_precip,
     geom_point(
       shape = 4, color = config_vars$x_mark,
       size = config_vars$decom_legend_size,
-      alpha = config_vars$flood_point_alpha, stroke = 1
+      alpha = config_vars$flood_point_alpha, stroke = decom_stroke
     ) +
     theme_void()
 
