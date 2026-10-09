@@ -13,16 +13,19 @@
 # forecast. Check actual Stage IV data availability and adjust date_end if
 # the latest hours come back empty (there's typically some processing lag).
 date_start: "2026-10-04"
-date_end: "2026-10-06"
+date_end: "2026-10-08"
 # No landfall yet (NHC forecast has Isaias approaching the northern Gulf
 # Coast around Oct 9-10, but that's beyond date_end, so it isn't shown in
 # this draft). Pinned before date_start so the "X hours to landfall"
 # countdown in build_title_block.R never fires.
 landfall_time: "2026-10-01 00:00:00"   # UTC
+# Optional: overrides the Instagram cover image (defaults to the last 1:1 frame).
+cover_image_path: "3_visualize/out/instagram_flood_stage_isaias_spike_frames/ig_frame_20261007T0000.png"
+
 
 storm_info:
   storm_name: "ISAIAS"
-  storm_type_label: "Tropical Storm"
+  storm_type_label: "Hurricane"
   storm_code: "al092026"
   storm_buffer: 250000
   shape_type: "buffered_storm_track"
@@ -217,8 +220,8 @@ viz_config_social:
   font_size: 14
   leg_font_size: 12
   plot_margin: 0.025
-  plot_shift_x: -0.36
-  plot_shift_y: -0.196
+  plot_shift_x: -0.351
+  plot_shift_y: -0.35
   plot_width: 1.39
   plot_height: 1.6
   rdg_icon_size: 0.014
@@ -264,8 +267,9 @@ viz_config_social:
   peak_height: 200000
   y_baseheight: 10000
   flood_stage_leg_x_nudge: 0
-  cover_zoom: 1.62
-  cover_pan_y: -0.45
+  cover_zoom: 1.95
+  cover_pan_y: -1
+  cover_pan_x: 0.9
 
 anchors_social:
   legend_box: [0.03, 0.285]

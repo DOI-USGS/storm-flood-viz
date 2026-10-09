@@ -30,21 +30,23 @@ title_frame <- function(title_text_line1, title_text_line2, start_date,
 
   if (layout == "cover") {
     # crop-to-fill so a square source frame isn't stretched on the 4:5 canvas.
-    # cover_pan_y pans the crop window within the zoomed source (0 = centered,
-    # 1 = as far down as possible) instead of moving the placed image, which
-    # would leave a gap since it already exactly fills the canvas. Both are
-    # storm-specific (depend on the chosen background frame), so they come
-    # from config_vars, not hardcoded here.
+    # cover_pan_x/y pan the crop window within the zoomed source (0 =
+    # centered, 1 = as far right/down as possible) instead of moving the
+    # placed image, which would leave a gap since it already exactly fills
+    # the canvas. Storm-specific, so they come from config_vars.
     cover_zoom <- config_vars$cover_zoom
     if (is.null(cover_zoom)) cover_zoom <- 1.58
+    cover_pan_x <- config_vars$cover_pan_x
+    if (is.null(cover_pan_x)) cover_pan_x <- 0
     cover_pan_y <- config_vars$cover_pan_y
     if (is.null(cover_pan_y)) cover_pan_y <- 0
     target_px <- round(c(config_vars$width, config_vars$height) * config_vars$dpi * cover_zoom)
     crop_px <- round(c(config_vars$width, config_vars$height) * config_vars$dpi)
+    offset_x <- round((target_px[1] - crop_px[1]) / 2 * cover_pan_x)
     offset_y <- round((target_px[2] - crop_px[2]) / 2 * cover_pan_y)
     bg_frame <- image_read(frame_bg_path) |>
       image_resize(sprintf("%dx%d^", target_px[1], target_px[2])) |>
-      image_crop(sprintf("%dx%d+0+%d", crop_px[1], crop_px[2], offset_y),
+      image_crop(sprintf("%dx%d+%d+%d", crop_px[1], crop_px[2], offset_x, offset_y),
                  gravity = "center") |>
     image_colorize(opacity = 15, color = config_vars$bg_col)
 

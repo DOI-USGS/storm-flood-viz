@@ -102,11 +102,17 @@ p1_targets <- list(
           st_transform(p0_proj)
       )
   ),
-  # Convert bbox to a list with xlim and ylim vector
+  # Convert bbox to a list with xlim and ylim vector. Uses the full storm
+  # bbox, not p1_conus_bbox_crop_sf's state-land extent, so content over
+  # open water isn't clipped out.
   tar_target(
     p1_bbox_coords,
     {
-      bbox <- st_bbox(p1_conus_bbox_crop_sf)
+      bbox <- p0_bbox_sf |>
+        st_as_sfc() |>
+        st_as_sf(crs = "EPSG:4269") |>
+        st_transform(p0_proj) |>
+        st_bbox()
       list(
         xlim = c(bbox["xmin"], bbox["xmax"]),
         ylim = c(bbox["ymin"], bbox["ymax"])
