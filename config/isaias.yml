@@ -77,13 +77,13 @@ flood_spike: "TRUE"
 
 # Color palettes
 pal_fs_blue:
-  "Not flooded": "#d5d5d5"
+  "Not flooded": "#c8c8c8"
   "Flood": "#4ecad7"
   "Moderate": "#17718E"
   "Major": "#003e6a"
 
 pal_fs_red:
-  "Not flooded": "#d5d5d5"
+  "Not flooded": "#c8c8c8"
   "Flood": "#e5a000"
   "Moderate": "#F7513B"
   "Major": "#C917E8"
