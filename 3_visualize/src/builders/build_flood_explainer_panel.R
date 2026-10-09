@@ -4,8 +4,7 @@
 #' genuinely different between modes — instead of branching inside
 #' [compose_frame()]. Each branch returns the explainer sentences (with bold
 #' keywords overprinted) and the flood-stage swatch image, positioned relative
-#' to the `flood_explain` anchor. The barplot is placed separately by
-#' [build_flood_status_bar_panel()].
+#' to the `flood_explain` anchor.
 #'
 #' @param legends List from [build_legends()]; uses `$peak`, `$flood_stage`.
 #' @param flood_spikes Logical. TRUE for spike mode; FALSE for sized-point mode.

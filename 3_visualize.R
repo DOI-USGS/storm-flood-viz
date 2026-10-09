@@ -10,8 +10,8 @@ source('3_visualize/src/builders/build_flood_status_bar.R')
 source('3_visualize/src/builders/build_title_block.R')
 source('3_visualize/src/builders/build_precip_legend_panel.R')
 source('3_visualize/src/builders/build_gage_icons_panel.R')
-source('3_visualize/src/builders/build_flood_status_bar_panel.R')
 source('3_visualize/src/builders/build_flood_explainer_panel.R')
+source('3_visualize/src/builders/build_flood_timeline_bar.R')
 source('3_visualize/src/builders/compose_frame.R')
 source('3_visualize/src/builders/build_title_end_frame.R')
 source('3_visualize/src/builders/build_video_mp4.R')
@@ -72,10 +72,10 @@ p3_targets <- list(
       global_max_flood_stages = p2_global_flow_maxes$max_flooded,
       flow_now = p2_flow_by_time,
       flood_groups_now = p2_flood_groups_by_time,
+      flood_counts_all = p2_flood_counts_by_hour,
       storm_now = p3_storm_by_time,
       rdg_now = p3_rdg_by_time,
       storm_info = p0_storm_info,
-      progress_fraction = p2_progress_fract,
       bbox_coords = p1_bbox_coords,
       state_inner_borders = p2_state_inner_lines,
       state_outer_lines = p2_bbox_outer_lines,
@@ -100,7 +100,7 @@ p3_targets <- list(
       frame_dir = p3_frame_dir
     ),
     pattern = map(p2_all_precip_timestamps, p3_precip_by_time, p2_flow_by_time,
-                  p2_flood_groups_by_time, p3_storm_by_time, p2_progress_fract,
+                  p2_flood_groups_by_time, p3_storm_by_time,
                   p3_rdg_by_time),
     format = "file"
   ),
@@ -194,10 +194,10 @@ p3_targets <- list(
       global_max_flood_stages = p2_global_flow_maxes$max_flooded,
       flow_now = p2_flow_by_time,
       flood_groups_now = p2_flood_groups_by_time,
+      flood_counts_all = p2_flood_counts_by_hour,
       storm_now = p3_storm_by_time,
       rdg_now = p3_rdg_by_time,
       storm_info = p0_storm_info,
-      progress_fraction = p2_progress_fract,
       bbox_coords = p1_bbox_coords,
       state_inner_borders = p2_state_inner_lines,
       state_outer_lines = p2_bbox_outer_lines,
@@ -219,11 +219,11 @@ p3_targets <- list(
       flood_stage_spike_leg_path = "3_visualize/in/custom_flood_stage_spike_leg_percentile.png",
       flood_stage_point_leg_path = "3_visualize/in/custom_flood_stage_point_leg_percentile.png",
       frame_dir = p3_ig_barplot_dir,
-      flood_bar_only = TRUE,
+      include_legend = FALSE,
       frame_prefix = "ig_frame"
     ),
     pattern = map(p2_all_precip_timestamps, p3_precip_by_time, p2_flow_by_time,
-                  p2_flood_groups_by_time, p3_storm_by_time, p2_progress_fract,
+                  p2_flood_groups_by_time, p3_storm_by_time,
                   p3_rdg_by_time),
     format = "file"
   ),

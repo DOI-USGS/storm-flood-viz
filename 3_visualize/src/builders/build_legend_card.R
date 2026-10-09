@@ -122,10 +122,10 @@ build_legend_card <- function(global_max_precip, precip_cols,
     target_rdg_icon, config_vars_card
   )
   severity_key <- build_flood_status_bar(
-    flow_now = NULL, flood_stage_cols_blue = flood_stage_cols_blue,
+    flood_stage_cols_blue = flood_stage_cols_blue,
     flood_stage_cols_red = flood_stage_cols_red,
-    global_max_flood_stages = NULL, precip_grayscale = precip_grayscale,
-    font_legend = font_legend, config_vars = config_vars_card, static = TRUE
+    precip_grayscale = precip_grayscale,
+    font_legend = font_legend, config_vars = config_vars_card
   )
 
   canvas <- rectGrob(

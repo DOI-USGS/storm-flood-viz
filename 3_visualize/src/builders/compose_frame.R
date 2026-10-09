@@ -26,8 +26,8 @@
 #' @param precip_grayscale_cols Character vector. Grayscale precip palette.
 #' @param flood_spikes Logical. TRUE for spike mode; FALSE for sized-point mode.
 #' @param global_max_precip Numeric. Global max precip (inches) for scale limit.
-#' @param global_max_flood_stages Numeric. Max flooded gage count across all
-#'   timesteps; sets the flood-status barplot x-axis limit.
+#' @param global_max_flood_stages Numeric. Max stacked Flood+Moderate+Major
+#'   total across all timesteps; sets the flood-timeline barplot y-axis limit.
 #' @param points_range Numeric length-2. Min/max point sizes for point mode.
 #' @param logo_path Character. Path to USGS logo PNG.
 #' @param hurricane_symbol_path Character. Path to hurricane symbol PNG.
@@ -35,7 +35,6 @@
 #' @param flood_stage_spike_leg_path Character. Path to spike-mode legend PNG.
 #' @param flood_stage_point_leg_path Character. Path to point-mode legend PNG.
 #' @param bbox_coords List with `xlim` and `ylim` projected bounding box coords.
-#' @param progress_fraction Numeric in [0, 1]. Animation progress.
 #' @param storm_info Named list/tibble with `storm_name` and `storm_type_label`.
 #' @param timezone_long Character. Olson timezone name for display.
 #' @param landfall_dtg POSIXct. Expected landfall time (UTC).
@@ -49,12 +48,13 @@
 #'   Missing anchors fall back to the hardcoded `default_anchors` below. These
 #'   are the few layout knobs worth tuning per storm; in-block offsets are
 #'   design constants and stay in the panel builders.
+#' @param flood_counts_all data.frame from [p2_flood_counts_by_hour] -- full-
+#'   timeline Flood/Moderate/Major gage counts, one row per hour/status, for
+#'   the growing flood-timeline barplot above the progress bar.
 #' @param include_legend Logical. TRUE (default) draws the legend stack
-#'   (precip legend, gage icons, flood explainer, flood status bar). FALSE
-#'   omits it, e.g. for a social-media crop with a separate static legend.
-#' @param flood_bar_only Logical. TRUE draws only a bigger flood-status
-#'   barplot (no precip legend, gage icons, or explainer text) instead of the
-#'   full legend stack; overrides include_legend.
+#'   (precip legend, gage icons, flood explainer). FALSE omits it, e.g. for a
+#'   social-media crop with a separate static legend. The flood-timeline
+#'   barplot is drawn either way.
 #' @return Character file path to the saved PNG, or NULL if `flow_now` is empty.
 compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
                            state_inner_borders, state_outer_lines,
@@ -66,12 +66,12 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
                            logo_path, hurricane_symbol_path, target_rdg_icon,
                            flood_stage_spike_leg_path,
                            flood_stage_point_leg_path,
-                           bbox_coords, progress_fraction,
+                           bbox_coords,
                            storm_info, timezone_long, landfall_dtg,
                            frame_dir, config_vars, precip_grayscale,
-                           flood_groups_now, anchors = list(),
-                           include_legend = TRUE, frame_prefix = "frame",
-                           flood_bar_only = FALSE) {
+                           flood_groups_now, flood_counts_all,
+                           anchors = list(),
+                           include_legend = TRUE, frame_prefix = "frame") {
   font_legend <- config_vars$load_font
   pm <- config_vars$plot_margin
 
@@ -95,7 +95,6 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
   anchors$precip_legend <- lb + c(0.027, 0)
   anchors$gage_icons <- lb + c(0, -0.029)
   anchors$flood_explain <- lb + c(0.027, -0.112)
-  anchors$flood_bar <- lb + c(0.17, -0.249)
 
   # Anchored label helper: dx/dy are offsets from `anchor`, with dy reading
   # "down from the anchor". Captures font and config so call sites stay terse.
@@ -134,12 +133,6 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
     (timestamp_lineheight_pt * line_tighten) / (config_vars$height * 72)
 
   if (nrow(flow_now) == 0) return(NULL)
-
-  # --- Flood status barplot ---
-  flood_status_bar <- build_flood_status_bar(
-    flow_now, flood_stage_cols_blue, flood_stage_cols_red,
-    global_max_flood_stages, precip_grayscale, font_legend, config_vars
-  )
 
   # --- Main map ---
   precip <- build_precip_layer(
@@ -180,7 +173,7 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
     )
 
   # --- Panels ---
-  if (include_legend && !flood_bar_only) {
+  if (include_legend) {
     legends <- build_legends(
       precip$scale, global_max_precip,
       flood_spikes, flood_stage_spike_leg_path,
@@ -192,7 +185,21 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
     image_resize("x100") |>
     image_colorize(100, "black")
 
+  # Same hour-index fraction the flood-timeline barplot uses, so the
+  # progress bar's fill lines up with the timeline's rightmost bar instead
+  # of trailing it by about one bar-width.
+  all_dtg <- sort(unique(flood_counts_all$dateTime))
+  progress_fraction <- match(dtg, all_dtg) / length(all_dtg)
+
   progress_bar <- build_progress_bar(progress_fraction, config_vars)
+  flood_timeline_bar <- build_flood_timeline_bar(
+    flood_counts_all, dtg, global_max_flood_stages, flood_stage_cols_red,
+    config_vars
+  )
+  # Full-width band sitting just above (slightly overlapping, to avoid a
+  # seam) the progress bar's top edge.
+  flood_timeline_h <- 0.12
+  flood_timeline_bottom <- config_vars$progress_y + config_vars$progress_h - 0.001
 
   canvas <- rectGrob(
     x = 0, y = 0, width = config_vars$canvas_width,
@@ -231,20 +238,16 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
       size = config_vars$canvas_subtitle_size) +
     draw_plot(progress_bar,
       x = anchors$progress[1], y = anchors$progress[2],
-      width = config_vars$progress_w, height = config_vars$progress_h)
+      width = config_vars$progress_w, height = config_vars$progress_h) +
+    draw_plot(flood_timeline_bar,
+      x = 0, y = flood_timeline_bottom,
+      width = 1, height = flood_timeline_h)
 
-  if (flood_bar_only) {
-    p <- p +
-      draw_plot(flood_status_bar,
-        x = anchors$flood_bar[1], y = anchors$flood_bar[2],
-        width = 0.25, height = 0.115)
-  } else if (include_legend) {
+  if (include_legend) {
     p <- p +
       build_precip_legend_panel(legends, global_max_precip, lbl, anchors,
         config_vars) +
       build_gage_icons_panel(legends, lbl, anchors, config_vars) +
-      build_flood_status_bar_panel(flood_status_bar, flood_spikes, anchors,
-        config_vars) +
       build_flood_explainer_panel(legends, flood_spikes, lbl, anchors,
         config_vars)
   }

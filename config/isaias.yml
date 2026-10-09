@@ -173,7 +173,7 @@ viz_config:
   canvas_line_height: 0.027
   ocean_label_text: "Gulf of America"
   ocean_label_x: 0.58
-  ocean_label_y_offset: 0.12
+  ocean_label_y_offset: 0.17
   ocean_label_size: 10
   canvas_width: 16
   canvas_height: 9
@@ -193,7 +193,7 @@ viz_config:
 # panel for a new storm. The internal layout (precip legend, gage icons, flood
 # explainer, status bar) follows it via design-constant offsets defined in R.
 anchors:
-  legend_box: [0.0, 0.275]
+  legend_box: [0.0, 0.3]
 
 # 4:5 social-media variant (e.g. Instagram feed post). Same builders/keys as
 # viz_config above, just a taller canvas. Starting from the same
@@ -252,7 +252,7 @@ viz_config_social:
   canvas_line_height: 0.027
   ocean_label_text: "Gulf of America"
   ocean_label_x: 0.48
-  ocean_label_y_offset: 0.26
+  ocean_label_y_offset: 0.31
   ocean_label_size: 14
   canvas_width: 16
   canvas_height: 9
@@ -305,7 +305,7 @@ legend_card:
   bottom_image_x: 0.15
   bottom_image_width: 0.18
   bottom_image_height: 0.22
-  bottom_key_x: 0.42
+  bottom_key_x: 0.48
   bottom_key_y: 0.03
   bottom_key_width: 0.55
   bottom_key_height: 0.2

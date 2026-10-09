@@ -208,25 +208,19 @@ p2_targets <- list(
       transpose() |>
       map(~ max(unlist(.x), na.rm = TRUE))
   ),
-  # Progress bar math
+  # Per-hour Flood/Moderate/Major gage counts, for the growing flood-timeline
+  # barplot (one stacked bar per hour, drawn cumulatively as the animation
+  # plays). Not branched -- one full-timeline table shared by every frame.
   tar_target(
-    p2_min_timestamp,
-    p2_all_precip_timestamps[[1]]
-  ),
-  tar_target(
-    p2_precip_duration,
-    as.double(
-      p2_all_precip_timestamps[[length(p2_all_precip_timestamps)]] - p2_min_timestamp,
-      units = "hours"
-    )
-  ),
-  tar_target(
-    p2_progress_fract,
-    {
-      hours_since_start <- as.double(p2_all_precip_timestamps - p2_min_timestamp, units = "hours")
-      hours_since_start / p2_precip_duration
-    },
-    pattern = map(p2_all_precip_timestamps),
-    iteration = "list"
+    p2_flood_counts_by_hour,
+    map2_dfr(p2_flow_by_time, p2_all_precip_timestamps, function(flow, dtg) {
+      flow |>
+        st_drop_geometry() |>
+        count(flood_status, .drop = FALSE) |>
+        mutate(dateTime = dtg)
+    }) |>
+      filter(flood_status != "Not flooded") |>
+      mutate(flood_status = factor(flood_status,
+        levels = c("Major", "Moderate", "Flood")))
   )
 )
