@@ -12,7 +12,7 @@
 # Stage IV precip is observed/analyzed data and can't extend into the
 # forecast. Check actual Stage IV data availability and adjust date_end if
 # the latest hours come back empty (there's typically some processing lag).
-date_start: "2026-10-07"
+date_start: "2026-10-08"
 date_end: "2026-10-12"
 
 # Landfall time in UTC
