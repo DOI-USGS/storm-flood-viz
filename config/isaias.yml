@@ -12,13 +12,13 @@
 # Stage IV precip is observed/analyzed data and can't extend into the
 # forecast. Check actual Stage IV data availability and adjust date_end if
 # the latest hours come back empty (there's typically some processing lag).
-date_start: "2026-10-04"
-date_end: "2026-10-08"
+date_start: "2026-10-06"
+date_end: "2026-10-12"
 # No landfall yet (NHC forecast has Isaias approaching the northern Gulf
 # Coast around Oct 9-10, but that's beyond date_end, so it isn't shown in
 # this draft). Pinned before date_start so the "X hours to landfall"
 # countdown in build_title_block.R never fires.
-landfall_time: "2026-10-01 00:00:00"   # UTC
+landfall_time: "2026-10-10 01:30:00" # UTC
 # Optional: overrides the Instagram cover image (defaults to the last 1:1 frame).
 cover_image_path: "3_visualize/out/instagram_flood_stage_isaias_spike_frames/ig_frame_20261007T0000.png"
 
@@ -39,10 +39,10 @@ storm_info:
 # reach the coast. Re-tune plot_shift_x/y and plot_width/height below once
 # you've seen a rendered frame.
 bbox:
-  xmin: -97.5
-  xmax: -82.0
-  ymin: 17.5
-  ymax: 35.0
+  xmin: -98.0
+  xmax: -78.5
+  ymin: 23.0
+  ymax: 38.0
 
 # Reused from helene.yml/edouard.yml — general Southeast/Gulf Albers projection.
 proj: "+proj=aea +lat_0=23 +lon_0=-84 +lat_1=30 +lat_2=37 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +type=crs"
@@ -70,6 +70,14 @@ cities:
     state: "MS"
   - name: "Atlanta"
     state: "GA"    
+  - name: "Nashville-Davidson"
+    state: "TN"   
+  - name: "Columbia"
+    state: "SC" 
+  - name: "Lexington"
+    state: "KY"       
+  - name: "Little Rock"
+    state: "AR"            
 
 # Viz toggles
 precip_grayscale: "FALSE"
@@ -220,10 +228,10 @@ viz_config_social:
   font_size: 14
   leg_font_size: 12
   plot_margin: 0.025
-  plot_shift_x: -0.351
-  plot_shift_y: -0.35
-  plot_width: 1.39
-  plot_height: 1.6
+  plot_shift_x: -0.21
+  plot_shift_y: -0.125
+  plot_width: 1.35
+  plot_height: 1.35
   rdg_icon_size: 0.014
   precip_raster_alpha: 0.6
   precip_col_alpha: 0.7
