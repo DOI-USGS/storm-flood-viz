@@ -11,6 +11,7 @@ source('3_visualize/src/builders/build_title_block.R')
 source('3_visualize/src/builders/build_precip_legend_panel.R')
 source('3_visualize/src/builders/build_gage_icons_panel.R')
 source('3_visualize/src/builders/build_flood_explainer_panel.R')
+source('3_visualize/src/builders/build_flood_severity_panel.R')
 source('3_visualize/src/builders/build_flood_timeline_bar.R')
 source('3_visualize/src/builders/compose_frame.R')
 source('3_visualize/src/builders/build_title_end_frame.R')
@@ -91,6 +92,7 @@ p3_targets <- list(
       precip_grayscale_cols = p0_viz_precip_config_pal_grayscale,
       config_vars = p0_viz_config_df,
       anchors = p0_viz_anchors,
+      track_start_dtg = p0_storm_track_start_time,
       landfall_dtg = p0_landfall_time,
       target_rdg_icon = "3_visualize/in/bullseye.png",
       logo_path = '3_visualize/in/usgs_logo_black.png',
@@ -113,7 +115,7 @@ p3_targets <- list(
       end_date = p0_date_end,
       logo_path = '3_visualize/in/usgs_logo_black.png',
       frame_bg_path = as.character(p3_flood_stage_frames)[
-        grepl("frame_20261006T1500.png$", p3_flood_stage_frames)
+        grepl("frame_20261012T1600.png$", p3_flood_stage_frames)
       ],
       config_vars = p0_viz_config_df,
       out_path = file.path(p3_frame_dir, "frame_00000000000.png")
@@ -126,7 +128,7 @@ p3_targets <- list(
       end_text_line1 = "STAY SAFE DURING FLOODS",
       end_text_line2 = sprintf("Learn more about the USGS response to %s at",
                                str_to_sentence(p3_storm_slug)),
-      end_text_line3 = sprintf("www.usgs.gov/%s", str_to_sentence(p3_storm_slug)),
+      end_text_line3 = sprintf("www.usgs.gov/special-topics/%s", p3_storm_slug),
       logo_path = '3_visualize/in/usgs_logo_black.png',
       config_vars = p0_viz_config_df,
       out_path = file.path(p3_frame_dir, "frame_99999999999.png"),
@@ -212,6 +214,7 @@ p3_targets <- list(
       precip_grayscale_cols = p0_viz_precip_config_pal_grayscale,
       config_vars = p0_viz_config_social_df,
       anchors = p0_viz_anchors_social,
+      track_start_dtg = p0_storm_track_start_time,
       landfall_dtg = p0_landfall_time,
       target_rdg_icon = "3_visualize/in/bullseye.png",
       logo_path = '3_visualize/in/usgs_logo_black.png',

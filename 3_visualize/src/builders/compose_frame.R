@@ -9,8 +9,10 @@
 #'   2. Basemap (state borders)
 #'   3. Flood gages — non-flooded points, spikes or sized points, decom markers
 #'   4. City markers and labels
-#'   5. Storm track path, dots, and hurricane symbol
-#'   6. Rapid-deployment gage icons
+#'   5. Rapid-deployment gage icons
+#'   6. Flood-timeline barplot (bottom band)
+#'   7. Storm track path, dots, and hurricane symbol — drawn last (its own
+#'      overlay plot) so it stays visible over the flood-timeline band
 #'
 #' @param dtg POSIXct. Current frame timestamp (UTC).
 #' @param precip_now data.frame. Gridded precipitation at current timestep.
@@ -55,6 +57,9 @@
 #'   (precip legend, gage icons, flood explainer). FALSE omits it, e.g. for a
 #'   social-media crop with a separate static legend. The flood-timeline
 #'   barplot is drawn either way.
+#' @param track_start_dtg POSIXct or NULL (default). If set, the storm
+#'   track/hurricane symbol isn't drawn until `dtg` reaches this time (storm
+#'   YAML `storm_track_start_time`).
 #' @return Character file path to the saved PNG, or NULL if `flow_now` is empty.
 compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
                            state_inner_borders, state_outer_lines,
@@ -70,7 +75,7 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
                            storm_info, timezone_long, landfall_dtg,
                            frame_dir, config_vars, precip_grayscale,
                            flood_groups_now, flood_counts_all,
-                           anchors = list(),
+                           anchors = list(), track_start_dtg = NULL,
                            include_legend = TRUE, frame_prefix = "frame") {
   font_legend <- config_vars$load_font
   pm <- config_vars$plot_margin
@@ -95,6 +100,7 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
   anchors$precip_legend <- lb + c(0.027, 0)
   anchors$gage_icons <- lb + c(0, -0.029)
   anchors$flood_explain <- lb + c(0.027, -0.112)
+  anchors$flood_severity <- anchors$flood_explain + c(0, -0.085)
 
   # Anchored label helper: dx/dy are offsets from `anchor`, with dy reading
   # "down from the anchor". Captures font and config so call sites stay terse.
@@ -153,7 +159,6 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
       points_range, font_legend, config_vars
     ) +
     build_cities_layer(major_cities, font_legend, config_vars) +
-    build_storm_track(storm_now, dtg, hurricane_symbol_path, config_vars) +
     build_rdg_layer(rdg_now, target_rdg_icon, config_vars) +
     coord_sf(
       xlim = bbox_coords$xlim,
@@ -171,6 +176,20 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
       legend.box = "vertical",
       legend.box.just = "center"
     )
+
+  # Storm track is a separate plot (same coord_sf/theme as map_plot, so it
+  # lines up pixel-for-pixel when overlaid) drawn as its own later layer, so
+  # it stays visible on top of the flood-timeline barplot instead of getting
+  # covered by it whenever the track crosses that bottom band.
+  storm_track_plot <- ggplot() +
+    build_storm_track(storm_now, dtg, hurricane_symbol_path, config_vars,
+      track_start_dtg) +
+    coord_sf(
+      xlim = bbox_coords$xlim,
+      ylim = bbox_coords$ylim,
+      expand = FALSE
+    ) +
+    theme_void()
 
   # --- Panels ---
   if (include_legend) {
@@ -241,7 +260,12 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
       width = config_vars$progress_w, height = config_vars$progress_h) +
     draw_plot(flood_timeline_bar,
       x = 0, y = flood_timeline_bottom,
-      width = 1, height = flood_timeline_h)
+      width = 1, height = flood_timeline_h) +
+    draw_plot(
+      storm_track_plot,
+      x = config_vars$plot_shift_x, y = config_vars$plot_shift_y,
+      height = config_vars$plot_height, width = config_vars$plot_width
+    )
 
   if (include_legend) {
     p <- p +
@@ -249,6 +273,8 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
         config_vars) +
       build_gage_icons_panel(legends, lbl, anchors, config_vars) +
       build_flood_explainer_panel(legends, flood_spikes, lbl, anchors,
+        config_vars) +
+      build_flood_severity_panel(flood_stage_cols_red, lbl, anchors,
         config_vars)
   }
 

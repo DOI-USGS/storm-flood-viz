@@ -53,10 +53,6 @@ title_frame <- function(title_text_line1, title_text_line2, start_date,
     p <- ggdraw(xlim = c(0, 1), ylim = c(0, 1)) +
       draw_grob(canvas, x = 0, y = 1, height = 1, width = 1, hjust = 0, vjust = 1) +
       draw_image(bg_frame, x = 0, y = 1, height = 1, width = 1, hjust = 0, vjust = 1) +
-      draw_image(logo,
-                 x = 0.9 - config_vars$plot_margin * 2, y = config_vars$plot_margin,
-                 width = config_vars$logo_width, hjust = 0, vjust = 0,
-                 halign = 0, valign = 0) +
       draw_label(pretitle, x = 0.032 + config_vars$plot_margin, y = 0.92, size = 28,
                  hjust = 0, vjust = 1, fontfamily = font_legend,
                  fontface = "bold", color = "black") +

@@ -12,16 +12,18 @@
 # Stage IV precip is observed/analyzed data and can't extend into the
 # forecast. Check actual Stage IV data availability and adjust date_end if
 # the latest hours come back empty (there's typically some processing lag).
-date_start: "2026-10-06"
+date_start: "2026-10-07"
 date_end: "2026-10-12"
-# No landfall yet (NHC forecast has Isaias approaching the northern Gulf
-# Coast around Oct 9-10, but that's beyond date_end, so it isn't shown in
-# this draft). Pinned before date_start so the "X hours to landfall"
-# countdown in build_title_block.R never fires.
-landfall_time: "2026-10-10 01:30:00" # UTC
-# Optional: overrides the Instagram cover image (defaults to the last 1:1 frame).
-cover_image_path: "3_visualize/out/instagram_flood_stage_isaias_spike_frames/ig_frame_20261007T0000.png"
 
+# Landfall time in UTC
+landfall_time: "2026-10-10 01:30:00" # UTC
+
+# Optional: hides the storm track/hurricane symbol until given time so it doesn't 
+# overlap the flood-timelinebarplot
+storm_track_start_time: ~
+
+# Optional: overrides the Instagram cover image (defaults to the last 1:1 frame).
+cover_image_path: "3_visualize/out/instagram_flood_stage_isaias_spike_frames/ig_frame_20261012T1500.png"
 
 storm_info:
   storm_name: "ISAIAS"
@@ -70,14 +72,12 @@ cities:
     state: "MS"
   - name: "Atlanta"
     state: "GA"    
-  - name: "Nashville-Davidson"
+  - name: "Memphis"
     state: "TN"   
   - name: "Columbia"
     state: "SC" 
   - name: "Lexington"
-    state: "KY"       
-  - name: "Little Rock"
-    state: "AR"            
+    state: "KY" 
 
 # Viz toggles
 precip_grayscale: "FALSE"
@@ -201,7 +201,7 @@ viz_config:
 # panel for a new storm. The internal layout (precip legend, gage icons, flood
 # explainer, status bar) follows it via design-constant offsets defined in R.
 anchors:
-  legend_box: [0.0, 0.3]
+  legend_box: [0.0, 0.355]
 
 # 4:5 social-media variant (e.g. Instagram feed post). Same builders/keys as
 # viz_config above, just a taller canvas. Starting from the same
@@ -229,7 +229,7 @@ viz_config_social:
   leg_font_size: 12
   plot_margin: 0.025
   plot_shift_x: -0.21
-  plot_shift_y: -0.125
+  plot_shift_y: -0.08
   plot_width: 1.35
   plot_height: 1.35
   rdg_icon_size: 0.014
@@ -260,7 +260,7 @@ viz_config_social:
   canvas_line_height: 0.027
   ocean_label_text: "Gulf of America"
   ocean_label_x: 0.48
-  ocean_label_y_offset: 0.31
+  ocean_label_y_offset: 0.28
   ocean_label_size: 14
   canvas_width: 16
   canvas_height: 9

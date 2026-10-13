@@ -11,9 +11,13 @@
 #' @param config_vars Named list of styling options. Must contain
 #'   `storm_path_col`, `storm_track_lw`, `storm_track_dot_size`, and
 #'   `hurricane_symbol_size` (all set in storm YAML viz_config).
+#' @param track_start_dtg POSIXct or NULL. If set, no track is drawn until
+#'   `dtg` reaches this time (storm YAML `storm_track_start_time`).
 #' @return A list of ggplot2 layer objects suitable for use with `+`.
 build_storm_track <- function(storm_now, dtg, hurricane_symbol_path,
-                              config_vars) {
+                              config_vars, track_start_dtg = NULL) {
+  if (!is.null(track_start_dtg) && dtg < track_start_dtg) return(list())
+
   past_storm_points <- filter(storm_now, DTG <= dtg)
   latest_point <- slice_tail(past_storm_points, n = 1)
 
