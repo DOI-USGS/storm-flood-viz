@@ -66,14 +66,23 @@ title_frame <- function(title_text_line1, title_text_line2, start_date,
     bg_frame <- image_read(frame_bg_path) |>
       image_colorize(opacity = 40, color = config_vars$bg_col)
 
+    title_bg_x <- config_vars$title_bg_x
+    if (is.null(title_bg_x)) title_bg_x <- -0.40
+    title_bg_y <- config_vars$title_bg_y
+    if (is.null(title_bg_y)) title_bg_y <- 3.6
+    title_bg_width <- config_vars$title_bg_width
+    if (is.null(title_bg_width)) title_bg_width <- 1.95
+    title_bg_height <- config_vars$title_bg_height
+    if (is.null(title_bg_height)) title_bg_height <- 6.4
+
     p <- ggdraw(xlim = c(0, 1), ylim = c(0,1)) +
       draw_grob(canvas,
                 x = 0, y = 1,
                 height = 1, width = 1,
                 hjust = 0, vjust = 1) +
       draw_image(bg_frame,
-                 x = -0.40, y = 3.6,
-                 height = 6.4, width = 1.95,
+                 x = title_bg_x, y = title_bg_y,
+                 height = title_bg_height, width = title_bg_width,
                  hjust = 0, vjust = 1) +
       draw_image(logo,
                  x = 0.9 - config_vars$plot_margin * 2,

@@ -214,7 +214,7 @@ p3_targets <- list(
       precip_grayscale_cols = p0_viz_precip_config_pal_grayscale,
       config_vars = p0_viz_config_social_df,
       anchors = p0_viz_anchors_social,
-      track_start_dtg = p0_storm_track_start_time,
+      track_start_dtg = p0_storm_track_start_time_social,
       landfall_dtg = p0_landfall_time,
       target_rdg_icon = "3_visualize/in/bullseye.png",
       logo_path = '3_visualize/in/usgs_logo_black.png',

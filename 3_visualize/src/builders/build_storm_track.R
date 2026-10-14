@@ -12,13 +12,18 @@
 #'   `storm_path_col`, `storm_track_lw`, `storm_track_dot_size`, and
 #'   `hurricane_symbol_size` (all set in storm YAML viz_config).
 #' @param track_start_dtg POSIXct or NULL. If set, no track is drawn until
-#'   `dtg` reaches this time (storm YAML `storm_track_start_time`).
+#'   `dtg` reaches this time, and the drawn path itself starts at this time
+#'   too (earlier track points are excluded, not just hidden pre-reveal)
+#'   (storm YAML `storm_track_start_time`).
 #' @return A list of ggplot2 layer objects suitable for use with `+`.
 build_storm_track <- function(storm_now, dtg, hurricane_symbol_path,
                               config_vars, track_start_dtg = NULL) {
   if (!is.null(track_start_dtg) && dtg < track_start_dtg) return(list())
 
   past_storm_points <- filter(storm_now, DTG <= dtg)
+  if (!is.null(track_start_dtg)) {
+    past_storm_points <- filter(past_storm_points, DTG >= track_start_dtg)
+  }
   latest_point <- slice_tail(past_storm_points, n = 1)
 
   list(

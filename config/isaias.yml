@@ -18,9 +18,13 @@ date_end: "2026-10-12"
 # Landfall time in UTC
 landfall_time: "2026-10-10 01:30:00" # UTC
 
-# Optional: hides the storm track/hurricane symbol until given time so it doesn't 
-# overlap the flood-timelinebarplot
-storm_track_start_time: ~
+# Optional: hides the storm track/hurricane symbol until given time so it doesn't
+# overlap the flood-timelinebarplot (1:1 hourly animation)
+storm_track_start_time: "2026-10-09 00:00:00" # UTC, = Oct 8, 2026 19:00 CDT
+
+# Optional: same, but for the 4:5 Instagram barplot video. Falls back to
+# storm_track_start_time above if omitted.
+storm_track_start_time_social: "2026-10-08 06:00:00" # UTC, = Oct 8, 2026 01:00 CDT
 
 # Optional: overrides the Instagram cover image (defaults to the last 1:1 frame).
 cover_image_path: "3_visualize/out/instagram_flood_stage_isaias_spike_frames/ig_frame_20261012T1500.png"
@@ -149,8 +153,8 @@ viz_config:
   font_size: 14
   leg_font_size: 12
   plot_margin: 0.025
-  plot_shift_x: -0.18
-  plot_shift_y: -0.212
+  plot_shift_x: -0.22
+  plot_shift_y: -0.208
   plot_width: 1.39
   plot_height: 1.6
   rdg_icon_size: 0.014
@@ -181,7 +185,7 @@ viz_config:
   canvas_line_height: 0.027
   ocean_label_text: "Gulf of America"
   ocean_label_x: 0.58
-  ocean_label_y_offset: 0.17
+  ocean_label_y_offset: 0.19
   ocean_label_size: 10
   canvas_width: 16
   canvas_height: 9
@@ -195,13 +199,17 @@ viz_config:
   # Flood spike geometry in projected units (meters); depends on proj above
   peak_height: 200000
   y_baseheight: 10000
+  title_bg_x: -0.42
+  title_bg_y: 3.47
+  title_bg_width: 1.95
+  title_bg_height: 6.4
 
 # Canvas anchor points (0-1 coords, y from bottom). legend_box is the single
 # knob for the whole legend stack. Move it to reposition the entire legend
 # panel for a new storm. The internal layout (precip legend, gage icons, flood
 # explainer, status bar) follows it via design-constant offsets defined in R.
 anchors:
-  legend_box: [0.0, 0.355]
+  legend_box: [-0.009, 0.36]
 
 # 4:5 social-media variant (e.g. Instagram feed post). Same builders/keys as
 # viz_config above, just a taller canvas. Starting from the same

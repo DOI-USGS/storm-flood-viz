@@ -79,6 +79,14 @@ load_storm_config <- function(path) {
     cfg$storm_track_start_time <- as.POSIXct(cfg$storm_track_start_time, tz = "UTC")
   }
 
+  # Optional: same, but for the 4:5 Instagram barplot video. Falls back to
+  # storm_track_start_time above when not set separately.
+  if (!is.null(cfg[["storm_track_start_time_social"]])) {
+    cfg$storm_track_start_time_social <- as.POSIXct(cfg$storm_track_start_time_social, tz = "UTC")
+  } else {
+    cfg$storm_track_start_time_social <- cfg$storm_track_start_time
+  }
+
   cfg$bbox <- st_bbox(c(xmin = cfg$bbox$xmin, xmax = cfg$bbox$xmax, ymin = cfg$bbox$ymin, ymax = cfg$bbox$ymax))
 
   # as_tibble() rejects NULL columns, but the template allows e.g.
@@ -135,6 +143,8 @@ p0_targets <- list(
   tar_target(p0_legend_card_cfg, p0_storm_cfg[["legend_card"]]),
   # Optional: hides the storm track until this time (see load_storm_config()).
   tar_target(p0_storm_track_start_time, p0_storm_cfg[["storm_track_start_time"]]),
+  # Optional: same, for the 4:5 Instagram barplot video (see load_storm_config()).
+  tar_target(p0_storm_track_start_time_social, p0_storm_cfg[["storm_track_start_time_social"]]),
 
   # Viz leaves
   tar_target(p0_viz_fs_config_pal_blue, p0_storm_cfg$pal_fs_blue),

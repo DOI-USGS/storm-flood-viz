@@ -15,7 +15,7 @@ build_flood_severity_panel <- function(flood_stage_cols_red, lbl, anchors,
   sw <- 0.018
   sh <- 0.022
   gap_after_swatch <- 0.010
-  gap_between_items <- 0.016
+  gap_between_items <- 0.008
 
   cats <- c("Major", "Moderate", "Flood")
   labels <- c("Major flood", "Moderate flood", "Flood")
