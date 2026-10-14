@@ -176,6 +176,8 @@ Per-storm and visualization settings live in `config/<storm>.yml`, **not** in R 
 
 -   `date_start` / `date_end` — animation period in `"YYYY-MM-DD"`. Start a day or two before arrival to capture early rainfall and streamflow; end past landfall to show ongoing impacts.
 -   `landfall_time` — UTC `"YYYY-MM-DD HH:MM:SS"` timestamp of landfall, used to drive the countdown label. From NHC forecasts/summaries.
+-   `storm_track_start_time` *(optional)* — UTC `"YYYY-MM-DD HH:MM:SS"` timestamp; hides the storm track/hurricane symbol in the 1:1 hourly animation until `dtg` reaches it, so the track doesn't pop in over the flood-timeline barplot's bottom band. Omit to show the track from the first frame.
+-   `storm_track_start_time_social` *(optional)* — same, for the 4:5 Instagram barplot video. Falls back to `storm_track_start_time` above if omitted.
 -   `storm_info`:
     -   `storm_name` — name in all caps (e.g. `"HELENE"`).
     -   `storm_type_label` — label shown in the title (e.g. `"Hurricane"`, `"Typhoon"`).
@@ -265,8 +267,14 @@ Per-storm and visualization settings live in `config/<storm>.yml`, **not** in R 
 -   *Flood-spike geometry (projected units):*
     -   `peak_height` — max spike height.
     -   `y_baseheight` — spike base offset above the gage.
+-   *Title card (1:1 hold frame, `viz_config` only):*
+    -   `title_bg_x` / `title_bg_y` — pan of the title card's background photo (the mp4's opening frame), anchored at the photo's top-left corner.
+    -   `title_bg_width` / `title_bg_height` — the photo is oversized past the 0-1 canvas by these amounts so it gets cropped; bigger crops in tighter.
+    -   `title_bg_zoom` — multiplies `title_bg_width`/`title_bg_height` together on top of those; `1` leaves them unchanged.
+-   *Flood-stat callout (also under `viz_config_social` for the 4:5 variant):*
+    -   `flood_stat_number_size` / `flood_stat_label_size` — font sizes for the "`<N>` gages in flood stage" callout drawn above the flood-timeline barplot.
 
-**`anchors`** — `legend_box` sets the position of the entire legend stack on the canvas; move it to reposition the legend panel for a new storm. The defaults work for most CONUS bboxes; see `default_anchors` in [`compose_frame.R`](3_visualize/src/builders/compose_frame.R) for the full list of anchor points and how they are derived.
+**`anchors`** — `legend_box` sets the position of the entire legend stack on the canvas; move it to reposition the legend panel for a new storm. `flood_stat` positions the "`<N>` gages in flood stage" callout (see `flood_stat_number_size` above) — if you move `legend_box`, check `flood_stat` still clears the legend's lowest item. The defaults work for most CONUS bboxes; see `default_anchors` in [`compose_frame.R`](3_visualize/src/builders/compose_frame.R) for the full list of anchor points and how they are derived.
 
 > **Regional note:** For storms outside the contiguous U.S. (Puerto Rico, Alaska, Hawaii, etc.), you may also need to adjust `p1_conus_bbox_crop_sf`, which downloads [tigris](https://github.com/walkerke/tigris) state borders and crops to the bbox. For a non-CONUS region, swap `tigris::states(cb = TRUE)` for the appropriate geography, e.g. `tigris::counties(state = "PR")`.
 
@@ -329,6 +337,7 @@ The pipeline runs in four phases. Each phase has a top-level script (`N_*.R`) th
 -   `build_precip_layer.R` / `build_precip_legend_panel.R` precipitation raster and its colorbar legend.
 -   `build_flood_layer.R` flood gage spikes/points.
 -   `build_flood_status_bar.R` / `build_flood_status_bar_panel.R` flood-status count barplot and its canvas placement.
+-   `build_flood_stat_callout.R` "`<N>` gages in flood stage" number + label above the flood-timeline barplot.
 -   `build_flood_explainer_panel.R` flood-stage explainer text panel.
 -   `build_cities_layer.R` city markers and labels.
 -   `build_storm_track.R` storm track line and hurricane symbol.
