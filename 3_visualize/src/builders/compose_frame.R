@@ -76,7 +76,8 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
                            frame_dir, config_vars, precip_grayscale,
                            flood_groups_now, flood_counts_all,
                            anchors = list(), track_start_dtg = NULL,
-                           include_legend = TRUE, frame_prefix = "frame") {
+                           include_legend = TRUE, frame_prefix = "frame",
+                           show_flood_stat = FALSE) {
   font_legend <- config_vars$load_font
   pm <- config_vars$plot_margin
 
@@ -89,7 +90,8 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
     legend_box = c(0, 0.275),
     ocean_label = c(config_vars$ocean_label_x,
                     pm + config_vars$ocean_label_y_offset),
-    progress = c(config_vars$progress_x, config_vars$progress_y)
+    progress = c(config_vars$progress_x, config_vars$progress_y),
+    flood_stat = c(pm - 0.012, 0.17)
   )
   anchors <- modifyList(default_anchors, anchors)
 
@@ -266,6 +268,11 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
       x = config_vars$plot_shift_x, y = config_vars$plot_shift_y,
       height = config_vars$plot_height, width = config_vars$plot_width
     )
+
+  if (show_flood_stat) {
+    p <- p + build_flood_stat_callout(flood_counts_all, dtg, lbl, anchors,
+      config_vars)
+  }
 
   if (include_legend) {
     p <- p +

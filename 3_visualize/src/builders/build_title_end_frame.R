@@ -53,15 +53,18 @@ title_frame <- function(title_text_line1, title_text_line2, start_date,
     p <- ggdraw(xlim = c(0, 1), ylim = c(0, 1)) +
       draw_grob(canvas, x = 0, y = 1, height = 1, width = 1, hjust = 0, vjust = 1) +
       draw_image(bg_frame, x = 0, y = 1, height = 1, width = 1, hjust = 0, vjust = 1) +
-      draw_label(pretitle, x = 0.032 + config_vars$plot_margin, y = 0.92, size = 28,
-                 hjust = 0, vjust = 1, fontfamily = font_legend,
-                 fontface = "bold", color = "black") +
-      draw_label(title_text_line1, x = 0.03 + config_vars$plot_margin, y = 0.87, size = 48,
+      draw_label(title_text_line1, x = 0.03 + config_vars$plot_margin, y = 0.92, size = 48,
                  hjust = 0, vjust = 1, fontfamily = font_legend, fontface = "bold",
                  color = "black", lineheight = 0.95) +
       draw_label(format(as.Date(start_date), "%B %Y"),
-                 x = 0.03 + config_vars$plot_margin, y = 0.80, size = 24,
+                 x = 0.03 + config_vars$plot_margin, y = 0.85, size = 24,
                  hjust = 0, vjust = 1, fontfamily = font_legend, color = "black")
+
+    if (!is.null(pretitle)) {
+      p <- p + draw_label(pretitle, x = 0.032 + config_vars$plot_margin, y = 0.92, size = 28,
+                 hjust = 0, vjust = 1, fontfamily = font_legend,
+                 fontface = "bold", color = "black")
+    }
   } else {
     bg_frame <- image_read(frame_bg_path) |>
       image_colorize(opacity = 40, color = config_vars$bg_col)
@@ -74,6 +77,8 @@ title_frame <- function(title_text_line1, title_text_line2, start_date,
     if (is.null(title_bg_width)) title_bg_width <- 1.95
     title_bg_height <- config_vars$title_bg_height
     if (is.null(title_bg_height)) title_bg_height <- 6.4
+    title_bg_zoom <- config_vars$title_bg_zoom
+    if (is.null(title_bg_zoom)) title_bg_zoom <- 1
 
     p <- ggdraw(xlim = c(0, 1), ylim = c(0,1)) +
       draw_grob(canvas,
@@ -82,7 +87,8 @@ title_frame <- function(title_text_line1, title_text_line2, start_date,
                 hjust = 0, vjust = 1) +
       draw_image(bg_frame,
                  x = title_bg_x, y = title_bg_y,
-                 height = title_bg_height, width = title_bg_width,
+                 height = title_bg_height * title_bg_zoom,
+                 width = title_bg_width * title_bg_zoom,
                  hjust = 0, vjust = 1) +
       draw_image(logo,
                  x = 0.9 - config_vars$plot_margin * 2,

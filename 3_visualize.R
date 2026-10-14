@@ -12,6 +12,7 @@ source('3_visualize/src/builders/build_precip_legend_panel.R')
 source('3_visualize/src/builders/build_gage_icons_panel.R')
 source('3_visualize/src/builders/build_flood_explainer_panel.R')
 source('3_visualize/src/builders/build_flood_severity_panel.R')
+source('3_visualize/src/builders/build_flood_stat_callout.R')
 source('3_visualize/src/builders/build_flood_timeline_bar.R')
 source('3_visualize/src/builders/compose_frame.R')
 source('3_visualize/src/builders/build_title_end_frame.R')
@@ -99,7 +100,8 @@ p3_targets <- list(
       hurricane_symbol_path = "3_visualize/in/hurricane_symbol.png",
       flood_stage_spike_leg_path = "3_visualize/in/custom_flood_stage_spike_leg_percentile.png",
       flood_stage_point_leg_path = "3_visualize/in/custom_flood_stage_point_leg_percentile.png",
-      frame_dir = p3_frame_dir
+      frame_dir = p3_frame_dir,
+      show_flood_stat = TRUE
     ),
     pattern = map(p2_all_precip_timestamps, p3_precip_by_time, p2_flow_by_time,
                   p2_flood_groups_by_time, p3_storm_by_time,
@@ -171,8 +173,7 @@ p3_targets <- list(
       config_vars = p0_viz_config_social_df,
       out_path = sprintf("3_visualize/out/instagram_%s_flood_stage_%s_cover.png",
                          p3_storm_slug, p3_layer),
-      layout = "cover",
-      pretitle = "Visualizing"
+      layout = "cover"
     ),
     format = "file"
   ),
@@ -223,7 +224,8 @@ p3_targets <- list(
       flood_stage_point_leg_path = "3_visualize/in/custom_flood_stage_point_leg_percentile.png",
       frame_dir = p3_ig_barplot_dir,
       include_legend = FALSE,
-      frame_prefix = "ig_frame"
+      frame_prefix = "ig_frame",
+      show_flood_stat = TRUE
     ),
     pattern = map(p2_all_precip_timestamps, p3_precip_by_time, p2_flow_by_time,
                   p2_flood_groups_by_time, p3_storm_by_time,

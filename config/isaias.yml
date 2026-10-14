@@ -199,17 +199,21 @@ viz_config:
   # Flood spike geometry in projected units (meters); depends on proj above
   peak_height: 200000
   y_baseheight: 10000
-  title_bg_x: -0.42
+  title_bg_x: -0.57
   title_bg_y: 3.47
   title_bg_width: 1.95
   title_bg_height: 6.4
+  title_bg_zoom: 1.05
+  # "<N> gages in flood stage" callout above the flood-timeline barplot.
+  flood_stat_number_size: 16
+  flood_stat_label_size: 13
 
 # Canvas anchor points (0-1 coords, y from bottom). legend_box is the single
 # knob for the whole legend stack. Move it to reposition the entire legend
-# panel for a new storm. The internal layout (precip legend, gage icons, flood
-# explainer, status bar) follows it via design-constant offsets defined in R.
+# panel for a new storm. 
 anchors:
-  legend_box: [-0.009, 0.36]
+  legend_box: [-0.009, 0.44]
+  flood_stat: [0.018, 0.185]
 
 # 4:5 social-media variant (e.g. Instagram feed post). Same builders/keys as
 # viz_config above, just a taller canvas. Starting from the same
@@ -286,9 +290,13 @@ viz_config_social:
   cover_zoom: 1.95
   cover_pan_y: -1
   cover_pan_x: 0.9
+  # "<N> gages in flood stage" callout above the flood-timeline barplot.
+  flood_stat_number_size: 20
+  flood_stat_label_size: 13
 
 anchors_social:
   legend_box: [0.03, 0.285]
+  flood_stat: [0.013, 0.17]
 
 # Instagram legend card (slide 3) row positions and sizing. Copied from
 # helene.yml's tuned values as a starting point (R defaults in
