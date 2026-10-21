@@ -49,7 +49,8 @@ encode_flood_mp4 <- function(title_frame_path, flood_frame_paths, end_frame_path
   all_frame_paths <- c(
     rep(title_frame_path, title_hold * reps),
     rep(last_flood_path, teaser_hold * reps),
-    rep(flood_frame_paths, each = reps),
+    rep(flood_frame_paths[1], reps + encode_fps), # hold the first frame 1s extra
+    rep(flood_frame_paths[-1], each = reps),
     rep(crossfade_paths, each = reps),
     rep(end_frame_path, end_hold * reps)
   )
@@ -85,7 +86,8 @@ encode_barplot_mp4 <- function(frame_paths, output_path, fps = 2, teaser_hold = 
 
   all_frame_paths <- c(
     rep(last_frame_path, teaser_hold * reps),
-    rep(frame_paths, each = reps)
+    rep(frame_paths[1], reps + encode_fps), # hold the first frame 1s extra
+    rep(frame_paths[-1], each = reps)
   )
 
   av_encode_video(

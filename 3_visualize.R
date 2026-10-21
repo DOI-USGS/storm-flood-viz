@@ -147,7 +147,7 @@ p3_targets <- list(
                                                   p3_flood_stage_frames != p3_end_frame_png],
       end_frame_path = p3_end_frame_png,
       output_path = p3_mp4_path,
-      fps = 2,
+      fps = 3,
       title_hold = 10L,
       fade_frames = 8L,
       end_hold = 4L
@@ -238,7 +238,7 @@ p3_targets <- list(
     encode_barplot_mp4(
       frame_paths = p3_ig_barplot_frames[!is.na(p3_ig_barplot_frames)],
       output_path = p3_ig_barplot_mp4_path,
-      fps = 2
+      fps = 3
     ),
     format = "file"
   ),
