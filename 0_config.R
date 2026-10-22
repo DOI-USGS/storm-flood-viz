@@ -74,12 +74,30 @@ load_storm_config <- function(path) {
 
   cfg$landfall_time <- as.POSIXct(cfg$landfall_time, tz = "UTC")
 
+  # Optional: hides the storm track/hurricane symbol until this time
+  if (!is.null(cfg[["storm_track_start_time"]])) {
+    cfg$storm_track_start_time <- as.POSIXct(cfg$storm_track_start_time, tz = "UTC")
+  }
+
+  # Optional: same, but for the 4:5 Instagram barplot video. Falls back to
+  # storm_track_start_time above when not set separately.
+  if (!is.null(cfg[["storm_track_start_time_social"]])) {
+    cfg$storm_track_start_time_social <- as.POSIXct(cfg$storm_track_start_time_social, tz = "UTC")
+  } else {
+    cfg$storm_track_start_time_social <- cfg$storm_track_start_time
+  }
+
   cfg$bbox <- st_bbox(c(xmin = cfg$bbox$xmin, xmax = cfg$bbox$xmax, ymin = cfg$bbox$ymin, ymax = cfg$bbox$ymax))
 
-  cfg$storm_info <- as_tibble(cfg$storm_info)
+  # as_tibble() rejects NULL columns, but the template allows e.g.
+  # stn_event: ~ for storms with no STN rapid-deployment gage data.
+  cfg$storm_info <- as_tibble(lapply(cfg$storm_info,
+                                     function(x) if (is.null(x)) NA else x))
   cfg$viz_config <- as_tibble(cfg$viz_config)
+  cfg$viz_config_social <- as_tibble(cfg$viz_config_social)
 
   cfg$anchors <- lapply(cfg$anchors, function(a) as.numeric(unlist(a)))
+  cfg$anchors_social <- lapply(cfg$anchors_social, function(a) as.numeric(unlist(a)))
 
   # Optional city override: list of name/state maps -> tibble (NULL if absent).
   # Use [["cities"]] not $cities: $ partial-matches the `cities_n` key.
@@ -101,7 +119,7 @@ load_storm_config <- function(path) {
 p0_targets <- list(
 
   # Storm config dispatch
-  tar_target(p0_storm_cfg_file, "config/helene.yml", format = "file"),
+  tar_target(p0_storm_cfg_file, "config/isaias.yml", format = "file"),
   tar_target(p0_storm_cfg, load_storm_config(p0_storm_cfg_file)),
 
   # Pipeline-constant data sources
@@ -119,6 +137,14 @@ p0_targets <- list(
   tar_target(p0_timezone_abv, p0_storm_cfg$timezone_abv),
   tar_target(p0_cities_n, p0_storm_cfg$cities_n),
   tar_target(p0_cities_override, p0_storm_cfg[["cities"]]),
+  # Optional: overrides the auto-picked Instagram cover image.
+  tar_target(p0_cover_image_path, p0_storm_cfg[["cover_image_path"]]),
+  # Optional: Instagram legend card row positions/sizing.
+  tar_target(p0_legend_card_cfg, p0_storm_cfg[["legend_card"]]),
+  # Optional: hides the storm track until this time (see load_storm_config()).
+  tar_target(p0_storm_track_start_time, p0_storm_cfg[["storm_track_start_time"]]),
+  # Optional: same, for the 4:5 Instagram barplot video (see load_storm_config()).
+  tar_target(p0_storm_track_start_time_social, p0_storm_cfg[["storm_track_start_time_social"]]),
 
   # Viz leaves
   tar_target(p0_viz_fs_config_pal_blue, p0_storm_cfg$pal_fs_blue),
@@ -130,6 +156,8 @@ p0_targets <- list(
   tar_target(p0_flood_spike_var, p0_storm_cfg$flood_spike),
   tar_target(p0_viz_config_df, p0_storm_cfg$viz_config),
   tar_target(p0_viz_anchors, p0_storm_cfg$anchors),
+  tar_target(p0_viz_config_social_df, p0_storm_cfg$viz_config_social),
+  tar_target(p0_viz_anchors_social, p0_storm_cfg$anchors_social),
 
   # Derived from per-storm values (precip/NWIS times in UTC to match precip)
   tar_target(p0_precip_bbox, unname(as.list(p0_bbox_sf))),

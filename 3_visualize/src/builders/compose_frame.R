@@ -9,8 +9,10 @@
 #'   2. Basemap (state borders)
 #'   3. Flood gages — non-flooded points, spikes or sized points, decom markers
 #'   4. City markers and labels
-#'   5. Storm track path, dots, and hurricane symbol
-#'   6. Rapid-deployment gage icons
+#'   5. Rapid-deployment gage icons
+#'   6. Flood-timeline barplot (bottom band)
+#'   7. Storm track path, dots, and hurricane symbol — drawn last (its own
+#'      overlay plot) so it stays visible over the flood-timeline band
 #'
 #' @param dtg POSIXct. Current frame timestamp (UTC).
 #' @param precip_now data.frame. Gridded precipitation at current timestep.
@@ -26,8 +28,8 @@
 #' @param precip_grayscale_cols Character vector. Grayscale precip palette.
 #' @param flood_spikes Logical. TRUE for spike mode; FALSE for sized-point mode.
 #' @param global_max_precip Numeric. Global max precip (inches) for scale limit.
-#' @param global_max_flood_stages Numeric. Max flooded gage count across all
-#'   timesteps; sets the flood-status barplot x-axis limit.
+#' @param global_max_flood_stages Numeric. Max stacked Flood+Moderate+Major
+#'   total across all timesteps; sets the flood-timeline barplot y-axis limit.
 #' @param points_range Numeric length-2. Min/max point sizes for point mode.
 #' @param logo_path Character. Path to USGS logo PNG.
 #' @param hurricane_symbol_path Character. Path to hurricane symbol PNG.
@@ -35,7 +37,6 @@
 #' @param flood_stage_spike_leg_path Character. Path to spike-mode legend PNG.
 #' @param flood_stage_point_leg_path Character. Path to point-mode legend PNG.
 #' @param bbox_coords List with `xlim` and `ylim` projected bounding box coords.
-#' @param progress_fraction Numeric in [0, 1]. Animation progress.
 #' @param storm_info Named list/tibble with `storm_name` and `storm_type_label`.
 #' @param timezone_long Character. Olson timezone name for display.
 #' @param landfall_dtg POSIXct. Expected landfall time (UTC).
@@ -49,6 +50,16 @@
 #'   Missing anchors fall back to the hardcoded `default_anchors` below. These
 #'   are the few layout knobs worth tuning per storm; in-block offsets are
 #'   design constants and stay in the panel builders.
+#' @param flood_counts_all data.frame from [p2_flood_counts_by_hour] -- full-
+#'   timeline Flood/Moderate/Major gage counts, one row per hour/status, for
+#'   the growing flood-timeline barplot above the progress bar.
+#' @param include_legend Logical. TRUE (default) draws the legend stack
+#'   (precip legend, gage icons, flood explainer). FALSE omits it, e.g. for a
+#'   social-media crop with a separate static legend. The flood-timeline
+#'   barplot is drawn either way.
+#' @param track_start_dtg POSIXct or NULL (default). If set, the storm
+#'   track/hurricane symbol isn't drawn until `dtg` reaches this time (storm
+#'   YAML `storm_track_start_time`).
 #' @return Character file path to the saved PNG, or NULL if `flow_now` is empty.
 compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
                            state_inner_borders, state_outer_lines,
@@ -60,10 +71,13 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
                            logo_path, hurricane_symbol_path, target_rdg_icon,
                            flood_stage_spike_leg_path,
                            flood_stage_point_leg_path,
-                           bbox_coords, progress_fraction,
+                           bbox_coords,
                            storm_info, timezone_long, landfall_dtg,
                            frame_dir, config_vars, precip_grayscale,
-                           flood_groups_now, anchors = list()) {
+                           flood_groups_now, flood_counts_all,
+                           anchors = list(), track_start_dtg = NULL,
+                           include_legend = TRUE, frame_prefix = "frame",
+                           show_flood_stat = FALSE) {
   font_legend <- config_vars$load_font
   pm <- config_vars$plot_margin
 
@@ -76,7 +90,8 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
     legend_box = c(0, 0.275),
     ocean_label = c(config_vars$ocean_label_x,
                     pm + config_vars$ocean_label_y_offset),
-    progress = c(config_vars$progress_x, config_vars$progress_y)
+    progress = c(config_vars$progress_x, config_vars$progress_y),
+    flood_stat = c(pm - 0.012, 0.17)
   )
   anchors <- modifyList(default_anchors, anchors)
 
@@ -87,7 +102,7 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
   anchors$precip_legend <- lb + c(0.027, 0)
   anchors$gage_icons <- lb + c(0, -0.029)
   anchors$flood_explain <- lb + c(0.027, -0.112)
-  anchors$flood_bar <- lb + c(0.17, -0.249)
+  anchors$flood_severity <- anchors$flood_explain + c(0, -0.085)
 
   # Anchored label helper: dx/dy are offsets from `anchor`, with dy reading
   # "down from the anchor". Captures font and config so call sites stay terse.
@@ -107,13 +122,25 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
   title_block <- build_title_block(
     storm_info, dtg, timezone_long, landfall_dtg, storm_now)
 
-  if (nrow(flow_now) == 0) return(NULL)
-
-  # --- Flood status barplot ---
-  flood_status_bar <- build_flood_status_bar(
-    flow_now, flood_stage_cols_blue, flood_stage_cols_red,
-    global_max_flood_stages, precip_grayscale, font_legend, config_vars
+  # Landfall countdown sits right after the timestamp label
+  landfall_gap <- 0.01
+  timestamp_width_pt <- systemfonts::string_width(
+    title_block$timestamp, family = font_legend, weight = "bold",
+    size = config_vars$canvas_subtitle_size, res = 72
   )
+  landfall_dx <- 0.002 + timestamp_width_pt / (config_vars$width * 72) +
+    landfall_gap
+
+  # Classification sits below the timestamp/landfall row
+  line_tighten <- 0.8
+  timestamp_lineheight_pt <- systemfonts::font_info(
+    family = font_legend, weight = "bold",
+    size = config_vars$canvas_subtitle_size, res = 72
+  )$lineheight
+  classification_dy <- 0.055 +
+    (timestamp_lineheight_pt * line_tighten) / (config_vars$height * 72)
+
+  if (nrow(flow_now) == 0) return(NULL)
 
   # --- Main map ---
   precip <- build_precip_layer(
@@ -121,7 +148,7 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
     global_max_precip, precip_grayscale, font_legend, config_vars
   )
 
-  p <- ggplot() +
+  map_plot <- ggplot() +
     precip$layers +
     build_basemap(state_inner_borders, state_outer_lines, config_vars) +
     theme(
@@ -134,7 +161,6 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
       points_range, font_legend, config_vars
     ) +
     build_cities_layer(major_cities, font_legend, config_vars) +
-    build_storm_track(storm_now, dtg, hurricane_symbol_path, config_vars) +
     build_rdg_layer(rdg_now, target_rdg_icon, config_vars) +
     coord_sf(
       xlim = bbox_coords$xlim,
@@ -153,18 +179,48 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
       legend.box.just = "center"
     )
 
+  # Storm track is a separate plot (same coord_sf/theme as map_plot, so it
+  # lines up pixel-for-pixel when overlaid) drawn as its own later layer, so
+  # it stays visible on top of the flood-timeline barplot instead of getting
+  # covered by it whenever the track crosses that bottom band.
+  storm_track_plot <- ggplot() +
+    build_storm_track(storm_now, dtg, hurricane_symbol_path, config_vars,
+      track_start_dtg) +
+    coord_sf(
+      xlim = bbox_coords$xlim,
+      ylim = bbox_coords$ylim,
+      expand = FALSE
+    ) +
+    theme_void()
+
   # --- Panels ---
-  legends <- build_legends(
-    precip$scale, global_max_precip,
-    flood_spikes, flood_stage_spike_leg_path,
-    flood_stage_point_leg_path, target_rdg_icon, config_vars
-  )
+  if (include_legend) {
+    legends <- build_legends(
+      precip$scale, global_max_precip,
+      flood_spikes, flood_stage_spike_leg_path,
+      flood_stage_point_leg_path, target_rdg_icon, config_vars
+    )
+  }
 
   logo <- image_read(logo_path) |>
     image_resize("x100") |>
     image_colorize(100, "black")
 
+  # Same hour-index fraction the flood-timeline barplot uses, so the
+  # progress bar's fill lines up with the timeline's rightmost bar instead
+  # of trailing it by about one bar-width.
+  all_dtg <- sort(unique(flood_counts_all$dateTime))
+  progress_fraction <- match(dtg, all_dtg) / length(all_dtg)
+
   progress_bar <- build_progress_bar(progress_fraction, config_vars)
+  flood_timeline_bar <- build_flood_timeline_bar(
+    flood_counts_all, dtg, global_max_flood_stages, flood_stage_cols_red,
+    config_vars
+  )
+  # Full-width band sitting just above (slightly overlapping, to avoid a
+  # seam) the progress bar's top edge.
+  flood_timeline_h <- 0.12
+  flood_timeline_bottom <- config_vars$progress_y + config_vars$progress_h - 0.001
 
   canvas <- rectGrob(
     x = 0, y = 0, width = config_vars$canvas_width,
@@ -181,7 +237,7 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
     draw_grob(canvas,
       x = 0, y = 1, height = 1, width = 1, hjust = 0, vjust = 1) +
     draw_plot(
-      p + theme(
+      map_plot + theme(
         legend.position = "none",
         plot.title = element_blank()
       ),
@@ -197,24 +253,41 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
       color = config_vars$major_cities_text_col) +
     lbl(title_block$storm_name, "title",
       size = config_vars$storm_title_size, bold = TRUE) +
-    lbl(title_block$timestamp, "title", dx = 0.002, dy = 0.050,
+    lbl(title_block$timestamp, "title", dx = 0.002, dy = 0.055,
       size = config_vars$canvas_subtitle_size, bold = TRUE) +
-    lbl(title_block$landfall, "title", dx = 0.260, dy = 0.050,
+    lbl(title_block$landfall, "title", dx = landfall_dx, dy = 0.055,
       size = config_vars$canvas_subtitle_size) +
     draw_plot(progress_bar,
       x = anchors$progress[1], y = anchors$progress[2],
       width = config_vars$progress_w, height = config_vars$progress_h) +
-    build_precip_legend_panel(legends, global_max_precip, lbl, anchors,
-      config_vars) +
-    build_gage_icons_panel(legends, lbl, anchors, config_vars) +
-    build_flood_status_bar_panel(flood_status_bar, flood_spikes, anchors,
-      config_vars) +
-    build_flood_explainer_panel(legends, flood_spikes, lbl, anchors,
+    draw_plot(flood_timeline_bar,
+      x = 0, y = flood_timeline_bottom,
+      width = 1, height = flood_timeline_h) +
+    draw_plot(
+      storm_track_plot,
+      x = config_vars$plot_shift_x, y = config_vars$plot_shift_y,
+      height = config_vars$plot_height, width = config_vars$plot_width
+    )
+
+  if (show_flood_stat) {
+    p <- p + build_flood_stat_callout(flood_counts_all, dtg, lbl, anchors,
       config_vars)
+  }
+
+  if (include_legend) {
+    p <- p +
+      build_precip_legend_panel(legends, global_max_precip, lbl, anchors,
+        config_vars) +
+      build_gage_icons_panel(legends, lbl, anchors, config_vars) +
+      build_flood_explainer_panel(legends, flood_spikes, lbl, anchors,
+        config_vars) +
+      build_flood_severity_panel(flood_stage_cols_red, lbl, anchors,
+        config_vars)
+  }
 
   if (!is.null(title_block$classification)) {
     p <- p + lbl(
-      title_block$classification, "title", dx = 0.002, dy = 0.075,
+      title_block$classification, "title", dx = 0.002, dy = classification_dy,
       size = config_vars$canvas_subtitle_size
     )
   }
@@ -222,7 +295,7 @@ compose_frame <- function(dtg, precip_now, flow_now, storm_now, rdg_now,
   # --- Save ---
   timestamp_str <- format(dtg, "%Y%m%dT%H%M")
   dir_create(frame_dir)
-  frame_path <- file.path(frame_dir, paste0("frame_", timestamp_str, ".png"))
+  frame_path <- file.path(frame_dir, paste0(frame_prefix, "_", timestamp_str, ".png"))
   ggsave(
     filename = frame_path, plot = p,
     width = config_vars$width, height = config_vars$height,
